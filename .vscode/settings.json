@@ -3,5 +3,8 @@
   "eslint.validate": ["javascript", "javascriptreact", "typescript", "typescriptreact", "astro"],
   "editor.codeActionsOnSave": {
     "source.fixAll.eslint": "explicit"
-  }
+  },
+  "npm.packageManager": "bun",
+  "npm.exclude": "**/node_modules/**",
+  "terminal.integrated.defaultProfile.windows": "PowerShell"
 }
