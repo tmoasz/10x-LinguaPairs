@@ -19,15 +19,31 @@ Uwagi i ograniczenia:
 
 ---
 
+### Tabela: languages (słownik języków)
+- **id**: `uuid` PK DEFAULT `gen_random_uuid()`
+- **code**: `citext` UNIQUE NOT NULL  
+  CHECK: regex `^[a-z]{2}(-[A-Z]{2})?$`
+- **name**: `text` NOT NULL
+- **name_native**: `text` NULL
+- **is_active**: `boolean` NOT NULL DEFAULT `true`
+- **sort_order**: `integer` NOT NULL DEFAULT `0`
+- **flag_emoji**: `text` NULL
+- **created_at**: `timestamptz` NOT NULL DEFAULT `now()`
+
+Uwagi i ograniczenia:
+- Publiczne, predefiniowane, zarządzane centralnie
+- Wspiera kody podstawowe (np. `pl`, `en`, `de`) oraz warianty regionalne (np. `en-US`)
+- Seed data: PL, EN (en-US), DE, IT, ES, CS
+
+---
+
 ### Tabela: decks
 - **id**: `uuid` PK DEFAULT `gen_random_uuid()`
 - **owner_user_id**: `uuid` NOT NULL (FK → `profiles.id`)
 - **title**: `text` NOT NULL
 - **description**: `text` NULL
-- **lang_a**: `text` NOT NULL  
-  CHECK: regex `^[a-z]{2}(-[A-Z]{2})?$`
-- **lang_b**: `text` NOT NULL  
-  CHECK: regex `^[a-z]{2}(-[A-Z]{2})?$`
+- **lang_a**: `uuid` NOT NULL (FK → `languages.id`)
+- **lang_b**: `uuid` NOT NULL (FK → `languages.id`)
 - CHECK: `lang_a <> lang_b`
 - **visibility**: `deck_visibility` NOT NULL DEFAULT `private`
 - **created_at**: `timestamptz` NOT NULL DEFAULT `now()`
@@ -37,6 +53,7 @@ Uwagi i ograniczenia:
 Uwagi i ograniczenia:
 - Właściciel: `owner_user_id`
 - Brak współpracy w MVP (brak `deck_members`)
+- Języki przez FK do `languages` (zamiast tekstowych kodów)
 
 ---
 
@@ -113,6 +130,7 @@ Uwagi i ograniczenia:
 ## 2. Relacje między tabelami
 - `profiles (1–1) auth.users`: `profiles.id = auth.users.id`
 - `profiles (1–N) decks`: `decks.owner_user_id → profiles.id`
+- `languages (1–N) decks`: `decks.lang_a → languages.id` oraz `decks.lang_b → languages.id`
 - `decks (1–N) pairs`: `pairs.deck_id → decks.id`
 - `pairs (M–N) tags` przez `pair_tags(pair_id, tag_id)`
 - `profiles (M–N) pairs` przez `user_pair_state(user_id, pair_id)`
@@ -123,6 +141,9 @@ Uwagi i ograniczenia:
 
 ### Globalne/rozszerzenia
 - Wymagane rozszerzenia: `unaccent`, `pg_trgm`, `pgcrypto`, `citext`
+
+### languages
+- Częściowy BTREE: `(is_active, sort_order)` WHERE `is_active = true` – lista aktywnych języków do wyboru
 
 ### decks
 - BTREE: `(owner_user_id, created_at DESC)`
@@ -179,6 +200,12 @@ Uwagi i ograniczenia:
   - Publiczny SELECT: `USING (EXISTS (SELECT 1 FROM decks d WHERE d.id = deck_id AND d.visibility = 'public' AND d.deleted_at IS NULL))`
   - Unlisted: brak bezpośredniego SELECT; dostęp via RPC z tokenem talii
 
+### RLS – languages (globalnie dostępne)
+- `ALTER TABLE languages ENABLE ROW LEVEL SECURITY;`
+- Polityki:
+  - `SELECT` dla wszystkich (anon/authenticated); tylko aktywne języki (`is_active = true`)
+  - Mutacje tylko rolą serwisową (brak INSERT/UPDATE/DELETE dla użytkowników)
+
 ### RLS – tags / pair_tags (globalnie dostępne)
 - `ALTER TABLE tags ENABLE ROW LEVEL SECURITY;`
 - `ALTER TABLE pair_tags ENABLE ROW LEVEL SECURITY;`
@@ -199,7 +226,8 @@ Uwagi i ograniczenia:
   - Publiczny SELECT: brak; udostępnianie tylko przez RPC `get_deck_by_token(token)` (SECURITY DEFINER), zwracające deck+pairs przy ważnym, nierozwiązanym tokenie oraz `visibility='unlisted'`
 
 ### Ograniczenia i walidacje (przykłady)
-- `decks.lang_a` / `decks.lang_b`: CHECK regex `^[a-z]{2}(-[A-Z]{2})?$`; CHECK `lang_a <> lang_b`
+- `languages.code`: CHECK regex `^[a-z]{2}(-[A-Z]{2})?$`; UNIQUE `(code)`
+- `decks.lang_a` / `decks.lang_b`: FK do `languages.id`; CHECK `lang_a <> lang_b`
 - `user_pair_state.last_grade`: CHECK `0..5`; `interval_days >= 0`
 
 ### Triggery techniczne
@@ -213,7 +241,8 @@ Uwagi i ograniczenia:
 - Soft delete: `deleted_at` w `decks` i `pairs`; większość indeksów i zapytań powinna filtrować `deleted_at IS NULL`.
 - Unlisted access: generowane UUID w `deck_share_links`; publiczny odczyt wyłącznie przez RPC z tokenem; możliwość wygaśnięcia (`expires_at`) i odwołania (`revoked_at`).
 - Skalowalność: brak partycjonowania w MVP; monitorować rozmiar `user_pair_state`; indeks `(user_id, due_at)` optymalizuje kolejkę powtórek.
+- Języki: tabela `languages` jako słownik centralnie zarządzany; wspiera kody podstawowe (ISO 639-1) oraz warianty regionalne (np. `en-US`); w MVP tylko podstawowe języki, bez wariantów regionalnych (z wyjątkiem `en-US` przygotowanego na przyszłość).
 - Potencjalne przyszłe rozszerzenia (poza MVP):  
-  `forked_from_deck_id`/`forked_from_pair_id`, historia `reviews`, per‑język FTS, bardziej szczegółowy `profiles.settings` (walidacja po stronie aplikacji/Zod).
+  `forked_from_deck_id`/`forked_from_pair_id`, historia `reviews`, per‑język FTS, bardziej szczegółowy `profiles.settings` (walidacja po stronie aplikacji/Zod), dodatkowe warianty regionalne (`en-GB`, `es-MX`, itp.).
 
 
