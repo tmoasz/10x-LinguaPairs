@@ -1,6 +1,7 @@
 ## 1. Lista tabel (kolumny, typy, ograniczenia)
 
 ### Tabela: profiles
+
 - **id**: `uuid` PK, = `auth.users.id`
 - **username**: `citext` UNIQUE NOT NULL
 - **display_name**: `text` NULL
@@ -10,16 +11,19 @@
 - **updated_at**: `timestamptz` NOT NULL DEFAULT `now()`
 
 Uwagi i ograniczenia:
+
 - 1–1 z `auth.users` (FK: `profiles.id` → `auth.users.id`)
 
 ---
 
 ### Typ: deck_visibility (ENUM)
+
 - Wartości: `private`, `unlisted`, `public`
 
 ---
 
 ### Tabela: languages (słownik języków)
+
 - **id**: `uuid` PK DEFAULT `gen_random_uuid()`
 - **code**: `citext` UNIQUE NOT NULL  
   CHECK: regex `^[a-z]{2}(-[A-Z]{2})?$`
@@ -31,6 +35,7 @@ Uwagi i ograniczenia:
 - **created_at**: `timestamptz` NOT NULL DEFAULT `now()`
 
 Uwagi i ograniczenia:
+
 - Publiczne, predefiniowane, zarządzane centralnie
 - Wspiera kody podstawowe (np. `pl`, `en`, `de`) oraz warianty regionalne (np. `en-US`)
 - Seed data: PL, EN (en-US), DE, IT, ES, CS
@@ -38,6 +43,7 @@ Uwagi i ograniczenia:
 ---
 
 ### Tabela: decks
+
 - **id**: `uuid` PK DEFAULT `gen_random_uuid()`
 - **owner_user_id**: `uuid` NOT NULL (FK → `profiles.id`)
 - **title**: `text` NOT NULL
@@ -51,6 +57,7 @@ Uwagi i ograniczenia:
 - **deleted_at**: `timestamptz` NULL (soft delete)
 
 Uwagi i ograniczenia:
+
 - Właściciel: `owner_user_id`
 - Brak współpracy w MVP (brak `deck_members`)
 - Języki przez FK do `languages` (zamiast tekstowych kodów)
@@ -58,6 +65,7 @@ Uwagi i ograniczenia:
 ---
 
 ### Tabela: pairs
+
 - **id**: `uuid` PK DEFAULT `gen_random_uuid()`
 - **deck_id**: `uuid` NOT NULL (FK → `decks.id`)
 - **term_a**: `text` NOT NULL
@@ -73,6 +81,7 @@ Uwagi i ograniczenia:
 - **deleted_at**: `timestamptz` NULL (soft delete)
 
 Uwagi i ograniczenia:
+
 - Unikalność w obrębie talii (ignorując soft delete):  
   UNIQUE `(deck_id, term_a_norm, term_b_norm)` WHERE `deleted_at IS NULL`
 - Kolejność domyślna po `added_at DESC`
@@ -80,17 +89,20 @@ Uwagi i ograniczenia:
 ---
 
 ### Tabela: tags (globalne)
+
 - **id**: `uuid` PK DEFAULT `gen_random_uuid()`
 - **slug**: `citext` UNIQUE NOT NULL
 - **name**: `text` NOT NULL
 - **description**: `text` NULL
 
 Uwagi:
+
 - Publiczne, predefiniowane, zarządzane centralnie
 
 ---
 
 ### Tabela: pair_tags (M–N)
+
 - **pair_id**: `uuid` NOT NULL (FK → `pairs.id`)
 - **tag_id**: `uuid` NOT NULL (FK → `tags.id`)
 - PK: `(pair_id, tag_id)`
@@ -98,6 +110,7 @@ Uwagi:
 ---
 
 ### Tabela: user_pair_state (minimalny SRS/progres)
+
 - **user_id**: `uuid` NOT NULL (FK → `profiles.id`)
 - **pair_id**: `uuid` NOT NULL (FK → `pairs.id`)
 - **deck_id**: `uuid` NOT NULL  
@@ -114,11 +127,13 @@ Uwagi:
 - PK: `(user_id, pair_id, deck_id)`
 
 Uwagi i ograniczenia:
+
 - Dodatkowy UNIQUE w `pairs` na `(id, deck_id)` zapewnia spójność FK złożonego
 
 ---
 
 ### Tabela: deck_share_links (dla unlisted)
+
 - **deck_id**: `uuid` NOT NULL (FK → `decks.id`)
 - **token**: `uuid` UNIQUE NOT NULL DEFAULT `gen_random_uuid()`
 - **created_at**: `timestamptz` NOT NULL DEFAULT `now()`
@@ -126,8 +141,8 @@ Uwagi i ograniczenia:
 - **revoked_at**: `timestamptz` NULL
 - PK: `(deck_id, token)`
 
-
 ## 2. Relacje między tabelami
+
 - `profiles (1–1) auth.users`: `profiles.id = auth.users.id`
 - `profiles (1–N) decks`: `decks.owner_user_id → profiles.id`
 - `languages (1–N) decks`: `decks.lang_a → languages.id` oraz `decks.lang_b → languages.id`
@@ -136,20 +151,23 @@ Uwagi i ograniczenia:
 - `profiles (M–N) pairs` przez `user_pair_state(user_id, pair_id)`
 - `decks (1–N) deck_share_links`: `deck_share_links.deck_id → decks.id`
 
-
 ## 3. Indeksy (wydajność i egzekwowanie ograniczeń)
 
 ### Globalne/rozszerzenia
+
 - Wymagane rozszerzenia: `unaccent`, `pg_trgm`, `pgcrypto`, `citext`
 
 ### languages
+
 - Częściowy BTREE: `(is_active, sort_order)` WHERE `is_active = true` – lista aktywnych języków do wyboru
 
 ### decks
+
 - BTREE: `(owner_user_id, created_at DESC)`
 - Częściowy BTREE: `(id)` WHERE `deleted_at IS NULL` (przydatny do joinów/warunków)
 
 ### pairs
+
 - UNIQUE (częściowy): `(deck_id, term_a_norm, term_b_norm)` WHERE `deleted_at IS NULL`
 - BTREE: `(deck_id, added_at DESC)`
 - GIN (FTS): na `search_tsv`
@@ -158,21 +176,24 @@ Uwagi i ograniczenia:
 - UNIQUE (techniczne): `(id, deck_id)` – dla FK złożonych w `user_pair_state`
 
 ### user_pair_state
+
 - BTREE: `(user_id, due_at)` – planowanie powtórek
 - BTREE: `(user_id, deck_id)` – filtrowanie progresu po talii
 
 ### tags / pair_tags
+
 - tags: UNIQUE `(slug)` (citext)
 - pair_tags: PK `(pair_id, tag_id)` + BTREE `(tag_id)` (odwrócone wyszukiwanie)
 
 ### deck_share_links
+
 - UNIQUE: `(token)`
 - BTREE: `(deck_id)`
-
 
 ## 4. Zasady PostgreSQL (RLS, polityki, typy, triggery)
 
 ### Rozszerzenia i typy
+
 - `CREATE EXTENSION IF NOT EXISTS unaccent;`
 - `CREATE EXTENSION IF NOT EXISTS pg_trgm;`
 - `CREATE EXTENSION IF NOT EXISTS pgcrypto;` (dla `gen_random_uuid()`)
@@ -180,12 +201,14 @@ Uwagi i ograniczenia:
 - `CREATE TYPE deck_visibility AS ENUM ('private','unlisted','public');`
 
 ### RLS – profiles
+
 - `ALTER TABLE profiles ENABLE ROW LEVEL SECURITY;`
 - Polityki:
   - Owner SELECT/UPDATE/DELETE: `USING (id = auth.uid()) WITH CHECK (id = auth.uid())`
   - INSERT: tylko przez backend (rola serwisowa) po rejestracji użytkownika
 
 ### RLS – decks
+
 - `ALTER TABLE decks ENABLE ROW LEVEL SECURITY;`
 - Polityki:
   - Owner pełny CRUD: `USING (owner_user_id = auth.uid()) WITH CHECK (owner_user_id = auth.uid())`
@@ -193,6 +216,7 @@ Uwagi i ograniczenia:
   - Unlisted: brak bezpośredniego SELECT; dostęp wyłącznie przez RPC/VIEW z tokenem
 
 ### RLS – pairs
+
 - `ALTER TABLE pairs ENABLE ROW LEVEL SECURITY;`
 - Polityki:
   - Owner CRUD: `USING (EXISTS (SELECT 1 FROM decks d WHERE d.id = deck_id AND d.owner_user_id = auth.uid()))`
@@ -201,12 +225,14 @@ Uwagi i ograniczenia:
   - Unlisted: brak bezpośredniego SELECT; dostęp via RPC z tokenem talii
 
 ### RLS – languages (globalnie dostępne)
+
 - `ALTER TABLE languages ENABLE ROW LEVEL SECURITY;`
 - Polityki:
   - `SELECT` dla wszystkich (anon/authenticated); tylko aktywne języki (`is_active = true`)
   - Mutacje tylko rolą serwisową (brak INSERT/UPDATE/DELETE dla użytkowników)
 
 ### RLS – tags / pair_tags (globalnie dostępne)
+
 - `ALTER TABLE tags ENABLE ROW LEVEL SECURITY;`
 - `ALTER TABLE pair_tags ENABLE ROW LEVEL SECURITY;`
 - Polityki:
@@ -214,28 +240,32 @@ Uwagi i ograniczenia:
   - `pair_tags`: `SELECT` dla wszystkich; mutacje tylko rolą serwisową
 
 ### RLS – user_pair_state
+
 - `ALTER TABLE user_pair_state ENABLE ROW LEVEL SECURITY;`
 - Polityki:
   - Owner pełny dostęp: `USING (user_id = auth.uid()) WITH CHECK (user_id = auth.uid())`
   - Aktualizacje rekomendowane przez RPC `apply_review(...)`
 
 ### RLS – deck_share_links
+
 - `ALTER TABLE deck_share_links ENABLE ROW LEVEL SECURITY;`
 - Polityki:
   - Owner CRUD: `USING (EXISTS (SELECT 1 FROM decks d WHERE d.id = deck_id AND d.owner_user_id = auth.uid()))`
   - Publiczny SELECT: brak; udostępnianie tylko przez RPC `get_deck_by_token(token)` (SECURITY DEFINER), zwracające deck+pairs przy ważnym, nierozwiązanym tokenie oraz `visibility='unlisted'`
 
 ### Ograniczenia i walidacje (przykłady)
+
 - `languages.code`: CHECK regex `^[a-z]{2}(-[A-Z]{2})?$`; UNIQUE `(code)`
 - `decks.lang_a` / `decks.lang_b`: FK do `languages.id`; CHECK `lang_a <> lang_b`
 - `user_pair_state.last_grade`: CHECK `0..5`; `interval_days >= 0`
 
 ### Triggery techniczne
+
 - Funkcja `set_updated_at()` + TRIGGER `BEFORE UPDATE` dla: `profiles`, `decks`, `pairs`
 - TRIGGER blokujący zmianę `decks.lang_a/lang_b` jeśli istnieją w tej talii wiersze w `pairs`
 
-
 ## 5. Dodatkowe uwagi projektowe
+
 - Duplicate control: brak duplikatów par w obrębie talii dzięki unikalności na `(deck_id, term_a_norm, term_b_norm)` z pominięciem soft-delete.
 - Wyszukiwanie: połączenie FTS (`search_tsv` z konfiguracją `simple`) i podobieństwa (`pg_trgm` na znormalizowanych polach) pokrywa większość przypadków (języki mieszane). Możliwa późniejsza optymalizacja per język.
 - Soft delete: `deleted_at` w `decks` i `pairs`; większość indeksów i zapytań powinna filtrować `deleted_at IS NULL`.
@@ -244,5 +274,3 @@ Uwagi i ograniczenia:
 - Języki: tabela `languages` jako słownik centralnie zarządzany; wspiera kody podstawowe (ISO 639-1) oraz warianty regionalne (np. `en-US`); w MVP tylko podstawowe języki, bez wariantów regionalnych (z wyjątkiem `en-US` przygotowanego na przyszłość).
 - Potencjalne przyszłe rozszerzenia (poza MVP):  
   `forked_from_deck_id`/`forked_from_pair_id`, historia `reviews`, per‑język FTS, bardziej szczegółowy `profiles.settings` (walidacja po stronie aplikacji/Zod), dodatkowe warianty regionalne (`en-GB`, `es-MX`, itp.).
-
-

@@ -17,6 +17,7 @@ Dokument opisuje szczegółowy stos technologiczny projektu **10x-LinguaPairs**,
 ## 2. Frontend Framework & Rendering
 
 ### Astro 5
+
 - **Wersja**: 5.15.1
 - **Rola**: Główny framework dla statycznych stron i layoutów
 - **Integracje**:
@@ -27,6 +28,7 @@ Dokument opisuje szczegółowy stos technologiczny projektu **10x-LinguaPairs**,
 - **Wydajność**: Prerendering dla statycznych treści, View Transitions API dla płynnych przejść
 
 ### React 19
+
 - **Wersja**: 19.2.0
 - **Rola**: Komponenty interaktywne (dynamiczne UI, minigra łączenia)
 - **Pakiety**: `react`, `react-dom`, `@types/react`, `@types/react-dom`
@@ -37,6 +39,7 @@ Dokument opisuje szczegółowy stos technologiczny projektu **10x-LinguaPairs**,
 ## 3. Język & TypeScript
 
 ### TypeScript 5
+
 - **Wersja**: 5.x
 - **Rola**: Type-safe development
 - **Konfiguracja**: `tsconfig.json`
@@ -47,6 +50,7 @@ Dokument opisuje szczegółowy stos technologiczny projektu **10x-LinguaPairs**,
 ## 4. Stylowanie
 
 ### Tailwind CSS 4
+
 - **Wersja**: 4.1.16
 - **Plugin**: `@tailwindcss/vite` (4.1.16)
 - **Konfiguracja**: Vite plugin
@@ -57,14 +61,17 @@ Dokument opisuje szczegółowy stos technologiczny projektu **10x-LinguaPairs**,
   - State variants (hover:, focus-visible:, active:)
 
 ### tw-animate-css
+
 - **Wersja**: 1.4.0
 - **Rola**: Animacje CSS w Tailwind
 
 ### class-variance-authority (CVA)
+
 - **Wersja**: 0.7.1
 - **Rola**: Zarządzanie wariantami komponentów
 
 ### clsx & tailwind-merge
+
 - **Wersje**: `clsx@^2.1.1`, `tailwind-merge@^3.3.1`
 - **Rola**: Łączenie klas CSS z logiką
 
@@ -73,6 +80,7 @@ Dokument opisuje szczegółowy stos technologiczny projektu **10x-LinguaPairs**,
 ## 5. UI Components
 
 ### Shadcn/ui
+
 - **Rola**: Biblioteka komponentów dostępnych (accessible)
 - **Styl**: "new-york" variant z kolorem bazowym "neutral"
 - **Lokalizacja**: `src/components/ui/`
@@ -86,6 +94,7 @@ Dokument opisuje szczegółowy stos technologiczny projektu **10x-LinguaPairs**,
 ## 6. Backend & Database
 
 ### Supabase
+
 - **Wersja**: 2.53.6
 - **Rola**:
   - Authentication (e-mail + hasło)
@@ -98,6 +107,7 @@ Dokument opisuje szczegółowy stos technologiczny projektu **10x-LinguaPairs**,
 - **Przepływ danych**: Kontekst `context.locals.supabase` w Astro routes
 
 ### Migracje
+
 - **System**: Supabase CLI migrations
 - **Lokalizacja**: `supabase/migrations/`
 - **Format**: `YYYYMMDDHHmmss_description.sql`
@@ -108,6 +118,7 @@ Dokument opisuje szczegółowy stos technologiczny projektu **10x-LinguaPairs**,
 ## 7. Walidacja danych
 
 ### Zod
+
 - **Wykorzystanie**: Walidacja danych API oraz schematów Supabase
 - **Zastosowanie**: Wszystkie formularze, endpointy API
 
@@ -116,6 +127,7 @@ Dokument opisuje szczegółowy stos technologiczny projektu **10x-LinguaPairs**,
 ## 8. Narzędzia deweloperskie
 
 ### Package Manager: Bun
+
 - **Wersja**: 1.3.1
 - **Rola**: Zarządzanie zależnościami
 - **Komendy**:
@@ -125,6 +137,7 @@ Dokument opisuje szczegółowy stos technologiczny projektu **10x-LinguaPairs**,
   - `bunx` – pakietów jednorazowych
 
 ### ESLint & Prettier
+
 - **ESLint**: 9.23.0
   - `@eslint/compat` (1.2.7)
   - `@eslint/js` (9.23.0)
@@ -143,6 +156,7 @@ Dokument opisuje szczegółowy stos technologiczny projektu **10x-LinguaPairs**,
   - `prettier-plugin-astro` (0.14.1)
 
 ### Git Hooks
+
 - **Husky**: 9.1.7
 - **lint-staged**: 15.5.0
 - **Pre-commit**: Automatyczne lintowanie i formatowanie
@@ -152,17 +166,20 @@ Dokument opisuje szczegółowy stos technologiczny projektu **10x-LinguaPairs**,
 ## 9. Build Tools & Configuration
 
 ### Vite
+
 - **Rola**: Build tool (używany przez Astro)
 - **Plugin**: `@tailwindcss/vite` (Tailwind CSS 4)
 - **Konfiguracja**: W `astro.config.mjs`
 
 ### TypeScript
+
 - **Konfiguracja**: `tsconfig.json`
 - **Features**: Strict mode, path aliases, module resolution
 
 ### ESLint Configuration
+
 - **Config**: `eslint.config.js` (flat config)
-- **Plugins**: 
+- **Plugins**:
   - TypeScript support (`@typescript-eslint/*`)
   - React support (hooks, compiler)
   - Accessibilidade (`eslint-plugin-jsx-a11y`)
@@ -170,6 +187,7 @@ Dokument opisuje szczegółowy stos technologiczny projektu **10x-LinguaPairs**,
   - Astro support
 
 ### Prettier
+
 - **Config**: `.prettierrc.json`
 - **Plugin**: `prettier-plugin-astro`
 - **Integration**: Auto-format on pre-commit (lint-staged)
@@ -179,11 +197,13 @@ Dokument opisuje szczegółowy stos technologiczny projektu **10x-LinguaPairs**,
 ## 10. Deployment & Build Configuration
 
 ### Adapter
+
 - **@astrojs/node**: 9.5.0 – Node.js adapter (SSR)
 - **Mode**: standalone
 - **Output**: `dist/` directory
 
 ### Environment Variables
+
 ```env
 SUPABASE_URL=your_supabase_url
 SUPABASE_KEY=your_supabase_anon_key
@@ -194,6 +214,7 @@ SUPABASE_KEY=your_supabase_anon_key
 ## 11. Development Workflow
 
 ### Available Scripts
+
 ```bash
 bun run dev        # Development server (port 3000)
 bun run build      # Build for production
@@ -204,6 +225,7 @@ bun run format     # Format files with Prettier
 ```
 
 ### Git Hooks (Husky + lint-staged)
+
 - **Husky**: 9.1.7 – Git hooks management
 - **lint-staged**: 15.5.0 – Run linters on staged files
 - **Pre-commit**: Auto-run ESLint + Prettier on staged files
@@ -215,6 +237,7 @@ bun run format     # Format files with Prettier
 ## 12. Zasoby i dokumentacja
 
 ### Oficjalne dokumentacje
+
 - [Astro](https://astro.build/docs)
 - [React](https://react.dev/)
 - [Tailwind CSS](https://tailwindcss.com/docs)
@@ -223,6 +246,7 @@ bun run format     # Format files with Prettier
 - [Bun](https://bun.sh/)
 
 ### Konfiguracje projektowe
+
 - `.cursor/rules/` – AI development rules (8 plików MDC)
 - `.nvmrc` – Node.js version (22.21.0)
 - `.gitignore` – Ignored files (Bun, cache, logs, etc.)
@@ -237,6 +261,7 @@ bun run format     # Format files with Prettier
 ## 13. Pełna lista zależności
 
 ### Dependencies (Production)
+
 ```json
 {
   "@astrojs/node": "9.5.0",
@@ -260,6 +285,7 @@ bun run format     # Format files with Prettier
 ```
 
 ### DevDependencies
+
 ```json
 {
   "@eslint/compat": "1.2.7",
@@ -293,5 +319,4 @@ bun run format     # Format files with Prettier
 
 ---
 
-*Ostatnia aktualizacja: 2025-01-XX*
-
+_Ostatnia aktualizacja: 2025-01-XX_
