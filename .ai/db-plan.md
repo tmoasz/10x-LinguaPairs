@@ -47,7 +47,7 @@ Uwagi i ograniczenia:
 - **id**: `uuid` PK DEFAULT `gen_random_uuid()`
 - **owner_user_id**: `uuid` NOT NULL (FK → `profiles.id`)
 - **title**: `text` NOT NULL
-- **description**: `text` NULL
+- **description**: `text` NOT NULL
 - **lang_a**: `uuid` NOT NULL (FK → `languages.id`)
 - **lang_b**: `uuid` NOT NULL (FK → `languages.id`)
 - CHECK: `lang_a <> lang_b`
