@@ -60,6 +60,39 @@ export type Database = {
           },
         ];
       };
+      languages: {
+        Row: {
+          id: string;
+          code: string;
+          name: string;
+          name_native: string | null;
+          is_active: boolean;
+          sort_order: number;
+          flag_emoji: string | null;
+          created_at: string;
+        };
+        Insert: {
+          id?: string;
+          code: string;
+          name: string;
+          name_native?: string | null;
+          is_active?: boolean;
+          sort_order?: number;
+          flag_emoji?: string | null;
+          created_at?: string;
+        };
+        Update: {
+          id?: string;
+          code?: string;
+          name?: string;
+          name_native?: string | null;
+          is_active?: boolean;
+          sort_order?: number;
+          flag_emoji?: string | null;
+          created_at?: string;
+        };
+        Relationships: [];
+      };
       decks: {
         Row: {
           created_at: string;
@@ -434,3 +467,4 @@ export const Constants = {
     },
   },
 } as const;
+

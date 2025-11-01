@@ -16,6 +16,7 @@ export type Profile = Tables<"profiles">;
 export type Deck = Tables<"decks">;
 export type Pair = Tables<"pairs">;
 export type Tag = Tables<"tags">;
+export type Language = Tables<"languages">;
 export type PairTag = Tables<"pair_tags">;
 export type UserPairState = Tables<"user_pair_state">;
 export type DeckShareLink = Tables<"deck_share_links">;
@@ -110,17 +111,13 @@ export interface QuotaDTO {
 
 /**
  * Language information DTO
- * Note: languages table not in current schema, this represents expected API structure
+ * Derived from languages table
+ * Note: is_active is excluded - API always returns only active languages, so this field is not needed
  */
-export interface LanguageDTO {
-  id: string;
-  code: string;
-  name: string;
-  name_native?: string;
-  flag_emoji?: string;
-  is_active?: boolean;
-  sort_order?: number;
-}
+export type LanguageDTO = Pick<
+  Language,
+  "id" | "code" | "name" | "name_native" | "flag_emoji" | "sort_order"
+>;
 
 /**
  * GET /api/languages - Response
@@ -186,8 +183,8 @@ export interface DeckListItemDTO {
  * Owner information in deck detail
  */
 export interface DeckOwnerDTO {
+  id: string;
   username: string;
-  display_name: string | null;
 }
 
 /**
@@ -216,6 +213,24 @@ export interface CreateDeckDTO {
   lang_a: string; // Language UUID
   lang_b: string; // Language UUID
   visibility?: DeckVisibility;
+}
+
+/**
+ * POST /api/decks - Response
+ * Simplified response with language IDs only (languages are static in DB, frontend can resolve from cache)
+ */
+export interface CreateDeckResponseDTO {
+  id: string;
+  owner_user_id: string;
+  owner: DeckOwnerDTO;
+  title: string;
+  description: string;
+  lang_a: string; // Language UUID only
+  lang_b: string; // Language UUID only
+  visibility: DeckVisibility;
+  pairs_count: number;
+  created_at: string;
+  updated_at: string;
 }
 
 /**
