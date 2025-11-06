@@ -7,6 +7,7 @@
  */
 
 import "@/styles/global.css";
+import ThemeToggle from "../components/ThemeToggle";
 
 interface Props {
   title: string;
@@ -23,8 +24,30 @@ const { title, description } = Astro.props;
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>{title} | LinguaPairs</title>
     <meta name="description" content={description || "Bezpieczne logowanie do LinguaPairs"} />
+    <script is:inline>
+      // Inicjalizacja dark mode przed renderowaniem - zapobiega flash of wrong theme
+      (function () {
+        const savedTheme = localStorage.getItem("theme");
+        const root = document.documentElement;
+
+        if (savedTheme === "dark") {
+          root.classList.add("dark");
+        } else if (savedTheme === "light") {
+          root.classList.remove("dark");
+        } else {
+          // Jeśli nie ma zapisanej preferencji, użyj systemowej
+          const systemPrefersDark = window.matchMedia("(prefers-color-scheme: dark)").matches;
+          if (systemPrefersDark) {
+            root.classList.add("dark");
+          }
+        }
+      })();
+    </script>
   </head>
   <body class="min-h-screen bg-linear-to-br from-background via-background to-muted/20">
+    <div class="fixed top-4 right-4 z-50">
+      <ThemeToggle client:load />
+    </div>
     <!-- Animated background blobs -->
     <div class="fixed inset-0 overflow-hidden pointer-events-none">
       <div
