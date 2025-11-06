@@ -1,0 +1,27 @@
+---
+/**
+ * Login Page
+ *
+ * User login with email and password
+ * Supports redirect parameter for post-login navigation
+ */
+
+import AuthLayout from "@/layouts/AuthLayout.astro";
+import LoginForm from "@/components/auth/LoginForm";
+import { Toaster } from "@/components/ui/sonner";
+
+// Get redirect parameter from URL
+const url = new URL(Astro.request.url);
+const redirect = url.searchParams.get("redirect") || undefined;
+
+// TODO: Check if user is already logged in and redirect to home
+// const user = Astro.locals.user;
+// if (user) {
+//   return Astro.redirect(redirect || "/");
+// }
+---
+
+<AuthLayout title="Zaloguj się" description="Witaj z powrotem! Zaloguj się do swojego konta.">
+  <LoginForm client:load redirect={redirect} />
+  <Toaster client:load />
+</AuthLayout>

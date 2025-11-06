@@ -1,0 +1,23 @@
+---
+/**
+ * Register Page
+ *
+ * New user registration with email and password
+ * After registration, user receives confirmation email
+ */
+
+import AuthLayout from "@/layouts/AuthLayout.astro";
+import RegisterForm from "@/components/auth/RegisterForm";
+import { Toaster } from "@/components/ui/sonner";
+
+// TODO: Check if user is already logged in and redirect to home
+// const user = Astro.locals.user;
+// if (user) {
+//   return Astro.redirect("/");
+// }
+---
+
+<AuthLayout title="Utwórz konto" description="Dołącz do tysięcy użytkowników uczących się języków z LinguaPairs.">
+  <RegisterForm client:load />
+  <Toaster client:load />
+</AuthLayout>
