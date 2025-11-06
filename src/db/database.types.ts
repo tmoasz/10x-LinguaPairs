@@ -28,6 +28,79 @@ export type Database = {
   };
   public: {
     Tables: {
+      generations: {
+        Row: {
+          id: string;
+          user_id: string;
+          deck_id: string;
+          type: string; // 'topic' | 'text' | 'extend'
+          topic_id: string | null;
+          input_text: string | null;
+          content_type: string; // 'auto' | 'words' | 'phrases' | 'mini-phrases'
+          register: string; // 'neutral' | 'informal' | 'formal'
+          pairs_requested: number; // 10 or 30
+          status: string; // 'pending' | 'running' | 'succeeded' | 'failed'
+          created_at: string;
+          started_at: string | null;
+          finished_at: string | null;
+          base_generation_id: string | null;
+        };
+        Insert: {
+          id?: string;
+          user_id: string;
+          deck_id: string;
+          type: string;
+          topic_id?: string | null;
+          input_text?: string | null;
+          content_type?: string;
+          register?: string;
+          pairs_requested: number;
+          status: string;
+          created_at?: string;
+          started_at?: string | null;
+          finished_at?: string | null;
+          base_generation_id?: string | null;
+        };
+        Update: {
+          id?: string;
+          user_id?: string;
+          deck_id?: string;
+          type?: string;
+          topic_id?: string | null;
+          input_text?: string | null;
+          content_type?: string;
+          register?: string;
+          pairs_requested?: number;
+          status?: string;
+          created_at?: string;
+          started_at?: string | null;
+          finished_at?: string | null;
+          base_generation_id?: string | null;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "generations_user_id_fkey";
+            columns: ["user_id"];
+            isOneToOne: false;
+            referencedRelation: "profiles";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "generations_deck_id_fkey";
+            columns: ["deck_id"];
+            isOneToOne: false;
+            referencedRelation: "decks";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "generations_base_generation_id_fkey";
+            columns: ["base_generation_id"];
+            isOneToOne: false;
+            referencedRelation: "generations";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
       deck_share_links: {
         Row: {
           created_at: string;
@@ -467,4 +540,3 @@ export const Constants = {
     },
   },
 } as const;
-
