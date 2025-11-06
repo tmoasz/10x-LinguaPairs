@@ -114,10 +114,7 @@ export interface QuotaDTO {
  * Derived from languages table
  * Note: is_active is excluded - API always returns only active languages, so this field is not needed
  */
-export type LanguageDTO = Pick<
-  Language,
-  "id" | "code" | "name" | "name_native" | "flag_emoji" | "sort_order"
->;
+export type LanguageDTO = Pick<Language, "id" | "code" | "name" | "name_native" | "flag_emoji" | "sort_order">;
 
 /**
  * GET /api/languages - Response
@@ -130,7 +127,7 @@ export interface LanguagesListDTO {
 /**
  * Language reference in deck responses
  */
-export type LanguageRefDTO = Pick<LanguageDTO, "id" | "code" | "name">;
+export type LanguageRefDTO = Pick<LanguageDTO, "id" | "code" | "name" | "flag_emoji">;
 
 /**
  * Extended language reference with flag emoji
