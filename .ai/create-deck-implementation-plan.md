@@ -5,6 +5,7 @@
 **Cel**: Utworzenie nowej talii kart językowych dla uwierzytelnionego użytkownika.
 
 **Funkcjonalność**:
+
 - Pozwala użytkownikom tworzyć nowe talie z określoną parą języków
 - Umożliwia ustawienie tytułu, opisu i widoczności talii
 - Automatycznie przypisuje zalogowanego użytkownika jako właściciela
@@ -15,24 +16,29 @@
 ## 2. Szczegóły żądania
 
 ### Metoda HTTP
+
 `POST`
 
 ### Struktura URL
+
 `/api/decks`
 
 ### Nagłówki
+
 - `Authorization: Bearer {access_token}` - **WYMAGANY**
 - `Content-Type: application/json` - **WYMAGANY**
 
 ### Parametry
 
 #### Wymagane (Request Body):
+
 - `title` (string): Tytuł talii, 1-200 znaków
 - `description` (string): Opis talii, 1-1000 znaków (używany do generowania par)
 - `lang_a` (string): UUID języka źródłowego (FK → `languages.id`)
 - `lang_b` (string): UUID języka docelowego (FK → `languages.id`)
 
 #### Opcjonalne (Request Body):
+
 - `visibility` (enum): Widoczność talii - "private" | "public" | "unlisted", domyślnie "private"
 
 ### Request Body (przykład)
@@ -50,21 +56,24 @@
 ### Walidacja Request Body (Zod Schema)
 
 ```typescript
-const createDeckSchema = z.object({
-  title: z.string().min(1, "Title is required").max(200, "Title must be at most 200 characters"),
-  description: z.string().min(1, "Description is required").max(1000, "Description must be at most 1000 characters"),
-  lang_a: z.string().uuid("Invalid language UUID format"),
-  lang_b: z.string().uuid("Invalid language UUID format"),
-  visibility: z.enum(["private", "public", "unlisted"]).optional().default("private")
-}).refine(data => data.lang_a !== data.lang_b, {
-  message: "Source and target languages must be different",
-  path: ["lang_b"]
-});
+const createDeckSchema = z
+  .object({
+    title: z.string().min(1, "Title is required").max(200, "Title must be at most 200 characters"),
+    description: z.string().min(1, "Description is required").max(1000, "Description must be at most 1000 characters"),
+    lang_a: z.string().uuid("Invalid language UUID format"),
+    lang_b: z.string().uuid("Invalid language UUID format"),
+    visibility: z.enum(["private", "public", "unlisted"]).optional().default("private"),
+  })
+  .refine((data) => data.lang_a !== data.lang_b, {
+    message: "Source and target languages must be different",
+    path: ["lang_b"],
+  });
 ```
 
 ## 3. Wykorzystywane typy
 
 ### Command Model (Request)
+
 ```typescript
 // src/types.ts (already defined)
 export interface CreateDeckDTO {
@@ -77,6 +86,7 @@ export interface CreateDeckDTO {
 ```
 
 ### Response DTO
+
 ```typescript
 // src/types.ts (already defined)
 export interface DeckDetailDTO {
@@ -95,6 +105,7 @@ export interface DeckDetailDTO {
 ```
 
 ### Supporting DTOs
+
 ```typescript
 export interface LanguageRefExtendedDTO {
   id: string;
@@ -112,6 +123,7 @@ export type DeckVisibility = "private" | "public" | "unlisted";
 ```
 
 ### Database Entity (for reference)
+
 ```typescript
 interface DeckEntity {
   id: string;
@@ -132,10 +144,12 @@ interface DeckEntity {
 ### Sukces - 201 Created
 
 **Headers:**
+
 - `Content-Type: application/json`
 - `Location: /api/decks/{deck_id}` (opcjonalnie, good practice)
 
 **Body:**
+
 ```json
 {
   "id": "550e8400-e29b-41d4-a716-446655440000",
@@ -167,6 +181,7 @@ interface DeckEntity {
 ### Error Responses
 
 #### 401 Unauthorized
+
 ```json
 {
   "error": {
@@ -177,6 +192,7 @@ interface DeckEntity {
 ```
 
 #### 400 Bad Request
+
 ```json
 {
   "error": {
@@ -193,12 +209,14 @@ interface DeckEntity {
 ```
 
 Inne przypadki 400:
+
 - Języki są identyczne
 - Nieprawidłowe UUID języków (nie istnieją w bazie)
 - Tytuł poza zakresem 1-200 znaków
 - Description poza zakresem 1-1000 znaków lub brak
 
 #### 422 Unprocessable Entity
+
 ```json
 {
   "error": {
@@ -215,11 +233,13 @@ Inne przypadki 400:
 ```
 
 Przypadki 422:
+
 - Nieprawidłowy format UUID
 - Nieprawidłowa wartość enum visibility
 - Zniekształcony JSON
 
 #### 500 Internal Server Error
+
 ```json
 {
   "error": {
@@ -267,29 +287,33 @@ Przypadki 422:
 ### Szczegóły interakcji z Supabase
 
 #### Krok 1: Walidacja języków
+
 ```sql
-SELECT id, code, name 
-FROM languages 
+SELECT id, code, name
+FROM languages
 WHERE id IN ($1, $2) AND deleted_at IS NULL
 ```
+
 **Cel**: Upewnić się, że oba języki istnieją przed utworzeniem talii
 
 #### Krok 2: Utworzenie talii
+
 ```sql
 INSERT INTO decks (
-  owner_user_id, 
-  title, 
-  description, 
-  lang_a, 
-  lang_b, 
+  owner_user_id,
+  title,
+  description,
+  lang_a,
+  lang_b,
   visibility
 ) VALUES ($1, $2, $3, $4, $5, $6)
 RETURNING *
 ```
 
 #### Krok 3: Pobranie pełnych danych talii z relacjami
+
 ```sql
-SELECT 
+SELECT
   d.*,
   la.id as lang_a_id, la.code as lang_a_code, la.name as lang_a_name,
   lb.id as lang_b_id, lb.code as lang_b_code, lb.name as lang_b_name,
@@ -305,15 +329,17 @@ WHERE d.id = $1 AND d.deleted_at IS NULL
 ## 6. Względy bezpieczeństwa
 
 ### Uwierzytelnianie (Authentication)
+
 - **Mechanizm**: Bearer Token via Supabase Auth
-- **Implementacja**: 
+- **Implementacja**:
   - Token walidowany w middleware `src/middleware/index.ts`
   - Użycie `supabase.auth.getUser()` do weryfikacji tokenu
   - User object dostępny w `context.locals.user`
 - **Guard**: W endpointcie sprawdzenie `if (!context.locals.user)` → zwrot 401
 
 ### Autoryzacja (Authorization)
-- **Owner Assignment**: 
+
+- **Owner Assignment**:
   - `owner_user_id` automatycznie ustawiany na `context.locals.user.id`
   - Użytkownik **NIE MOŻE** podać własnego `owner_user_id` w request body
   - To zabezpiecza przed podszywaniem się pod innych użytkowników
@@ -322,16 +348,19 @@ WHERE d.id = $1 AND d.deleted_at IS NULL
 ### Walidacja danych wejściowych
 
 #### Warstwa 1: Zod Schema Validation
+
 - Format UUID dla lang_a i lang_b
 - Długość tytułu (1-200 znaków)
 - Enum dla visibility
 - Podstawowe sprawdzenie lang_a !== lang_b
 
 #### Warstwa 2: Business Logic Validation (Service Layer)
+
 - Weryfikacja istnienia języków w bazie danych
 - Sprawdzenie czy języki nie są oznaczone jako usunięte (deleted_at IS NULL)
 
 #### Warstwa 3: Database Constraints
+
 - CHECK constraint: `lang_a <> lang_b` (zabezpieczenie na poziomie DB)
 - Foreign Key constraints do `languages.id`
 - NOT NULL constraints
@@ -339,22 +368,27 @@ WHERE d.id = $1 AND d.deleted_at IS NULL
 ### Zapobieganie atakom
 
 #### SQL Injection
+
 - **Ochrona**: Parametryzowane zapytania Supabase
 - **Never**: Konkatenacja stringów w SQL
 
 #### XSS (Cross-Site Scripting)
+
 - **Ochrona**: Dane w JSON, frontend odpowiedzialny za sanitization przy renderowaniu
 - **Uwaga**: Title i description mogą zawierać HTML - frontend musi escapować
 
 #### Mass Assignment
+
 - **Ochrona**: Explicit DTO mapping
 - **Zabronione pola**: owner_user_id, id, created_at, updated_at, deleted_at nie mogą być ustawiane przez użytkownika
 
 ### Rate Limiting
+
 - **MVP**: Nie implementowane
 - **Future**: Rozważyć rate limiting per user (np. 100 talii/godzinę)
 
 ### CORS
+
 - **Konfiguracja**: Należy upewnić się, że CORS jest odpowiednio skonfigurowany w Astro
 - **Uwaga**: Bearer token wymaga proper CORS headers
 
@@ -362,18 +396,18 @@ WHERE d.id = $1 AND d.deleted_at IS NULL
 
 ### Katalog błędów
 
-| Kod | Status | Scenariusz | Wiadomość użytkownika | Akcja systemu |
-|-----|--------|------------|----------------------|---------------|
-| UNAUTHORIZED | 401 | Brak tokenu lub nieprawidłowy token | "Authentication required" | Zwróć 401, zaloguj próbę dostępu |
-| VALIDATION_ERROR | 400 | lang_a === lang_b | "Source and target languages must be different" | Zwróć 400 z details |
-| VALIDATION_ERROR | 400 | Języki nie istnieją w DB | "One or more languages are invalid" | Zwróć 400 z details |
-| VALIDATION_ERROR | 400 | Tytuł poza zakresem 1-200 | "Title must be between 1 and 200 characters" | Zwróć 400 z details |
-| VALIDATION_ERROR | 400 | Description poza zakresem 1-1000 lub brak | "Description is required and must be between 1 and 1000 characters" | Zwróć 400 z details |
-| INVALID_FORMAT | 422 | Nieprawidłowy format UUID | "Invalid UUID format" | Zwróć 422 z details |
-| INVALID_FORMAT | 422 | Nieprawidłowa wartość visibility | "Visibility must be private, public, or unlisted" | Zwróć 422 z details |
-| INVALID_FORMAT | 422 | Zniekształcony JSON | "Invalid JSON format" | Zwróć 422 |
-| INTERNAL_ERROR | 500 | Database connection error | "An unexpected error occurred" | Zwróć 500, zaloguj pełny stack trace |
-| INTERNAL_ERROR | 500 | Unexpected exception | "An unexpected error occurred" | Zwróć 500, zaloguj pełny stack trace |
+| Kod              | Status | Scenariusz                                | Wiadomość użytkownika                                               | Akcja systemu                        |
+| ---------------- | ------ | ----------------------------------------- | ------------------------------------------------------------------- | ------------------------------------ |
+| UNAUTHORIZED     | 401    | Brak tokenu lub nieprawidłowy token       | "Authentication required"                                           | Zwróć 401, zaloguj próbę dostępu     |
+| VALIDATION_ERROR | 400    | lang_a === lang_b                         | "Source and target languages must be different"                     | Zwróć 400 z details                  |
+| VALIDATION_ERROR | 400    | Języki nie istnieją w DB                  | "One or more languages are invalid"                                 | Zwróć 400 z details                  |
+| VALIDATION_ERROR | 400    | Tytuł poza zakresem 1-200                 | "Title must be between 1 and 200 characters"                        | Zwróć 400 z details                  |
+| VALIDATION_ERROR | 400    | Description poza zakresem 1-1000 lub brak | "Description is required and must be between 1 and 1000 characters" | Zwróć 400 z details                  |
+| INVALID_FORMAT   | 422    | Nieprawidłowy format UUID                 | "Invalid UUID format"                                               | Zwróć 422 z details                  |
+| INVALID_FORMAT   | 422    | Nieprawidłowa wartość visibility          | "Visibility must be private, public, or unlisted"                   | Zwróć 422 z details                  |
+| INVALID_FORMAT   | 422    | Zniekształcony JSON                       | "Invalid JSON format"                                               | Zwróć 422                            |
+| INTERNAL_ERROR   | 500    | Database connection error                 | "An unexpected error occurred"                                      | Zwróć 500, zaloguj pełny stack trace |
+| INTERNAL_ERROR   | 500    | Unexpected exception                      | "An unexpected error occurred"                                      | Zwróć 500, zaloguj pełny stack trace |
 
 ### Struktura odpowiedzi błędu
 
@@ -386,17 +420,19 @@ interface ErrorResponse {
       field?: string;
       message: string;
     }>;
-  }
+  };
 }
 ```
 
 ### Strategia logowania błędów
 
 #### Development
+
 - Pełny stack trace w konsoli
 - Szczegóły błędów DB w response (dla debugowania)
 
 #### Production
+
 - Generic error messages dla użytkownika
 - Szczegółowe logi w systemie logowania (nie w response)
 - Logging library: console.error (MVP), consider structured logging later
@@ -412,8 +448,8 @@ export const POST: APIRoute = async (context) => {
       JSON.stringify({
         error: {
           code: "UNAUTHORIZED",
-          message: "Authentication required"
-        }
+          message: "Authentication required",
+        },
       }),
       { status: 401 }
     );
@@ -423,20 +459,15 @@ export const POST: APIRoute = async (context) => {
     // Parse and validate input
     const body = await context.request.json();
     const validatedData = createDeckSchema.parse(body);
-    
+
     // Business logic
-    const deck = await deckService.createDeck(
-      context.locals.supabase,
-      context.locals.user.id,
-      validatedData
-    );
-    
+    const deck = await deckService.createDeck(context.locals.supabase, context.locals.user.id, validatedData);
+
     // Success response
-    return new Response(JSON.stringify(deck), { 
+    return new Response(JSON.stringify(deck), {
       status: 201,
-      headers: { "Content-Type": "application/json" }
+      headers: { "Content-Type": "application/json" },
     });
-    
   } catch (error) {
     // Zod validation error
     if (error instanceof z.ZodError) {
@@ -445,16 +476,16 @@ export const POST: APIRoute = async (context) => {
           error: {
             code: "VALIDATION_ERROR",
             message: "Validation failed",
-            details: error.errors.map(e => ({
+            details: error.errors.map((e) => ({
               field: e.path.join("."),
-              message: e.message
-            }))
-          }
+              message: e.message,
+            })),
+          },
         }),
         { status: 422 }
       );
     }
-    
+
     // Custom business errors
     if (error instanceof ValidationError) {
       return new Response(
@@ -462,21 +493,21 @@ export const POST: APIRoute = async (context) => {
           error: {
             code: "VALIDATION_ERROR",
             message: error.message,
-            details: error.details
-          }
+            details: error.details,
+          },
         }),
         { status: 400 }
       );
     }
-    
+
     // Unexpected errors
     console.error("Unexpected error creating deck:", error);
     return new Response(
       JSON.stringify({
         error: {
           code: "INTERNAL_ERROR",
-          message: "An unexpected error occurred"
-        }
+          message: "An unexpected error occurred",
+        },
       }),
       { status: 500 }
     );
@@ -489,16 +520,19 @@ export const POST: APIRoute = async (context) => {
 ### Potencjalne wąskie gardła
 
 #### 1. Multiple Database Queries
+
 - **Problem**: 3 zapytania do DB (walidacja języków, insert, fetch z joins)
 - **Wpływ**: Średni - ok. 30-50ms per request
 - **Priorytet**: Niski w MVP
 
 #### 2. Join Queries
+
 - **Problem**: Query z 3 joins (languages x2, profiles) do pobrania pełnych danych
 - **Wpływ**: Niski przy małej liczbie rekordów
 - **Priorytet**: Niski w MVP
 
 #### 3. Count Query dla pairs_count
+
 - **Problem**: COUNT na pairs może być kosztowne przy dużej liczbie par
 - **Wpływ**: Bardzo niski przy tworzeniu (zawsze 0)
 - **Priorytet**: Bardzo niski
@@ -506,6 +540,7 @@ export const POST: APIRoute = async (context) => {
 ### Strategie optymalizacji
 
 #### Optymalizacja 1: Database Indexing (ZAIMPLEMENTOWAĆ)
+
 ```sql
 -- Indeksy dla foreign keys (jeśli nie istnieją)
 CREATE INDEX IF NOT EXISTS idx_decks_owner_user_id ON decks(owner_user_id);
@@ -515,6 +550,7 @@ CREATE INDEX IF NOT EXISTS idx_decks_deleted_at ON decks(deleted_at) WHERE delet
 ```
 
 #### Optymalizacja 2: Pojedyncze zapytanie z RETURNING (ROZWAŻYĆ)
+
 ```sql
 -- Zamiast INSERT + SELECT, użyj CTE
 WITH new_deck AS (
@@ -522,7 +558,7 @@ WITH new_deck AS (
   VALUES ($1, $2, $3, $4, $5, $6)
   RETURNING *
 )
-SELECT 
+SELECT
   d.*,
   la.id as lang_a_id, la.code as lang_a_code, la.name as lang_a_name,
   lb.id as lang_b_id, lb.code as lang_b_code, lb.name as lang_b_name,
@@ -533,15 +569,18 @@ INNER JOIN languages la ON d.lang_a = la.id
 INNER JOIN languages lb ON d.lang_b = lb.id
 INNER JOIN profiles p ON d.owner_user_id = p.id;
 ```
+
 **Korzyść**: Redukcja z 3 do 2 zapytań (walidacja + insert+fetch)
 
 #### Optymalizacja 3: Caching języków (FUTURE)
+
 - **Problem**: Języki zmieniają się rzadko
 - **Rozwiązanie**: Cache języków w pamięci/Redis na 1h
 - **Korzyść**: Eliminacja query do languages przy walidacji
 - **Priorytet**: Niski (languages query jest szybki)
 
 #### Optymalizacja 4: Connection Pooling (WERYFIKACJA)
+
 - **Sprawdzić**: Czy Supabase client ma connection pooling
 - **Jeśli nie**: Rozważyć implementację pooling dla Astro SSR
 - **Priorytet**: Średni jeśli występuje N+1 problem
@@ -549,12 +588,14 @@ INNER JOIN profiles p ON d.owner_user_id = p.id;
 ### Monitoring i metryki
 
 #### Metryki do śledzenia (Future)
+
 - Czas odpowiedzi endpointu (p50, p95, p99)
 - Liczba utworzonych talii per użytkownik per dzień
 - Rate błędów 4xx i 5xx
 - Czas wykonania query DB
 
 #### Alarmy (Future)
+
 - p95 > 500ms
 - Error rate > 5%
 - DB connection pool exhaustion
@@ -562,10 +603,12 @@ INNER JOIN profiles p ON d.owner_user_id = p.id;
 ### Limity i constraints
 
 #### Rate limiting (Future, nie w MVP)
+
 - 100 talii / godzinę per użytkownik
 - 1000 talii / godzinę globalnie
 
 #### Resource limits
+
 - Max title length: 200 znaków (już w walidacji)
 - Max description length: Rozważyć limit (np. 1000 znaków)
 
@@ -574,75 +617,86 @@ INNER JOIN profiles p ON d.owner_user_id = p.id;
 ### Faza 1: Przygotowanie typów i walidacji
 
 #### Krok 1.1: Weryfikacja typów DTO
+
 - [x] Sprawdzić czy `CreateDeckDTO` i `DeckDetailDTO` są już zdefiniowane w `src/types.ts`
 - [ ] Dodać lub zaktualizować brakujące typy (`LanguageRefExtendedDTO`, `DeckOwnerDTO`)
 - [ ] Upewnić się, że `DeckVisibility` jest zdefiniowany jako union type
 
 **Pliki**:
+
 - `src/types.ts`
 
 #### Krok 1.2: Utworzenie schematu Zod
+
 - [ ] Utworzyć plik `src/lib/validation/deck.validation.ts`
 - [ ] Zdefiniować `createDeckSchema` zgodnie ze specyfikacją
 - [ ] Dodać custom refinement dla `lang_a !== lang_b`
 - [ ] Wyeksportować schemat
 
 **Pliki**:
+
 - `src/lib/validation/deck.validation.ts` (nowy)
 
 ```typescript
 // Przykład struktury
 import { z } from "zod";
 
-export const createDeckSchema = z.object({
-  title: z.string().min(1).max(200),
-  description: z.string().min(1).max(1000),
-  lang_a: z.string().uuid(),
-  lang_b: z.string().uuid(),
-  visibility: z.enum(["private", "public", "unlisted"]).optional().default("private")
-}).refine(data => data.lang_a !== data.lang_b, {
-  message: "Source and target languages must be different",
-  path: ["lang_b"]
-});
+export const createDeckSchema = z
+  .object({
+    title: z.string().min(1).max(200),
+    description: z.string().min(1).max(1000),
+    lang_a: z.string().uuid(),
+    lang_b: z.string().uuid(),
+    visibility: z.enum(["private", "public", "unlisted"]).optional().default("private"),
+  })
+  .refine((data) => data.lang_a !== data.lang_b, {
+    message: "Source and target languages must be different",
+    path: ["lang_b"],
+  });
 ```
 
 ### Faza 2: Implementacja Service Layer
 
 #### Krok 2.1: Utworzenie DeckService
+
 - [ ] Utworzyć plik `src/lib/services/deck.service.ts`
 - [ ] Zdefiniować klasę lub obiekt `DeckService` z metodą `createDeck`
 - [ ] Zaimportować typy DTO i `SupabaseClient`
 
 **Pliki**:
+
 - `src/lib/services/deck.service.ts` (nowy)
 
 #### Krok 2.2: Implementacja walidacji języków
+
 - [ ] W `createDeck` dodać query sprawdzający istnienie języków:
   ```typescript
   const { data: languages, error } = await supabase
-    .from('languages')
-    .select('id, code, name')
-    .in('id', [createDeckDTO.lang_a, createDeckDTO.lang_b])
-    .is('deleted_at', null);
+    .from("languages")
+    .select("id, code, name")
+    .in("id", [createDeckDTO.lang_a, createDeckDTO.lang_b])
+    .is("deleted_at", null);
   ```
 - [ ] Sprawdzić czy zwrócono dokładnie 2 języki
 - [ ] Jeśli nie, rzucić custom `ValidationError`
 
 **Zależności**:
+
 - Custom error class `ValidationError` (utworzyć w `src/lib/errors/`)
 
 #### Krok 2.3: Implementacja tworzenia talii
+
 - [ ] Dodać insert query:
   ```typescript
   const { data: deck, error } = await supabase
-    .from('decks')
+    .from("decks")
     .insert({
       owner_user_id: userId,
       title: createDeckDTO.title,
       description: createDeckDTO.description,
       lang_a: createDeckDTO.lang_a,
       lang_b: createDeckDTO.lang_b,
-      visibility: createDeckDTO.visibility || 'private'
+      visibility: createDeckDTO.visibility || "private",
     })
     .select()
     .single();
@@ -650,73 +704,79 @@ export const createDeckSchema = z.object({
 - [ ] Obsłużyć potencjalne błędy DB
 
 #### Krok 2.4: Implementacja pobierania pełnych danych
+
 - [ ] Dodać query z joinami do languages i profiles:
   ```typescript
   const { data: fullDeck, error } = await supabase
-    .from('decks')
-    .select(`
+    .from("decks")
+    .select(
+      `
       *,
       lang_a_data:languages!decks_lang_a_fkey(id, code, name),
       lang_b_data:languages!decks_lang_b_fkey(id, code, name),
       owner:profiles!decks_owner_user_id_fkey(id, username, avatar_url)
-    `)
-    .eq('id', deck.id)
-    .is('deleted_at', null)
+    `
+    )
+    .eq("id", deck.id)
+    .is("deleted_at", null)
     .single();
   ```
 - [ ] Obsłużyć błędy
 
 #### Krok 2.5: Transformacja do DTO
+
 - [ ] Zmapować wynik DB na `DeckDetailDTO`
 - [ ] Dodać `pairs_count: 0` (nowa talia nie ma par)
 - [ ] Zwrócić `DeckDetailDTO`
 
 **Kompletna struktura DeckService**:
+
 ```typescript
-import type { SupabaseClient } from '@/db/supabase.client';
-import type { CreateDeckDTO, DeckDetailDTO } from '@/types';
-import { ValidationError } from '@/lib/errors/validation.error';
+import type { SupabaseClient } from "@/db/supabase.client";
+import type { CreateDeckDTO, DeckDetailDTO } from "@/types";
+import { ValidationError } from "@/lib/errors/validation.error";
 
 export const deckService = {
-  async createDeck(
-    supabase: SupabaseClient,
-    userId: string,
-    data: CreateDeckDTO
-  ): Promise<DeckDetailDTO> {
+  async createDeck(supabase: SupabaseClient, userId: string, data: CreateDeckDTO): Promise<DeckDetailDTO> {
     // Implementation steps 2.2 - 2.5
-  }
+  },
 };
 ```
 
 ### Faza 3: Implementacja API Endpoint
 
 #### Krok 3.1: Utworzenie pliku endpointu
+
 - [ ] Utworzyć plik `src/pages/api/decks/index.ts`
 - [ ] Dodać `export const prerender = false;`
 - [ ] Zaimportować potrzebne moduły (Zod, service, typy)
 
 **Pliki**:
+
 - `src/pages/api/decks/index.ts` (nowy)
 
 #### Krok 3.2: Implementacja handlera POST
+
 - [ ] Zdefiniować `export const POST: APIRoute = async (context) => {}`
 - [ ] Dodać authentication guard na początku:
   ```typescript
   if (!context.locals.user) {
-    return new Response(
-      JSON.stringify({ error: { code: "UNAUTHORIZED", message: "Authentication required" } }),
-      { status: 401, headers: { "Content-Type": "application/json" } }
-    );
+    return new Response(JSON.stringify({ error: { code: "UNAUTHORIZED", message: "Authentication required" } }), {
+      status: 401,
+      headers: { "Content-Type": "application/json" },
+    });
   }
   ```
 
 #### Krok 3.3: Parsowanie i walidacja request body
+
 - [ ] Owinąć w try-catch
 - [ ] Parsować `await context.request.json()`
 - [ ] Walidować z Zod: `createDeckSchema.parse(body)`
 - [ ] Obsłużyć `ZodError` → zwrócić 422 z details
 
 #### Krok 3.4: Wywołanie service layer
+
 - [ ] Wywołać `deckService.createDeck()` z:
   - `context.locals.supabase`
   - `context.locals.user.id`
@@ -725,17 +785,19 @@ export const deckService = {
 - [ ] Obsłużyć inne błędy → zwrócić 500
 
 #### Krok 3.5: Zwrócenie odpowiedzi sukcesu
+
 - [ ] Zwrócić `new Response(JSON.stringify(deck), { status: 201 })`
 - [ ] Dodać header `Content-Type: application/json`
 - [ ] Opcjonalnie: dodać header `Location: /api/decks/${deck.id}`
 
 **Kompletna struktura endpointu**:
+
 ```typescript
-import type { APIRoute } from 'astro';
-import { z } from 'zod';
-import { createDeckSchema } from '@/lib/validation/deck.validation';
-import { deckService } from '@/lib/services/deck.service';
-import { ValidationError } from '@/lib/errors/validation.error';
+import type { APIRoute } from "astro";
+import { z } from "zod";
+import { createDeckSchema } from "@/lib/validation/deck.validation";
+import { deckService } from "@/lib/services/deck.service";
+import { ValidationError } from "@/lib/errors/validation.error";
 
 export const prerender = false;
 
@@ -747,6 +809,7 @@ export const POST: APIRoute = async (context) => {
 ### Faza 4: Obsługa błędów
 
 #### Krok 4.1: Utworzenie custom error classes
+
 - [ ] Utworzyć plik `src/lib/errors/validation.error.ts`
 - [ ] Zdefiniować klasę `ValidationError`:
   ```typescript
@@ -756,22 +819,25 @@ export const POST: APIRoute = async (context) => {
       public details?: Array<{ field?: string; message: string }>
     ) {
       super(message);
-      this.name = 'ValidationError';
+      this.name = "ValidationError";
     }
   }
   ```
 
 **Pliki**:
+
 - `src/lib/errors/validation.error.ts` (nowy)
 - `src/lib/errors/index.ts` (nowy, re-export wszystkich błędów)
 
 #### Krok 4.2: Implementacja error handling w endpoint
+
 - [ ] Dodać catch dla `ZodError`
 - [ ] Dodać catch dla `ValidationError`
 - [ ] Dodać catch dla generic errors
 - [ ] Logować błędy z `console.error()` (w production rozważyć structured logging)
 
 #### Krok 4.3: Standaryzacja error responses
+
 - [ ] Upewnić się, że wszystkie error responses mają format:
   ```typescript
   {
@@ -786,6 +852,7 @@ export const POST: APIRoute = async (context) => {
 ### Faza 5: Testy i walidacja
 
 #### Krok 5.1: Testy manualne
+
 - [ ] Test 1: Utworzenie talii z poprawnymi danymi → 201
 - [ ] Test 2: Brak tokenu auth → 401
 - [ ] Test 3: Nieprawidłowy token auth → 401
@@ -803,12 +870,14 @@ export const POST: APIRoute = async (context) => {
 **Narzędzia**: Postman, cURL, lub Insomnia
 
 #### Krok 5.2: Weryfikacja response structure
+
 - [ ] Sprawdzić czy response 201 zawiera wszystkie pola z `DeckDetailDTO`
 - [ ] Sprawdzić czy języki są rozwinięte (nie tylko UUID)
 - [ ] Sprawdzić czy owner jest rozwinięty
 - [ ] Sprawdzić czy `pairs_count` = 0
 
 #### Krok 5.3: Weryfikacja bezpieczeństwa
+
 - [ ] Sprawdzić czy `owner_user_id` jest zawsze ustawiane na auth user
 - [ ] Próba modyfikacji `owner_user_id` w request body → zignorowane
 - [ ] Sprawdzić czy token bearer jest wymagany
@@ -816,16 +885,19 @@ export const POST: APIRoute = async (context) => {
 ### Faza 6: Optymalizacja i monitoring (Post-MVP)
 
 #### Krok 6.1: Dodanie indeksów DB
+
 - [ ] Sprawdzić execution plan zapytań
 - [ ] Dodać indeksy według sekcji 8 (Performance)
 - [ ] Zmierzyć poprawę wydajności
 
 #### Krok 6.2: Implementacja advanced error logging
+
 - [ ] Rozważyć użycie Sentry lub podobnego
 - [ ] Dodać correlation IDs do requestów
 - [ ] Logować metryki wydajności
 
 #### Krok 6.3: Dodanie rate limiting (Future)
+
 - [ ] Implementacja middleware rate limiting
 - [ ] Konfiguracja limitów per user
 - [ ] Error response dla rate limit exceeded (429)
@@ -833,16 +905,19 @@ export const POST: APIRoute = async (context) => {
 ### Faza 7: Dokumentacja
 
 #### Krok 7.1: Aktualizacja API documentation
+
 - [ ] Dodać przykłady request/response do dokumentacji API
 - [ ] Udokumentować wszystkie error codes
 - [ ] Dodać przykłady cURL/code dla developerów
 
 #### Krok 7.2: Code documentation
+
 - [ ] Dodać JSDoc komentarze do service methods
 - [ ] Dodać komentarze do complex logic
 - [ ] Udokumentować validation rules
 
 #### Krok 7.3: README updates
+
 - [ ] Dodać informację o nowym endpoincie do project README
 - [ ] Zaktualizować setup instructions jeśli potrzebne
 
@@ -903,5 +978,3 @@ pages/api/decks/index.ts
 3. **Import**: Import talii z plików (CSV, Anki)
 4. **Webhooks**: Powiadomienia o utworzeniu talii
 5. **Analytics**: Tracking deck creation metrics
-
-

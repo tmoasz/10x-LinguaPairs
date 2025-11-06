@@ -812,8 +812,7 @@ Generate 30 vocabulary pairs from a predefined topic.
   "topic_id": "travel",
   "deck_id": "uuid",
   "content_type": "auto",
-  "register": "neutral",
-  "exclude_pairs": ["uuid1", "uuid2"]
+  "register": "neutral"
 }
 ```
 
@@ -823,7 +822,6 @@ Generate 30 vocabulary pairs from a predefined topic.
 - `deck_id`: Target deck UUID (must belong to authenticated user)
 - `content_type`: "auto" (60% words, 30% phrases, 10% mini-phrases) | "words" | "phrases" | "mini-phrases"
 - `register`: "neutral" | "informal" | "formal"
-- `exclude_pairs`: Array of pair UUIDs to exclude (for deduplication)
 
 **Response (201 Created):**
 
@@ -867,7 +865,6 @@ Generate 30 vocabulary pairs from a predefined topic.
 - User must have remaining daily quota (3 generations/day)
 - Deck must belong to authenticated user
 - Each pair ≤ 8 tokens per side
-- Strict deduplication within deck (normalized terms)
 
 **Error Responses:**
 
@@ -911,7 +908,7 @@ Same structure as `/api/generate/from-topic`
 **Validation Rules:**
 
 - Text length: 1-5000 characters
-- Same quota and deduplication rules as topic-based generation
+- Same quota as topic-based generation
 
 **Error Responses:**
 Same as `/api/generate/from-topic`, plus:
@@ -1508,14 +1505,14 @@ Get a curated deck with all pairs.
 3. Check backend cache (key: topic/text hash + parameters)
 4. If cache miss, call AI service (OpenAI/Anthropic)
 5. Parse and validate AI response
-6. Apply deduplication (exclude existing pairs in deck)
-7. Ensure exactly 30 pairs (or 10 for "+10")
-8. Create pairs in database
-9. Log telemetry (generation time, cost, cache hit, prompt hash)
-10. Return pairs + metadata
+6. Ensure exactly 30 pairs (or 10 for "+10")
+7. Create pairs in database
+8. Log telemetry (generation time, cost, cache hit, prompt hash)
+9. Return pairs + metadata
 
 **Deduplication:**
 
+- NOT in actual MVP
 - Normalize terms (unaccent, lowercase, trim, collapse whitespace)
 - Check against `(deck_id, term_a_norm, term_b_norm)` unique constraint
 - Exclude flagged pairs

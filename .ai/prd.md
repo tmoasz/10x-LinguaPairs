@@ -55,23 +55,111 @@ Użytkownicy języków obcych tracą czas na ręczne tworzenie fiszek i mają tr
 
 ## 5. Historyjki użytkowników
 
-| ID     | Tytuł                       | Opis                                                                                                                | Kryteria akceptacji                                                                                                                                                     |
-| ------ | --------------------------- | ------------------------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| US-001 | Generacja zestawu z tematu  | Jako zalogowany użytkownik chcę wybrać temat z listy, aby otrzymać 30 par słówek dostosowanych do tematu.           | a) Wybór dowolnego tematu z listy generuje 30 par w <10 s. b) Paradygmat 60/30/10 słowa/zwroty/mini-frazy. c) Pary spełniają kontrakt danych i ≤8 tokenów na stronę.    |
-| US-002 | Generacja z własnego opisu  | Jako zalogowany użytkownik chcę wkleić opis ≤5000 znaków i wygenerować 30 par adekwatnych do kontekstu.             | a) System akceptuje opis do 5000 znaków. b) Wynik zawiera 30 unikalnych par.                                                                                            |
-| US-003 | Ustawienie rejestru         | Jako użytkownik chcę przełączyć rejestr (neutralny/nieformalny/formalny), aby uzyskać pary w odpowiednim stylu.     | a) Dostępny przełącznik 3-stanowy. b) Każda wygenerowana para zawiera wybrany register w polu danych.                                                                   |
-| US-004 | Filtr typu treści           | Jako użytkownik chcę ograniczyć generację tylko do słów, zwrotów lub mini-frazy.                                    | a) Widoczny filtr 4 opcji. b) Wynik zawiera wyłącznie wybrany typ(y).                                                                                                   |
-| US-005 | Dogenerowanie „+10”         | Jako użytkownik chcę dogenerować 10 dodatkowych par z tego samego promptu bez duplikatów.                           | a) Kliknięcie „+10” dodaje dokładnie 10 nowych par. b) Żadne z 10 nie występuje w bieżącym zestawie ani flagged/znanych.                                                |
-| US-006 | Ręczne dodanie słowa        | Jako użytkownik chcę ręcznie dodać słowo i otrzymać automatyczne tłumaczenie, aby uzupełnić zestaw.                 | a) Formularz dodawania przyjmuje słowo (PL lub EN). b) System generuje brakującą stronę pary i dopisuje do listy.                                                       |
-| US-007 | Przegląd i zgłaszanie błędu | Jako użytkownik chcę przejrzeć listę par i zgłosić błąd w tłumaczeniu.                                              | a) Widok listy par przed nauką. b) Każda para ma przycisk „Zgłoś błąd”, który oznacza parę jako flagged.                                                                |
-| US-008 | Nauka łączeniem podstawowa  | Jako użytkownik chcę łączyć pary w siatce 2×3 i rozszerzać do 10, aby ćwiczyć tłumaczenia.                          | a) Domyślnie widoczne 3 pary (2×3). b) Przycisk „Pokaż więcej” zwiększa o 1 wiersz do maks. 10. c) Połączona poprawnie para jest oznaczana, błędna aktywuje anty-cheat. |
-| US-009 | Anty-cheat                  | Jako system chcę po błędzie ukryć jedną poprawną parę i dodać fałszywkę, aby utrudnić losowe klikanie.              | a) Po każdym błędzie dokładnie jedna para znika, a jedna fałszywka się pojawia. b) Fałszywka nie pokrywa się z istniejącymi parami.                                     |
-| US-010 | Tryb Challenge              | Jako użytkownik chcę zagrać 3 rundy po 10 par (2×5), aby sprawdzić się pod presją czasu.                            | a) Start Trybu Challenge wyświetla timer (domyślnie 60 s, TBC). b) Wynik każdej rundy aktualizuje procent poprawnych par w Leitner.                                     |
-| US-011 | Progres Leitner             | Jako użytkownik chcę widzieć, jak pary przechodzą przez 3 kubki Leitner w oparciu o wyniki, aby śledzić postępy.    | a) System zapisuje status kubka dla każdej pary. b) Widok postępu pokazuje % w każdym kubku.                                                                            |
-| US-012 | Limit generacji             | Jako zalogowany użytkownik mogę wygenerować maks. 3 zestawy dziennie.                                               | a) Próba czwartej generacji danego dnia zwraca komunikat o limicie.                                                                                                     |
-| US-013 | Korzystanie offline         | Jako użytkownik offline chcę korzystać z 10 ostatnich cached setów, aby kontynuować naukę bez internetu.            | a) Aplikacja otwiera się offline. b) Dostępnych jest maks. 10 zapisanych zestawów.                                                                                      |
-| US-014 | Bezpieczne logowanie        | Jako użytkownik chcę zarejestrować się i zalogować przez Supabase e-mail+hasło, aby mój postęp był synchronizowany. | a) Formularz rejestracji i logowania z walidacją hasła. b) Zalogowany stan jest wymagany do generacji i zapisu postępu.                                                 |
-| US-015 | Dostęp gościa               | Jako gość chcę natychmiast uczyć się na kuratorowanych zestawach bez rejestracji.                                   | a) Strona startowa pokazuje listę predefiniowanych setów. b) Postęp gościa zapisywany lokalnie (localStorage/IndexedDB).                                                |
+### US-001: Generacja zestawu z tematu
+
+- **Opis**: Jako zalogowany użytkownik chcę wybrać temat z listy, aby otrzymać 30 par słówek dostosowanych do tematu.
+- **Kryteria akceptacji**:
+  - a) Wybór dowolnego tematu z listy generuje 30 par w <10 s.
+  - b) Paradygmat 60/30/10 słowa/zwroty/mini-frazy.
+  - c) Pary spełniają kontrakt danych i ≤8 tokenów na stronę.
+
+### US-002: Generacja z własnego opisu
+
+- **Opis**: Jako zalogowany użytkownik chcę wkleić opis ≤5000 znaków i wygenerować 30 par adekwatnych do kontekstu.
+- **Kryteria akceptacji**:
+  - a) System akceptuje opis do 5000 znaków.
+  - b) Wynik zawiera 30 unikalnych par.
+
+### US-003: Ustawienie rejestru
+
+- **Opis**: Jako użytkownik chcę przełączyć rejestr (neutralny/nieformalny/formalny), aby uzyskać pary w odpowiednim stylu.
+- **Kryteria akceptacji**:
+  - a) Dostępny przełącznik 3-stanowy.
+  - b) Każda wygenerowana para zawiera wybrany register w polu danych.
+
+### US-004: Filtr typu treści
+
+- **Opis**: Jako użytkownik chcę ograniczyć generację tylko do słów, zwrotów lub mini-frazy.
+- **Kryteria akceptacji**:
+  - a) Widoczny filtr 4 opcji.
+  - b) Wynik zawiera wyłącznie wybrany typ(y).
+
+### US-005: Dogenerowanie „+10"
+
+- **Opis**: Jako użytkownik chcę dogenerować 10 dodatkowych par z tego samego promptu bez duplikatów.
+- **Kryteria akceptacji**:
+  - a) Kliknięcie „+10" dodaje dokładnie 10 nowych par.
+  - b) Żadne z 10 nie występuje w bieżącym zestawie ani flagged/znanych.
+
+### US-006: Ręczne dodanie słowa
+
+- **Opis**: Jako użytkownik chcę ręcznie dodać słowo i otrzymać automatyczne tłumaczenie, aby uzupełnić zestaw.
+- **Kryteria akceptacji**:
+  - a) Formularz dodawania przyjmuje słowo (PL lub EN).
+  - b) System generuje brakującą stronę pary i dopisuje do listy.
+
+### US-007: Przegląd i zgłaszanie błędu
+
+- **Opis**: Jako użytkownik chcę przejrzeć listę par i zgłosić błąd w tłumaczeniu.
+- **Kryteria akceptacji**:
+  - a) Widok listy par przed nauką.
+  - b) Każda para ma przycisk „Zgłoś błąd", który oznacza parę jako flagged.
+
+### US-008: Nauka łączeniem podstawowa
+
+- **Opis**: Jako użytkownik chcę łączyć pary w siatce 2×3 i rozszerzać do 10, aby ćwiczyć tłumaczenia.
+- **Kryteria akceptacji**:
+  - a) Domyślnie widoczne 3 pary (2×3).
+  - b) Przycisk „Pokaż więcej" zwiększa o 1 wiersz do maks. 10.
+  - c) Połączona poprawnie para jest oznaczana, błędna aktywuje anty-cheat.
+
+### US-009: Anty-cheat
+
+- **Opis**: Jako system chcę po błędzie ukryć jedną poprawną parę i dodać fałszywkę, aby utrudnić losowe klikanie.
+- **Kryteria akceptacji**:
+  - a) Po każdym błędzie dokładnie jedna para znika, a jedna fałszywka się pojawia.
+  - b) Fałszywka nie pokrywa się z istniejącymi parami.
+
+### US-010: Tryb Challenge
+
+- **Opis**: Jako użytkownik chcę zagrać 3 rundy po 10 par (2×5), aby sprawdzić się pod presją czasu.
+- **Kryteria akceptacji**:
+  - a) Start Trybu Challenge wyświetla timer (domyślnie 60 s, TBC).
+  - b) Wynik każdej rundy aktualizuje procent poprawnych par w Leitner.
+
+### US-011: Progres Leitner
+
+- **Opis**: Jako użytkownik chcę widzieć, jak pary przechodzą przez 3 kubki Leitner w oparciu o wyniki, aby śledzić postępy.
+- **Kryteria akceptacji**:
+  - a) System zapisuje status kubka dla każdej pary.
+  - b) Widok postępu pokazuje % w każdym kubku.
+
+### US-012: Limit generacji
+
+- **Opis**: Jako zalogowany użytkownik mogę wygenerować maks. 3 zestawy dziennie.
+- **Kryteria akceptacji**:
+  - a) Próba czwartej generacji danego dnia zwraca komunikat o limicie.
+
+### US-013: Korzystanie offline
+
+- **Opis**: Jako użytkownik offline chcę korzystać z 10 ostatnich cached setów, aby kontynuować naukę bez internetu.
+- **Kryteria akceptacji**:
+  - a) Aplikacja otwiera się offline.
+  - b) Dostępnych jest maks. 10 zapisanych zestawów.
+
+### US-014: Bezpieczne logowanie
+
+- **Opis**: Jako użytkownik chcę zarejestrować się i zalogować przez Supabase e-mail+hasło, aby mój postęp był synchronizowany.
+- **Kryteria akceptacji**:
+  - a) Formularz rejestracji i logowania z walidacją hasła.
+  - b) Zalogowany stan jest wymagany do generacji i zapisu postępu.
+
+### US-015: Dostęp gościa
+
+- **Opis**: Jako gość chcę natychmiast uczyć się na kuratorowanych zestawach bez rejestracji.
+- **Kryteria akceptacji**:
+  - a) Strona startowa pokazuje listę predefiniowanych setów.
+  - b) Postęp gościa zapisywany lokalnie (localStorage/IndexedDB).
 
 ## 6. Metryki sukcesu
 
