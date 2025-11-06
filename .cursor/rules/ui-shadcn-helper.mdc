@@ -48,16 +48,16 @@ Aby zainstalować nowy komponent, wykorzystaj shadcn CLI
 
 
 ```bash
-npx shadcn@latest add [component-name]
+bunx shadcn@latest add [component-name]
 ```
 
 Przykładowo, aby dodać komponent accordion
 
 ```bash
-npx shadcn@latest add accordion
+bunx shadcn@latest add accordion
 ```
 
-Ważne: `npx shadcn-ui@latest` zostało wycofane, korzystaj z `npx shadcn@latest`
+Ważne: `bunx shadcn-ui@latest` zostało wycofane, korzystaj z `bunx shadcn@latest`
 
 Niektóre popularne komponenty to:
 

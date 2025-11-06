@@ -22,3 +22,39 @@ pnpm-debug.log*
 
 # jetbrains setting folder
 .idea/
+
+# Bun
+.bun/
+bun.lock.bak
+
+# Build / bundler caches
+.turbo/
+.cache/
+.vite/
+.parcel-cache/
+.eslintcache
+
+# Test / coverage
+coverage/
+.nyc_output/
+.playwright*
+playwright-report/
+
+# Hosting outputs
+.vercel/
+.output/
+.netlify/
+
+# IDE / OS
+.vscode/
+Thumbs.db
+ehthumbs.db
+Desktop.ini
+
+# Misc
+*.pid
+*.log
+*.tmp
+*.swp
+*.orig
+*.bak

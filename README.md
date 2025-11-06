@@ -1,94 +1,116 @@
-# 10x Astro Starter
+# 10x-LinguaPairs
 
-A modern, opinionated starter template for building fast, accessible, and AI-friendly web applications.
+Welcome to **10x-LinguaPairs**, a modern, accessible, web applications focused on language-learning tools.
+
+## Table of Contents
+
+1. [Project Description](#project-description)
+2. [Tech Stack](#tech-stack)
+3. [Getting Started Locally](#getting-started-locally)
+4. [Available Scripts](#available-scripts)
+5. [Project Scope](#project-scope)
+6. [Project Status](#project-status)
+7. [License](#license)
+
+## Project Description
+
+10x-LinguaPairs provides an Astro 5 + React 19 boilerplate enhanced with TypeScript, Tailwind CSS and shadcn/ui. It is designed to help developers ship performant, accessible and SEO-friendly sites quickly. Although the template can be used for any kind of project, it is optimised for building language-learning tools such as flash-cards, vocabulary trainers or pair-matching games.
 
 ## Tech Stack
 
-- [Astro](https://astro.build/) v5.5.5 - Modern web framework for building fast, content-focused websites
-- [React](https://react.dev/) v19.0.0 - UI library for building interactive components
-- [TypeScript](https://www.typescriptlang.org/) v5 - Type-safe JavaScript
-- [Tailwind CSS](https://tailwindcss.com/) v4.0.17 - Utility-first CSS framework
+| Layer     | Technology                                                                                               |
+| --------- | -------------------------------------------------------------------------------------------------------- |
+| Framework | [Astro](https://astro.build/) 5                                                                          |
+| UI        | [React](https://react.dev/) 19 & [shadcn/ui](https://ui.shadcn.com/)                                     |
+| Language  | [TypeScript](https://www.typescriptlang.org/) 5                                                          |
+| Styling   | [Tailwind CSS](https://tailwindcss.com/) 4 & [tw-animate-css](https://github.com/benface/tw-animate-css) |
+| Icons     | [lucide-react](https://lucide.dev/)                                                                      |
+| Tooling   | ESLint, Prettier, Husky & lint-staged                                                                    |
 
-## Prerequisites
+## Getting Started Locally
 
-- Node.js v22.14.0 (as specified in `.nvmrc`)
-- npm (comes with Node.js)
+### Prerequisites
 
-## Getting Started
+- Node.js `22.21.0` (see `.nvmrc`)
+- [Bun](https://bun.sh/) package manager – this project uses Bun instead of npm/yarn.
+- [Docker Desktop](https://www.docker.com/products/docker-desktop/) – required for Supabase local development
+- [Supabase CLI](https://supabase.com/docs/guides/cli) – install with `bunx supabase --version`
 
-1. Clone the repository:
+### Installing Bun
+
+If you don't have Bun installed yet, run one of the following commands:
+
+macOS / Linux:
 
 ```bash
-git clone https://github.com/przeprogramowani/10x-astro-starter.git
-cd 10x-astro-starter
+curl -fsSL https://bun.sh/install | bash
 ```
 
-2. Install dependencies:
+Windows (PowerShell):
 
-```bash
-npm install
+```powershell
+iwr https://bun.sh/install.ps1 -UseBasicParsing | iex
 ```
 
-3. Run the development server:
+### Installation
 
 ```bash
-npm run dev
+# 1. Clone the repository
+$ git clone https://github.com/tmoasz/10x-LinguaPairs.git
+$ cd 10x-LinguaPairs
+
+# 2. Install dependencies
+$ bun install
+
+# 3. Start the development server
+$ bun run dev
+
+# 4. Open the project
+# Visit http://localhost:4321 in your browser
 ```
 
-4. Build for production:
+### Building for Production
 
 ```bash
-npm run build
+# Generate an optimised production build
+$ bun run build
+
+# Preview the built site locally
+$ bun run preview
 ```
 
 ## Available Scripts
 
-- `npm run dev` - Start development server
-- `npm run build` - Build for production
-- `npm run preview` - Preview production build
-- `npm run lint` - Run ESLint
-- `npm run lint:fix` - Fix ESLint issues
+| Script             | What it does                                      |
+| ------------------ | ------------------------------------------------- |
+| `bun run dev`      | Start the development server with hot-reload      |
+| `bun run build`    | Build the site for production (output in `dist/`) |
+| `bun run preview`  | Preview the production build locally              |
+| `bun run lint`     | Run ESLint over all source files                  |
+| `bun run lint:fix` | Automatically fix lint issues                     |
+| `bun run format`   | Format files using Prettier                       |
 
-## Project Structure
+## Project Scope
 
-```md
-.
-├── src/
-│   ├── layouts/    # Astro layouts
-│   ├── pages/      # Astro pages
-│   │   └── api/    # API endpoints
-│   ├── components/ # UI components (Astro & React)
-│   └── assets/     # Static assets
-├── public/         # Public assets
-```
+The current template includes:
 
-## AI Development Support
+- Pre-configured Astro + React + TS setup
+- Tailwind CSS 4 with sensible defaults and theming
+- shadcn/ui components ready to use
+- Opinionated ESLint & Prettier configs with Husky hooks
+- Sample layout, page and component structure
 
-This project is configured with AI development tools to enhance the development experience, providing guidelines for:
+Planned future enhancements (see project board):
 
-- Project structure
-- Coding practices
-- Frontend development
-- Styling with Tailwind
-- Accessibility best practices
-- Astro and React guidelines
+- Supabase integration for backend data storage
+- Authentication scaffold
+- Example language-learning features (flashcards, spaced repetition)
+- Unit & end-to-end testing setup
 
-### Cursor IDE
+## Project Status
 
-The project includes AI rules in `.cursor/rules/` directory that help Cursor IDE understand the project structure and provide better code suggestions.
-
-### GitHub Copilot
-
-AI instructions for GitHub Copilot are available in `.github/copilot-instructions.md`
-
-### Windsurf
-
-The `.windsurfrules` file contains AI configuration for Windsurf.
-
-## Contributing
-
-Please follow the AI guidelines and coding practices defined in the AI configuration files when contributing to this project.
+🚧 **Work in progress** – Version `0.0.1` is an early preview. Breaking changes may occur while the core structure is being stabilised.
 
 ## License
 
-MIT
+This project is licensed under the **MIT License** – see the [LICENSE](LICENSE) file for details.

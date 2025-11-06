@@ -56,8 +56,14 @@ const reactConfig = tseslint.config({
   },
 });
 
+// Ignore generated files
+const ignoreConfig = tseslint.config({
+  ignores: ["**/database.types.ts", "**/*.generated.*", "**/.astro/**"],
+});
+
 export default tseslint.config(
   includeIgnoreFile(gitignorePath),
+  ignoreConfig,
   baseConfig,
   jsxA11yConfig,
   reactConfig,

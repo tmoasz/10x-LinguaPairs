@@ -14,6 +14,7 @@ alwaysApply: true
 - React 19
 - Tailwind 4
 - Shadcn/ui
+- Bun (package manager)
 
 ## Project Structure
 
@@ -28,7 +29,7 @@ When introducing changes to the project, always follow the directory structure b
 - `./src/types.ts` - Shared types for backend and frontend (Entities, DTOs)
 - `./src/components` - Client-side components written in Astro (static) and React (dynamic)
 - `./src/components/ui` - Client-side components from Shadcn/ui
-- `./src/lib` - Services and helpers 
+- `./src/lib` - Services and helpers
 - `./src/assets` - static internal assets
 - `./public` - public assets
 
@@ -47,3 +48,14 @@ When modifying the directory structure, always update this section.
 - Use guard clauses to handle preconditions and invalid states early.
 - Implement proper error logging and user-friendly error messages.
 - Consider using custom error types or error factories for consistent error handling.
+
+## Package Management
+
+### Bun
+
+- Use Bun as the default package manager for Node.js dependencies.
+- Run `bun install` to install dependencies; avoid `npm install` or `yarn`.
+- Use `bun run <script>` to execute project scripts defined in `package.json` or `bunfig.toml`.
+- When adding new scripts or documentation, prefer Bun commands (e.g., `bunx` instead of `npx`).
+- Ensure any shell commands in documentation or CI pipelines invoke Bun commands.
+- For Windows environments, scripts should be compatible with PowerShell (`pwsh`) as per user rules.
