@@ -15,4 +15,3 @@ export const languagesListQuerySchema = z.object({
 export const languageIdParamSchema = z.object({
   id: z.string().uuid("Invalid language ID format"),
 });
-
