@@ -8,6 +8,9 @@
 import AuthLayout from "@/layouts/AuthLayout.astro";
 import ForgotPasswordForm from "@/components/auth/ForgotPasswordForm";
 import { Toaster } from "@/components/ui/sonner";
+
+// SSR-only - requires runtime access to cookies/headers for auth middleware
+export const prerender = false;
 ---
 
 <AuthLayout title="Nie pamiętasz hasła?" description="Nie martw się! Wyślemy Ci link do zresetowania hasła.">

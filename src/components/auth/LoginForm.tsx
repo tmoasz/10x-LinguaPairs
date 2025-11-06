@@ -5,7 +5,8 @@
  * Features: inline validation, loading states, animated errors, Toaster integration
  */
 
-import { useState } from "react";
+import { useCallback, useState } from "react";
+import type React from "react";
 import { loginSchema, type LoginFormData } from "@/lib/validation/auth.schemas";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -17,9 +18,8 @@ interface LoginFormProps {
   redirect?: string;
 }
 
-// TODO: Use redirect param when backend is implemented
-// eslint-disable-next-line @typescript-eslint/no-unused-vars
-export default function LoginForm(_props: LoginFormProps) {
+export default function LoginForm(props: LoginFormProps) {
+  const { redirect } = props;
   const [formData, setFormData] = useState<LoginFormData>({
     email: "",
     password: "",
@@ -54,35 +54,54 @@ export default function LoginForm(_props: LoginFormProps) {
     validateField(field, formData[field]);
   };
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
+  const handleSubmit = useCallback(
+    async (e: React.FormEvent) => {
+      e.preventDefault();
 
-    // Validate all fields
-    const result = loginSchema.safeParse(formData);
-    if (!result.success) {
-      const fieldErrors: Partial<Record<keyof LoginFormData, string>> = {};
-      result.error.errors.forEach((err) => {
-        const field = err.path[0] as keyof LoginFormData;
-        fieldErrors[field] = err.message;
-      });
-      setErrors(fieldErrors);
-      return;
-    }
+      const result = loginSchema.safeParse(formData);
+      if (!result.success) {
+        const fieldErrors: Partial<Record<keyof LoginFormData, string>> = {};
+        result.error.errors.forEach((err) => {
+          const field = err.path[0] as keyof LoginFormData;
+          fieldErrors[field] = err.message;
+        });
+        setErrors(fieldErrors);
+        return;
+      }
 
-    setIsLoading(true);
+      setIsLoading(true);
+      try {
+        const res = await fetch("/api/auth/login", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ email: formData.email, password: formData.password }),
+        });
 
-    // TODO: Implement actual login logic
-    // For now, just simulate API call
-    setTimeout(() => {
-      setIsLoading(false);
-      // Simulate error for demo
-      // toast.error("Błąd logowania", {
-      //   description: "Błędny e-mail lub hasło",
-      // });
-      toast.success("Zalogowano pomyślnie!");
-      // console.log("Login with:", formData, "redirect:", redirect);
-    }, 1500);
-  };
+        const data = (await res.json().catch(() => ({}))) as {
+          user?: { id: string; email: string | null };
+          error?: string;
+        };
+
+        if (!res.ok) {
+          const message = data?.error || "Nie udało się zalogować";
+          toast.error("Błąd logowania", { description: message });
+          setIsLoading(false);
+          // Clear only password on error
+          setFormData((prev) => ({ ...prev, password: "" }));
+          return;
+        }
+
+        toast.success("Zalogowano pomyślnie!");
+        // Ensure cookies are set by server, then navigate
+        const target = redirect && redirect.startsWith("/") && !redirect.startsWith("//") ? redirect : "/";
+        window.location.assign(target);
+      } catch {
+        toast.error("Błąd logowania", { description: "Wystąpił błąd. Spróbuj ponownie." });
+        setIsLoading(false);
+      }
+    },
+    [formData, redirect]
+  );
 
   return (
     <form onSubmit={handleSubmit} className="space-y-6" noValidate>

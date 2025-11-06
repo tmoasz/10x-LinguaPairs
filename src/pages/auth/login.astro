@@ -10,15 +10,19 @@ import AuthLayout from "@/layouts/AuthLayout.astro";
 import LoginForm from "@/components/auth/LoginForm";
 import { Toaster } from "@/components/ui/sonner";
 
-// Get redirect parameter from URL
+// Get redirect parameter from URL (only allow relative paths)
 const url = new URL(Astro.request.url);
-const redirect = url.searchParams.get("redirect") || undefined;
+const rawRedirect = url.searchParams.get("redirect") || undefined;
+const redirect = rawRedirect && rawRedirect.startsWith("/") && !rawRedirect.startsWith("//") ? rawRedirect : undefined;
 
-// TODO: Check if user is already logged in and redirect to home
-// const user = Astro.locals.user;
-// if (user) {
-//   return Astro.redirect(redirect || "/");
-// }
+// SSR-only
+export const prerender = false;
+
+// If user already logged in, redirect away
+const user = Astro.locals.user;
+if (user) {
+  return Astro.redirect(redirect || "/");
+}
 ---
 
 <AuthLayout title="Zaloguj się" description="Witaj z powrotem! Zaloguj się do swojego konta.">

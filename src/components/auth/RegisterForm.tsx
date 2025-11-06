@@ -5,7 +5,8 @@
  * Features: password strength indicator, inline validation, animated UI, Toaster
  */
 
-import { useState } from "react";
+import { useCallback, useState } from "react";
+import type React from "react";
 import {
   registerSchema,
   type RegisterFormData,
@@ -29,6 +30,8 @@ export default function RegisterForm() {
   const [errors, setErrors] = useState<Partial<Record<keyof RegisterFormData, string>>>({});
   const [isLoading, setIsLoading] = useState(false);
   const [success, setSuccess] = useState(false);
+  const [resendEmail, setResendEmail] = useState<string | null>(null);
+  const [isResending, setIsResending] = useState(false);
 
   const passwordStrength = formData.password ? getPasswordStrength(formData.password) : null;
 
@@ -73,32 +76,61 @@ export default function RegisterForm() {
     validateField(field, formData[field]);
   };
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
+  const handleSubmit = useCallback(
+    async (e: React.FormEvent) => {
+      e.preventDefault();
 
-    const result = registerSchema.safeParse(formData);
-    if (!result.success) {
-      const fieldErrors: Partial<Record<keyof RegisterFormData, string>> = {};
-      result.error.errors.forEach((err) => {
-        const field = err.path[0] as keyof RegisterFormData;
-        fieldErrors[field] = err.message;
-      });
-      setErrors(fieldErrors);
-      return;
-    }
+      const result = registerSchema.safeParse(formData);
+      if (!result.success) {
+        const fieldErrors: Partial<Record<keyof RegisterFormData, string>> = {};
+        result.error.errors.forEach((err) => {
+          const field = err.path[0] as keyof RegisterFormData;
+          fieldErrors[field] = err.message;
+        });
+        setErrors(fieldErrors);
+        return;
+      }
 
-    setIsLoading(true);
+      setIsLoading(true);
+      try {
+        const res = await fetch("/api/auth/register", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ email: formData.email, password: formData.password }),
+        });
 
-    // TODO: Implement actual registration logic
-    setTimeout(() => {
-      setIsLoading(false);
-      setSuccess(true);
-      toast.success("Konto utworzone!", {
-        description: "Sprawdź swoją skrzynkę e-mail",
-      });
-      // console.log("Register with:", formData);
-    }, 1500);
-  };
+        const data = (await res.json().catch(() => ({}))) as {
+          message?: string;
+          error?: string;
+          requiresConfirmation?: boolean;
+          email?: string;
+        };
+
+        if (!res.ok) {
+          const message = data?.error || "Nie udało się utworzyć konta";
+          toast.error("Błąd rejestracji", { description: message });
+          // Clear password on error (like LoginForm does)
+          setFormData((prev) => ({ ...prev, password: "", passwordConfirm: "" }));
+          setIsLoading(false);
+          return;
+        }
+
+        toast.success("Konto utworzone!", {
+          description:
+            data?.message ?? "Sprawdź swoją skrzynkę e-mail. Wysłaliśmy link aktywacyjny do potwierdzenia konta.",
+        });
+        setResendEmail(data?.email || formData.email);
+        setSuccess(true);
+      } catch {
+        toast.error("Błąd rejestracji", { description: "Wystąpił błąd. Spróbuj ponownie." });
+        // Clear password on error
+        setFormData((prev) => ({ ...prev, password: "", passwordConfirm: "" }));
+      } finally {
+        setIsLoading(false);
+      }
+    },
+    [formData]
+  );
 
   // Success state
   if (success) {
@@ -117,8 +149,52 @@ export default function RegisterForm() {
         </div>
         <div className="pt-4 border-t border-border">
           <p className="text-xs text-muted-foreground mb-4">Nie otrzymałeś wiadomości?</p>
-          <Button variant="ghost" onClick={() => setSuccess(false)}>
-            Wyślij ponownie
+          <Button
+            variant="ghost"
+            onClick={async () => {
+              const emailToResend = resendEmail || formData.email;
+              if (!emailToResend) return;
+
+              setIsResending(true);
+              try {
+                const res = await fetch("/api/auth/resend-confirmation", {
+                  method: "POST",
+                  headers: { "Content-Type": "application/json" },
+                  body: JSON.stringify({ email: emailToResend }),
+                });
+
+                const data = (await res.json().catch(() => ({}))) as {
+                  message?: string;
+                  error?: string;
+                };
+
+                if (!res.ok) {
+                  toast.error("Błąd", {
+                    description: data?.error || "Nie udało się wysłać emaila ponownie.",
+                  });
+                  return;
+                }
+
+                toast.success("Email wysłany!", {
+                  description: data?.message || "Link aktywacyjny został ponownie wysłany.",
+                });
+                setResendEmail(emailToResend);
+              } catch {
+                toast.error("Błąd", { description: "Wystąpił błąd. Spróbuj ponownie." });
+              } finally {
+                setIsResending(false);
+              }
+            }}
+            disabled={isResending}
+          >
+            {isResending ? (
+              <>
+                <Loader2 className="w-4 h-4 animate-spin mr-2" />
+                Wysyłanie...
+              </>
+            ) : (
+              "Wyślij ponownie"
+            )}
           </Button>
         </div>
       </div>

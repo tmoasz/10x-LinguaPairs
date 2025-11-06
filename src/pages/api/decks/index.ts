@@ -3,9 +3,6 @@ import { z } from "zod";
 import { createDeckSchema } from "@/lib/validation/deck.validation";
 import { deckService } from "@/lib/services/deck.service";
 import { ValidationError } from "@/lib/errors";
-import { createClient } from "@supabase/supabase-js";
-import { DEFAULT_USER_ID } from "@/db/supabase.client";
-import type { Database } from "@/db/database.types";
 import type { DecksListDTO, DeckListItemDTO } from "@/types";
 
 export const prerender = false;
@@ -27,15 +24,7 @@ export const prerender = false;
  * - 500 Internal Server Error for unexpected errors
  */
 export const GET: APIRoute = async (context) => {
-  // Use service role key to bypass RLS for test user (development only)
-  // In production, this should use authenticated user's client
-  const supabaseServiceRoleKey = import.meta.env.SUPABASE_SERVICE_ROLE_KEY;
-  const hasServiceRoleKey = !!supabaseServiceRoleKey;
-  const supabase = supabaseServiceRoleKey
-    ? createClient<Database>(import.meta.env.SUPABASE_URL, supabaseServiceRoleKey, {
-        auth: { autoRefreshToken: false, persistSession: false },
-      })
-    : context.locals.supabase;
+  const supabase = context.locals.supabase;
 
   if (!supabase) {
     return new Response(
@@ -52,33 +41,26 @@ export const GET: APIRoute = async (context) => {
     );
   }
 
-  // Log configuration for debugging
-  if (process.env.NODE_ENV === "development") {
-    console.log("GET /api/decks - Configuration:", {
-      hasServiceRoleKey,
-      hasSupabaseUrl: !!import.meta.env.SUPABASE_URL,
-      DEFAULT_USER_ID_set: !!DEFAULT_USER_ID && DEFAULT_USER_ID.trim() !== "",
-      DEFAULT_USER_ID_length: DEFAULT_USER_ID?.length || 0,
-    });
+  // Check authentication
+  const user = context.locals.user;
+  if (!user || !user.id) {
+    return new Response(
+      JSON.stringify({
+        error: {
+          code: "UNAUTHORIZED",
+          message: "User not authenticated",
+        },
+      }),
+      {
+        status: 401,
+        headers: { "Content-Type": "application/json" },
+      }
+    );
   }
 
+  const userId = user.id;
+
   try {
-    // Validate DEFAULT_USER_ID
-    if (!DEFAULT_USER_ID || DEFAULT_USER_ID.trim() === "") {
-      console.error("DEFAULT_USER_ID is not set. Please set DEFAULT_USER_ID in .env file");
-      return new Response(
-        JSON.stringify({
-          error: {
-            code: "CONFIGURATION_ERROR",
-            message: "Server configuration error: DEFAULT_USER_ID is not set",
-          },
-        }),
-        {
-          status: 500,
-          headers: { "Content-Type": "application/json" },
-        }
-      );
-    }
 
     // Parse query parameters
     const url = new URL(context.request.url);
@@ -106,10 +88,11 @@ export const GET: APIRoute = async (context) => {
 
     // Fetch decks with languages and pairs count
     // First, get total count
+    // RLS will automatically filter to user's decks, but we add explicit filter for extra security
     const { count: totalCount, error: countError } = await supabase
       .from("decks")
       .select("*", { count: "exact", head: true })
-      .eq("owner_user_id", DEFAULT_USER_ID)
+      .eq("owner_user_id", userId)
       .is("deleted_at", null);
 
     if (countError) {
@@ -119,7 +102,6 @@ export const GET: APIRoute = async (context) => {
         details: countError.details,
         hint: countError.hint,
         code: countError.code,
-        DEFAULT_USER_ID: DEFAULT_USER_ID.substring(0, 8) + "...",
       });
       return new Response(
         JSON.stringify({
@@ -141,10 +123,11 @@ export const GET: APIRoute = async (context) => {
     }
 
     // Fetch decks
+    // RLS will automatically filter to user's decks, but we add explicit filter for extra security
     const { data: decks, error: decksError } = await supabase
       .from("decks")
       .select("id, owner_user_id, title, description, lang_a, lang_b, visibility, created_at, updated_at")
-      .eq("owner_user_id", DEFAULT_USER_ID)
+      .eq("owner_user_id", userId)
       .is("deleted_at", null)
       .order(sort, { ascending: order === "asc" })
       .range(offset, offset + limit - 1);
@@ -156,8 +139,6 @@ export const GET: APIRoute = async (context) => {
         details: decksError.details,
         hint: decksError.hint,
         code: decksError.code,
-        DEFAULT_USER_ID: DEFAULT_USER_ID.substring(0, 8) + "...",
-        hasServiceRoleKey,
       });
       return new Response(
         JSON.stringify({
@@ -330,14 +311,7 @@ export const GET: APIRoute = async (context) => {
  * - 500 Internal Server Error for unexpected errors
  */
 export const POST: APIRoute = async (context) => {
-  // Use service role key to bypass RLS for test user (development only)
-  // In production, this should use authenticated user's client
-  const supabaseServiceRoleKey = import.meta.env.SUPABASE_SERVICE_ROLE_KEY;
-  const supabase = supabaseServiceRoleKey
-    ? createClient<Database>(import.meta.env.SUPABASE_URL, supabaseServiceRoleKey, {
-        auth: { autoRefreshToken: false, persistSession: false },
-      })
-    : context.locals.supabase;
+  const supabase = context.locals.supabase;
 
   if (!supabase) {
     return new Response(
@@ -353,6 +327,25 @@ export const POST: APIRoute = async (context) => {
       }
     );
   }
+
+  // Check authentication
+  const user = context.locals.user;
+  if (!user || !user.id) {
+    return new Response(
+      JSON.stringify({
+        error: {
+          code: "UNAUTHORIZED",
+          message: "User not authenticated",
+        },
+      }),
+      {
+        status: 401,
+        headers: { "Content-Type": "application/json" },
+      }
+    );
+  }
+
+  const userId = user.id;
 
   try {
     let body;
@@ -375,7 +368,7 @@ export const POST: APIRoute = async (context) => {
 
     const validatedData = createDeckSchema.parse(body);
 
-    const deck = await deckService.createDeck(supabase, DEFAULT_USER_ID, validatedData);
+    const deck = await deckService.createDeck(supabase, userId, validatedData);
 
     return new Response(JSON.stringify(deck), {
       status: 201,

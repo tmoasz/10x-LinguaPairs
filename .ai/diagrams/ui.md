@@ -7,10 +7,12 @@
 ### Komponenty wymienione w dokumentacji:
 
 #### Layouty (Astro):
+
 1. **AppLayout.astro** (istniejący) - bazowy layout aplikacji z nagłówkiem i nawigacją
 2. **AuthLayout.astro** (nowy) - uproszczony layout dla stron auth bez bocznej nawigacji
 
 #### Strony (Astro SSR):
+
 1. **index.astro** - strona startowa (publiczna)
 2. **generate.astro** - strona generacji zestawów (chroniona)
 3. **auth/login.astro** - strona logowania
@@ -23,6 +25,7 @@
 10. **progress.astro** - widok postępów (chroniona)
 
 #### Komponenty React (client-side):
+
 1. **LoginForm.tsx** - formularz logowania
 2. **RegisterForm.tsx** - formularz rejestracji
 3. **ForgotPasswordForm.tsx** - formularz resetu hasła
@@ -32,6 +35,7 @@
 7. **GenerateWizard.tsx** - kreator generowania (istniejący, wymaga aktualizacji)
 
 #### Komponenty UI (Shadcn/ui):
+
 1. **Button** - przycisk (istniejący)
 2. **Input** - pole tekstowe (istniejący)
 3. **Label** - etykieta (istniejący)
@@ -39,19 +43,24 @@
 5. **Form** - formularz (wymagany doinstalowanie)
 
 #### Backend - API endpoints:
+
 1. **GET /api/auth/session** - sprawdzenie sesji
 2. **POST /api/auth/signout** - wylogowanie
 
 #### Serwisy:
+
 1. **auth.service.ts** - serwis autentykacji (nowy)
 
 #### Walidacja:
+
 1. **auth.schemas.ts** - schematy Zod (nowy)
 
 #### Obsługa błędów:
+
 1. **auth.errors.ts** - mapowanie błędów Supabase (nowy)
 
 #### Infrastruktura:
+
 1. **supabase.client.ts** - klient Supabase (istniejący, wymaga aktualizacji)
 2. **middleware/index.ts** - middleware Astro (istniejący, wymaga rozszerzenia)
 
@@ -96,29 +105,29 @@
 ```mermaid
 flowchart TD
     Start([Użytkownik]) --> Middleware{Middleware<br/>index.ts}
-    
+
     subgraph Infrastruktura["Infrastruktura"]
         SupabaseClient[supabase.client.ts<br/>SSR i Browser Client]
         Middleware
     end
-    
+
     Middleware --> CheckAuth{Sprawdzenie<br/>autentykacji}
-    
+
     CheckAuth -->|Zalogowany| ProtectedRoute{Trasa<br/>chroniona?}
     CheckAuth -->|Gość| PublicRoute{Trasa<br/>publiczna?}
-    
+
     ProtectedRoute -->|Tak| RedirectAuth[Redirect do<br/>/auth/login]
     ProtectedRoute -->|Nie| AppLayout[AppLayout.astro<br/>Bazowy layout]
-    
+
     PublicRoute -->|Tak| AppLayout
     PublicRoute -->|Nie| RedirectAuth
-    
+
     subgraph StronyPubliczne["Strony Publiczne"]
         IndexPage[index.astro<br/>Strona startowa]
         LearnPublic[learn/public/[setId].astro<br/>Nauka kuratorowanych]
         ChallengePublic[challenge/public/[setId].astro<br/>Challenge kuratorowanych]
     end
-    
+
     subgraph StronyAuth["Strony Autentykacji"]
         LoginPage[login.astro<br/>Strona logowania]
         RegisterPage[register.astro<br/>Strona rejestracji]
@@ -126,26 +135,26 @@ flowchart TD
         ResetPage[reset.astro<br/>Reset hasła SSR]
         CallbackPage[callback.ts<br/>Handler potwierdzeń]
     end
-    
+
     subgraph StronyChronione["Strony Chronione"]
         GeneratePage[generate.astro<br/>Generacja zestawów]
         LearnUser[learn/user/[setId].astro<br/>Nauka własnych]
         ChallengeUser[challenge/user/[setId].astro<br/>Challenge własnych]
         ProgressPage[progress.astro<br/>Widok postępów]
     end
-    
+
     subgraph LayoutAuth["Layout Autentykacji"]
         AuthLayout[AuthLayout.astro<br/>Uproszczony layout]
     end
-    
+
     RedirectAuth --> AuthLayout
     AuthLayout --> LoginPage
     AuthLayout --> RegisterPage
     AuthLayout --> ForgotPage
-    
+
     ResetPage --> AuthLayout
     CallbackPage --> AppLayout
-    
+
     AppLayout --> IndexPage
     AppLayout --> LearnPublic
     AppLayout --> ChallengePublic
@@ -153,7 +162,7 @@ flowchart TD
     AppLayout --> LearnUser
     AppLayout --> ChallengeUser
     AppLayout --> ProgressPage
-    
+
     subgraph FormularzeAuth["Komponenty React - Formularze Auth"]
         LoginForm[LoginForm.tsx<br/>Formularz logowania]
         RegisterForm[RegisterForm.tsx<br/>Formularz rejestracji]
@@ -162,14 +171,14 @@ flowchart TD
         LogoutBtn[LogoutButton.tsx<br/>Przycisk wylogowania]
         AuthGate[AuthGate.tsx<br/>Komponent ochrony]
     end
-    
+
     LoginPage --> LoginForm
     RegisterPage --> RegisterForm
     ForgotPage --> ForgotForm
     ResetPage --> ResetForm
     AppLayout --> LogoutBtn
     AppLayout --> AuthGate
-    
+
     subgraph KomponentyUI["Komponenty UI Shadcn"]
         UIButton[Button.tsx]
         UIInput[Input.tsx]
@@ -177,93 +186,93 @@ flowchart TD
         UIAlert[Alert.tsx]
         UIForm[Form.tsx<br/>wymagany]
     end
-    
+
     LoginForm --> UIButton
     LoginForm --> UIInput
     LoginForm --> UILabel
     LoginForm --> UIAlert
     LoginForm --> UIForm
-    
+
     RegisterForm --> UIButton
     RegisterForm --> UIInput
     RegisterForm --> UILabel
     RegisterForm --> UIAlert
     RegisterForm --> UIForm
-    
+
     ForgotForm --> UIButton
     ForgotForm --> UIInput
     ForgotForm --> UIAlert
-    
+
     ResetForm --> UIButton
     ResetForm --> UIInput
     ResetForm --> UILabel
     ResetForm --> UIAlert
     ResetForm --> UIForm
-    
+
     subgraph Serwisy["Serwisy"]
         AuthService[auth.service.ts<br/>Operacje autentykacji]
     end
-    
+
     LoginForm -->|wywołuje| AuthService
     RegisterForm -->|wywołuje| AuthService
     ForgotForm -->|wywołuje| AuthService
     ResetForm -->|wywołuje| AuthService
     LogoutBtn -->|wywołuje| AuthService
-    
+
     subgraph Walidacja["Walidacja"]
         AuthSchemas[auth.schemas.ts<br/>Schematy Zod]
     end
-    
+
     LoginForm -->|używa| AuthSchemas
     RegisterForm -->|używa| AuthSchemas
     ForgotForm -->|używa| AuthSchemas
     ResetForm -->|używa| AuthSchemas
-    
+
     subgraph ObslugaBledow["Obsługa Błędów"]
         AuthErrors[auth.errors.ts<br/>Mapowanie błędów]
     end
-    
+
     AuthService -->|używa| AuthErrors
     LoginForm -->|wyświetla| AuthErrors
     RegisterForm -->|wyświetla| AuthErrors
     ForgotForm -->|wyświetla| AuthErrors
     ResetForm -->|wyświetla| AuthErrors
-    
+
     subgraph APIEndpoints["API Endpoints"]
         SessionAPI[session.ts<br/>GET /api/auth/session]
         SignoutAPI[signout.ts<br/>POST /api/auth/signout]
     end
-    
+
     AuthService -->|wywołuje| SessionAPI
     LogoutBtn -->|wywołuje| SignoutAPI
     Middleware -->|odczytuje| SessionAPI
-    
+
     AuthService -->|używa| SupabaseClient
     SessionAPI -->|używa| SupabaseClient
     SignoutAPI -->|używa| SupabaseClient
     ResetPage -->|używa| SupabaseClient
     CallbackPage -->|używa| SupabaseClient
-    
+
     subgraph KomponentyIstniejace["Komponenty Istniejące - Wymagają Aktualizacji"]
         GenerateWizard[GenerateWizard.tsx<br/>Kreator generowania]
     end
-    
+
     GeneratePage --> GenerateWizard
     GenerateWizard -.->|wymaga| AuthService
-    
+
     subgraph SupabaseAuth["Supabase Auth"]
         SupabaseAuthService[Supabase Auth<br/>Rejestracja Logowanie<br/>Reset Sesja]
     end
-    
+
     AuthService -->|komunikuje| SupabaseAuthService
     SessionAPI -->|komunikuje| SupabaseAuthService
     SignoutAPI -->|komunikuje| SupabaseAuthService
     ResetPage -->|komunikuje| SupabaseAuthService
     CallbackPage -->|komunikuje| SupabaseAuthService
-    
+
     SupabaseAuthService -->|zwraca| AuthService
     SupabaseAuthService -->|ustawia cookies| Middleware
-    
+
     style AuthLayout fill:#e1f5ff,stroke:#0277bd,stroke-width:2px
     style LoginForm fill:#fff3e0,stroke:#ef6c00,stroke-width:2px
     style RegisterForm fill:#fff3e0,stroke:#ef6c00,stroke-width:2px
@@ -309,4 +318,3 @@ Diagram przedstawia kompleksową architekturę modułu autentykacji i rejestracj
 3. Formularze → Walidacja Zod → AuthService → Supabase Auth
 4. Błędy → Mapowanie przez auth.errors.ts → Wyświetlenie w UI
 5. Sukces → Redirect z parametrem lub domyślna strona
-

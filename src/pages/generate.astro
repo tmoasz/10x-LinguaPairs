@@ -14,15 +14,17 @@ import Layout from "@/layouts/Layout.astro";
 import GenerateWizard from "@/components/generate/GenerateWizard";
 import { Toaster } from "@/components/ui/sonner";
 
-// Sprawdzenie uwierzytelnienia
-// TODO: Odkomentować po utworzeniu strony /auth/login
-//const { data: sessionData } = await Astro.locals.supabase.auth.getSession();
-//const user = sessionData?.session?.user ?? null;
+// Upewnij się, że strona jest renderowana po stronie serwera (wymagane dla autentykacji)
+export const prerender = false;
 
-// Jeśli użytkownik nie jest zalogowany, przekieruj do logowania
-// if (!user) {
-//   return Astro.redirect("/auth/login?redirect=/generate");
-// }
+// Sprawdzenie uwierzytelnienia - dodatkowe zabezpieczenie (defense in depth)
+// Middleware już chroni tę trasę, ale sprawdzamy również tutaj dla pewności
+const user = Astro.locals.user;
+
+if (!user) {
+  const redirectPath = `/auth/login?redirect=${encodeURIComponent("/generate")}`;
+  return Astro.redirect(redirectPath);
+}
 
 // Meta info
 const title = "Generowanie par słówek | LinguaPairs";

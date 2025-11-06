@@ -10,6 +10,9 @@ import AuthLayout from "@/layouts/AuthLayout.astro";
 import ResetPasswordForm from "@/components/auth/ResetPasswordForm";
 import { Toaster } from "@/components/ui/sonner";
 
+// SSR-only - requires runtime access to cookies/headers for auth middleware
+export const prerender = false;
+
 // Get parameters from URL (Supabase sends code and type)
 const url = new URL(Astro.request.url);
 const code = url.searchParams.get("code");

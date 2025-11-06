@@ -103,16 +103,16 @@ Komponenty UI (Shadcn/ui): wykorzystujemy istniejący `Button`; wymagane doinsta
 ### 1.5. Kluczowe scenariusze UI
 
 - Rejestracja
-  1) Użytkownik wypełnia formularz → walidacja Zod → `signUp` → komunikat o weryfikacji e‑mail.
-  2) Po kliknięciu w link aktywacyjny (Supabase) → `exchangeCodeForSession` (SSR) → redirect na `/` lub wskazany `redirect`.
+  1. Użytkownik wypełnia formularz → walidacja Zod → `signUp` → komunikat o weryfikacji e‑mail.
+  2. Po kliknięciu w link aktywacyjny (Supabase) → `exchangeCodeForSession` (SSR) → redirect na `/` lub wskazany `redirect`.
 
 - Logowanie
-  1) Formularz → `signInWithPassword` → redirect do `redirect` lub domyślnej strony.
-  2) Niepowodzenie → komunikat błędu + reset pola hasła (bez resetu e‑maila).
+  1. Formularz → `signInWithPassword` → redirect do `redirect` lub domyślnej strony.
+  2. Niepowodzenie → komunikat błędu + reset pola hasła (bez resetu e‑maila).
 
 - Zapomniane hasło
-  1) Formularz e‑mail → `resetPasswordForEmail` (redirect: `/auth/reset`).
-  2) Użytkownik z e‑maila trafia na `/auth/reset?code=...` → SSR exchange code → formularz ustawienia nowego hasła → `updateUser({ password })` → sukces.
+  1. Formularz e‑mail → `resetPasswordForEmail` (redirect: `/auth/reset`).
+  2. Użytkownik z e‑maila trafia na `/auth/reset?code=...` → SSR exchange code → formularz ustawienia nowego hasła → `updateUser({ password })` → sukces.
 
 - Wylogowanie
   - `signOut` (server preferowany dla spójności cookie) → redirect do strony publicznej.
@@ -259,11 +259,7 @@ export type AuthUser = { id: string; email: string };
 export type AuthSession = { expiresAt: string | null };
 export type AuthStatusResponse = { user: AuthUser | null; session?: AuthSession | null };
 
-export type AuthErrorCode =
-  | 'EMAIL_ALREADY_REGISTERED'
-  | 'INVALID_CREDENTIALS'
-  | 'TOKEN_EXPIRED'
-  | 'UNKNOWN';
+export type AuthErrorCode = "EMAIL_ALREADY_REGISTERED" | "INVALID_CREDENTIALS" | "TOKEN_EXPIRED" | "UNKNOWN";
 
 export type AuthError = { code: AuthErrorCode; message: string };
 ```
@@ -274,7 +270,7 @@ Interfejs (docelowo):
 
 ```ts
 export interface AuthServiceApi {
-  signInWithPassword(input: { email: string; password: string }): Promise<{ user: AuthUser }>; 
+  signInWithPassword(input: { email: string; password: string }): Promise<{ user: AuthUser }>;
   signUpWithPassword(input: { email: string; password: string }): Promise<void>; // email confirm step
   requestPasswordReset(input: { email: string }): Promise<void>;
   completePasswordReset(input: { newPassword: string }): Promise<void>;
@@ -347,16 +343,16 @@ Uwaga dot. granic MVP (PRD §4): reset hasła wskazany jako poza MVP. Ta specyfi
 
 ## 8. Checklist wdrożeniowy (bez implementacji)
 
-1) Doinstalować brakujące komponenty Shadcn (Input/Label/Form) i spiąć style.
-2) Utworzyć layout `AuthLayout.astro` i strony `/auth/*` jak w strukturze.
-3) Dodać formularze React i walidacje Zod.
-4) Zaimplementować `src/db/supabase.client.ts` (SSR i browser) oraz rozszerzyć `src/middleware/index.ts` o ochronę tras.
-5) Utworzyć API `GET /api/auth/session`, `POST /api/auth/signout`.
-6) Zaimplementować `AuthService` (browser) i mapowanie błędów.
-7) Przejścia i przekierowania (obsługa `redirect`), edge‑cases linków (expired/used).
-8) Testy ręczne happy‑path i edge‑cases; lint i format.
-9) Rozdzielić trasy `learn`/`challenge` na publiczne i prywatne (`[source]`).
-10) Opcjonalnie włączyć reset hasła flagą środowiskową `AUTH_RESET_ENABLED` (poza MVP).
+1. Doinstalować brakujące komponenty Shadcn (Input/Label/Form) i spiąć style.
+2. Utworzyć layout `AuthLayout.astro` i strony `/auth/*` jak w strukturze.
+3. Dodać formularze React i walidacje Zod.
+4. Zaimplementować `src/db/supabase.client.ts` (SSR i browser) oraz rozszerzyć `src/middleware/index.ts` o ochronę tras.
+5. Utworzyć API `GET /api/auth/session`, `POST /api/auth/signout`.
+6. Zaimplementować `AuthService` (browser) i mapowanie błędów.
+7. Przejścia i przekierowania (obsługa `redirect`), edge‑cases linków (expired/used).
+8. Testy ręczne happy‑path i edge‑cases; lint i format.
+9. Rozdzielić trasy `learn`/`challenge` na publiczne i prywatne (`[source]`).
+10. Opcjonalnie włączyć reset hasła flagą środowiskową `AUTH_RESET_ENABLED` (poza MVP).
 
 ---
 
@@ -365,5 +361,3 @@ Uwaga dot. granic MVP (PRD §4): reset hasła wskazany jako poza MVP. Ta specyfi
 - W produkcji wymusić `Secure` dla ciasteczek i HTTPS.
 - Weryfikować parametr `redirect` (dozwolone tylko ścieżki względne w obrębie domeny).
 - Nie logować danych wrażliwych (hasła, tokeny); komunikaty błędów bez ujawniania szczegółów technicznych.
-
-

@@ -1,8 +1,5 @@
 import type { APIRoute } from "astro";
 import { z } from "zod";
-import { createClient } from "@supabase/supabase-js";
-import type { Database } from "@/db/database.types";
-import { DEFAULT_USER_ID } from "@/db/supabase.client";
 import { generationService } from "@/lib/services/generation.service";
 import { generateFromTextSchema } from "@/lib/validation/generation.validation";
 
@@ -14,12 +11,7 @@ import { generateFromTextSchema } from "@/lib/validation/generation.validation";
 export const prerender = false;
 
 export const POST: APIRoute = async (context) => {
-  const supabaseServiceRoleKey = import.meta.env.SUPABASE_SERVICE_ROLE_KEY;
-  const supabase = supabaseServiceRoleKey
-    ? createClient<Database>(import.meta.env.SUPABASE_URL, supabaseServiceRoleKey, {
-        auth: { autoRefreshToken: false, persistSession: false },
-      })
-    : context.locals.supabase;
+  const supabase = context.locals.supabase;
 
   if (!supabase) {
     return new Response(
@@ -27,6 +19,17 @@ export const POST: APIRoute = async (context) => {
       { status: 500, headers: { "Content-Type": "application/json" } }
     );
   }
+
+  // Check authentication
+  const user = context.locals.user;
+  if (!user || !user.id) {
+    return new Response(JSON.stringify({ error: { code: "UNAUTHORIZED", message: "User not authenticated" } }), {
+      status: 401,
+      headers: { "Content-Type": "application/json" },
+    });
+  }
+
+  const userId = user.id;
 
   try {
     const raw = await context.request.json();
@@ -38,14 +41,6 @@ export const POST: APIRoute = async (context) => {
       );
     }
     const body = generateFromTextSchema.parse(raw);
-
-    const userId = DEFAULT_USER_ID;
-    if (!userId) {
-      return new Response(JSON.stringify({ error: { code: "UNAUTHORIZED", message: "User not authenticated" } }), {
-        status: 401,
-        headers: { "Content-Type": "application/json" },
-      });
-    }
 
     const result = await generationService.runFromText(supabase, userId, body);
     const quota = await generationService.quota(supabase, userId);

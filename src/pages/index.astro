@@ -1,8 +1,13 @@
 ---
 import Welcome from "../components/Welcome.astro";
 import Layout from "../layouts/Layout.astro";
+
+// SSR-only - uses Astro.locals.user for conditional rendering
+export const prerender = false;
+
+const user = (Astro.locals.user as { id: string; email: string | null } | undefined) ?? null;
 ---
 
-<Layout>
-  <Welcome />
+<Layout title="LinguaPairs — Generuj i ucz się słownictwa 10x szybciej">
+  <Welcome user={user} />
 </Layout>
