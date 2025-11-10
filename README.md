@@ -18,14 +18,15 @@ Welcome to **10x-LinguaPairs**, a modern, accessible, web applications focused o
 
 ## Tech Stack
 
-| Layer     | Technology                                                                                               |
-| --------- | -------------------------------------------------------------------------------------------------------- |
-| Framework | [Astro](https://astro.build/) 5                                                                          |
-| UI        | [React](https://react.dev/) 19 & [shadcn/ui](https://ui.shadcn.com/)                                     |
-| Language  | [TypeScript](https://www.typescriptlang.org/) 5                                                          |
-| Styling   | [Tailwind CSS](https://tailwindcss.com/) 4 & [tw-animate-css](https://github.com/benface/tw-animate-css) |
-| Icons     | [lucide-react](https://lucide.dev/)                                                                      |
-| Tooling   | ESLint, Prettier, Husky & lint-staged                                                                    |
+| Layer     | Technology                                                                                                |
+| --------- | --------------------------------------------------------------------------------------------------------- |
+| Framework | [Astro](https://astro.build/) 5                                                                           |
+| UI        | [React](https://react.dev/) 19 & [shadcn/ui](https://ui.shadcn.com/)                                      |
+| Language  | [TypeScript](https://www.typescriptlang.org/) 5                                                           |
+| Styling   | [Tailwind CSS](https://tailwindcss.com/) 4 & [tw-animate-css](https://github.com/benface/tw-animate-css)  |
+| Icons     | [lucide-react](https://lucide.dev/)                                                                       |
+| Testing   | [Vitest](https://vitest.dev/), [Playwright](https://playwright.dev/), [RTL](https://testing-library.com/) |
+| Tooling   | ESLint, Prettier, Husky & lint-staged                                                                     |
 
 ## Getting Started Locally
 
@@ -105,7 +106,7 @@ Planned future enhancements (see project board):
 - Supabase integration for backend data storage
 - Authentication scaffold
 - Example language-learning features (flashcards, spaced repetition)
-- Unit & end-to-end testing setup
+- Unit & end-to-end testing setup (Vitest, Playwright, RTL)
 
 ## Project Status
 
