@@ -23,20 +23,54 @@ Object.defineProperty(window, "matchMedia", {
 });
 
 // Mock IntersectionObserver
-global.IntersectionObserver = class IntersectionObserver {
-  constructor() {}
-  disconnect() {}
-  observe() {}
-  takeRecords() {
+class MockIntersectionObserver implements IntersectionObserver {
+  readonly root: Element | Document | null = null;
+  readonly rootMargin = "0px";
+  readonly thresholds: readonly number[] = [0];
+  private readonly callback: IntersectionObserverCallback;
+
+  constructor(callback: IntersectionObserverCallback = () => undefined) {
+    this.callback = callback;
+  }
+
+  disconnect(): void {
+    this.callback([], this);
+  }
+
+  observe(): void {
+    this.callback([], this);
+  }
+
+  takeRecords(): IntersectionObserverEntry[] {
     return [];
   }
-  unobserve() {}
-} as any;
+
+  unobserve(): void {
+    this.callback([], this);
+  }
+}
+
+global.IntersectionObserver = MockIntersectionObserver as unknown as typeof IntersectionObserver;
 
 // Mock ResizeObserver
-global.ResizeObserver = class ResizeObserver {
-  constructor() {}
-  disconnect() {}
-  observe() {}
-  unobserve() {}
-} as any;
+class MockResizeObserver implements ResizeObserver {
+  private readonly callback: ResizeObserverCallback;
+
+  constructor(callback: ResizeObserverCallback) {
+    this.callback = callback;
+  }
+
+  disconnect(): void {
+    this.callback([], this);
+  }
+
+  observe(): void {
+    this.callback([], this);
+  }
+
+  unobserve(): void {
+    this.callback([], this);
+  }
+}
+
+global.ResizeObserver = MockResizeObserver as unknown as typeof ResizeObserver;
