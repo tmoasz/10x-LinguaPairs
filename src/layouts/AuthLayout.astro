@@ -8,6 +8,7 @@
 
 import "@/styles/global.css";
 import ThemeToggle from "../components/ThemeToggle";
+import { Toaster } from "@/components/ui/sonner";
 
 interface Props {
   title: string;
@@ -118,6 +119,8 @@ const { title, description } = Astro.props;
         <p class="text-xs text-muted-foreground">© 2025 LinguaPairs. Wszystkie prawa zastrzeżone.</p>
       </div>
     </main>
+
+    <Toaster client:load position="bottom-center" />
 
     <style>
       @keyframes blob {

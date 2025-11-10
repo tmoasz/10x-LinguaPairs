@@ -8,7 +8,6 @@
 
 import AuthLayout from "@/layouts/AuthLayout.astro";
 import LoginForm from "@/components/auth/LoginForm";
-import { Toaster } from "@/components/ui/sonner";
 
 // Get redirect parameter from URL (only allow relative paths)
 const url = new URL(Astro.request.url);
@@ -27,5 +26,4 @@ if (user) {
 
 <AuthLayout title="Zaloguj się" description="Witaj z powrotem! Zaloguj się do swojego konta.">
   <LoginForm client:load redirect={redirect} />
-  <Toaster client:load />
 </AuthLayout>

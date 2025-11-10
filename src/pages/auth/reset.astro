@@ -8,7 +8,6 @@
 
 import AuthLayout from "@/layouts/AuthLayout.astro";
 import ResetPasswordForm from "@/components/auth/ResetPasswordForm";
-import { Toaster } from "@/components/ui/sonner";
 
 // SSR-only - requires runtime access to cookies/headers for auth middleware
 export const prerender = false;
@@ -69,5 +68,4 @@ const hasValidParams = code && type === "recovery";
       </div>
     )
   }
-  <Toaster client:load />
 </AuthLayout>

@@ -1,11 +1,17 @@
 import { defineConfig, devices } from "@playwright/test";
+import { config } from "dotenv";
+import { fileURLToPath } from "url";
+import { dirname, resolve } from "path";
+
+// Get __dirname equivalent in ES modules
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = dirname(__filename);
 
 /**
- * Read environment variables from file.
- * https://github.com/motdotla/dotenv
+ * Load environment variables from .env.test file for E2E tests.
+ * This ensures tests use the test database instead of production.
  */
-// import dotenv from 'dotenv';
-// dotenv.config({ path: path.resolve(__dirname, '.env') });
+config({ path: resolve(__dirname, ".env.test") });
 
 /**
  * See https://playwright.dev/docs/test-configuration.
@@ -53,9 +59,12 @@ export default defineConfig({
 
   /* Run your local dev server before starting the tests */
   webServer: {
-    command: "bun run preview",
-    url: "http://localhost:4321",
+    // Use .env.test for E2E tests - this script loads env vars from .env.test
+    command: "bun run preview:test-env",
+    url: "http://localhost:4321/", // Trailing slash may help
     reuseExistingServer: !process.env.CI,
-    timeout: 120 * 1000,
+    timeout: 180 * 1000, // Increased timeout for build + server startup
+    stdout: "pipe", // Show server output
+    stderr: "pipe", // Show server errors
   },
 });
