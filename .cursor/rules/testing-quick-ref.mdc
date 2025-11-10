@@ -1,0 +1,86 @@
+## TESTING QUICK REFERENCE
+
+### Commands
+
+#### Unit Tests (Vitest)
+- `bun run test` - Run all unit tests once
+- `bun run test:watch` - Run tests in watch mode (recommended for development)
+- `bun run test:ui` - Open Vitest UI for interactive testing
+- `bun run test:coverage` - Generate coverage report
+
+#### E2E Tests (Playwright)
+- `bun run test:e2e` - Run all E2E tests
+- `bun run test:e2e:ui` - Run tests in Playwright UI mode
+- `bun run test:e2e:debug` - Run tests in debug mode
+- `bun run test:e2e:codegen` - Generate test code using Playwright codegen
+
+### File Naming Conventions
+
+- Unit tests: `*.test.ts` or `*.test.tsx` (colocated with source files)
+- E2E tests: `*.spec.ts` (in `e2e/` directory)
+- Page Objects: `*.page.ts` (in `e2e/pages/` directory)
+
+### Test Structure Patterns
+
+#### Unit Test (Vitest)
+```typescript
+import { describe, it, expect } from 'vitest';
+
+describe('Feature Name', () => {
+  it('should do something specific', () => {
+    // Arrange
+    const input = 'test';
+    
+    // Act
+    const result = functionUnderTest(input);
+    
+    // Assert
+    expect(result).toBe('expected');
+  });
+});
+```
+
+#### Component Test (React Testing Library)
+```typescript
+import { render, screen } from '@testing-library/react';
+import userEvent from '@testing-library/user-event';
+
+it('should handle user interaction', async () => {
+  const user = userEvent.setup();
+  render(<Component />);
+  
+  await user.click(screen.getByRole('button'));
+  
+  expect(screen.getByText('Result')).toBeInTheDocument();
+});
+```
+
+#### E2E Test (Playwright + POM)
+```typescript
+import { test, expect } from '@playwright/test';
+import { PageName } from './pages/page-name.page';
+
+test.describe('Feature Name', () => {
+  test('should complete user flow', async ({ page }) => {
+    const pageName = new PageName(page);
+    await pageName.goto();
+    
+    await pageName.performAction();
+    
+    await expect(page).toHaveURL('/expected-url');
+  });
+});
+```
+
+### Key Guidelines
+
+1. **Colocate unit tests** with source files
+2. **Use descriptive test names** that explain what is being tested
+3. **Follow AAA pattern**: Arrange, Act, Assert
+4. **Test behavior, not implementation** details
+5. **Keep tests independent** - each test should run in isolation
+6. **Use Page Object Model** for E2E tests
+7. **Prefer semantic queries** (`getByRole`, `getByLabel`) over CSS selectors
+8. **Mock external dependencies** in unit tests
+9. **Use globals** from Vitest (no need to import describe, it, expect)
+10. **Run tests before committing** to catch issues early
