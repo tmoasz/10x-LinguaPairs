@@ -110,12 +110,14 @@ export function mapCreateDeckResponseToListItem(
     id: langA.id,
     code: langA.code,
     name: langA.name,
+    flag_emoji: langA.flag_emoji,
   };
 
   const langBRef: LanguageRefDTO = {
     id: langB.id,
     code: langB.code,
     name: langB.name,
+    flag_emoji: langB.flag_emoji,
   };
 
   return {
