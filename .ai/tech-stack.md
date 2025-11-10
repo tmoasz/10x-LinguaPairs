@@ -161,6 +161,15 @@ Dokument opisuje szczegółowy stos technologiczny projektu **10x-LinguaPairs**,
 - **lint-staged**: 15.5.0
 - **Pre-commit**: Automatyczne lintowanie i formatowanie
 
+### Testowanie
+
+- **Framework do testów jednostkowych/integracyjnych**: Vitest (4.0.8) ✅
+- **Biblioteka do testowania komponentów**: React Testing Library (16.3.0) ✅
+- **Framework do testów E2E**: Playwright (1.56.1) ✅
+- **DOM Environment**: jsdom (27.1.0) / happy-dom (20.0.10) ✅
+- **Coverage Provider**: V8 (@vitest/coverage-v8) ✅
+- **Mockowanie API**: Mock Service Worker (MSW) - Do zainstalowania w razie potrzeby
+
 ---
 
 ## 9. Build Tools & Configuration
@@ -216,12 +225,27 @@ SUPABASE_KEY=your_supabase_anon_key
 ### Available Scripts
 
 ```bash
+# Development
 bun run dev        # Development server (port 3000)
 bun run build      # Build for production
 bun run preview    # Preview production build
+
+# Linting & Formatting
 bun run lint       # Run ESLint
 bun run lint:fix   # Fix lint issues automatically
 bun run format     # Format files with Prettier
+
+# Testing (Unit/Integration - Vitest)
+bun run test              # Run all unit tests
+bun run test:watch        # Run tests in watch mode
+bun run test:ui           # Open Vitest UI
+bun run test:coverage     # Generate coverage report
+
+# Testing (E2E - Playwright)
+bun run test:e2e          # Run E2E tests
+bun run test:e2e:ui       # Run E2E tests in UI mode
+bun run test:e2e:debug    # Run E2E tests in debug mode
+bun run test:e2e:codegen  # Generate test code
 ```
 
 ### Git Hooks (Husky + lint-staged)
@@ -319,4 +343,4 @@ bun run format     # Format files with Prettier
 
 ---
 
-_Ostatnia aktualizacja: 2025-01-XX_
+_Ostatnia aktualizacja: 2025-11-10_
