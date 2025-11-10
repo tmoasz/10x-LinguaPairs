@@ -8,12 +8,7 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { useWizardStateMachine } from "./useWizardStateMachine";
 import { useWizardResources } from "./useWizardResources";
-import {
-  getDefaultLanguages,
-  isOnboarding,
-  mapCreateDeckResponseToListItem,
-  formatApiError,
-} from "./utils";
+import { getDefaultLanguages, isOnboarding, mapCreateDeckResponseToListItem, formatApiError } from "./utils";
 import type { ErrorStates, LoadingStates } from "./types";
 import type {
   CreateDeckDTO,

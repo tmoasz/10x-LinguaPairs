@@ -127,13 +127,7 @@ export function useWizardStateMachine({
     }
     const { title, description, lang_a, lang_b } = state.newDeck;
     return Boolean(
-      title &&
-        title.length > 0 &&
-        description &&
-        description.length > 0 &&
-        lang_a &&
-        lang_b &&
-        lang_a !== lang_b
+      title && title.length > 0 && description && description.length > 0 && lang_a && lang_b && lang_a !== lang_b
     );
   }, [state.createDeckMode, state.newDeck]);
 
@@ -153,9 +147,7 @@ export function useWizardStateMachine({
   const canGoNext = useMemo(() => currentStepValid && !isGenerating, [currentStepValid, isGenerating]);
 
   const canSubmit = useMemo(() => {
-    return (
-      validateStep1(state, true) && validateStep2(state) && validateStep3(state, quotaRemaining) && !isGenerating
-    );
+    return validateStep1(state, true) && validateStep2(state) && validateStep3(state, quotaRemaining) && !isGenerating;
   }, [state, quotaRemaining, isGenerating]);
 
   const setStep = useCallback((step: WizardStep) => {
