@@ -14,7 +14,7 @@ export const supabaseClient = createClient<Database>(supabaseUrl, supabaseAnonKe
  * All API endpoints now use context.locals.user.id from authenticated sessions.
  * This may still be used in tests or development scripts, but should not be used in production code.
  */
-export const DEFAULT_USER_ID: string = (import.meta as any).env?.DEFAULT_USER_ID ?? "";
+export const DEFAULT_USER_ID: string = import.meta.env.DEFAULT_USER_ID ?? "";
 
 // SSR server client (per-request) with cookie management via getAll/setAll
 const isProduction = import.meta.env.PROD ?? false;

@@ -2,6 +2,7 @@ import type { APIRoute } from "astro";
 import { z } from "zod";
 import { generationService } from "@/lib/services/generation.service";
 import { generateFromTextSchema } from "@/lib/validation/generation.validation";
+import { getErrorMessage } from "@/lib/utils/error.utils";
 
 /**
  * POST /api/generate/from-text
@@ -66,27 +67,27 @@ export const POST: APIRoute = async (context) => {
       );
     }
 
-    if (error && typeof error === "object" && "message" in error) {
-      const msg = String((error as any).message);
-      if (msg === "QUOTA_EXCEEDED") {
+    const message = getErrorMessage(error);
+    if (message) {
+      if (message === "QUOTA_EXCEEDED") {
         return new Response(
           JSON.stringify({ error: { code: "QUOTA_EXCEEDED", message: "Daily generation limit reached" } }),
           { status: 403, headers: { "Content-Type": "application/json" } }
         );
       }
-      if (msg === "GENERATION_IN_PROGRESS") {
+      if (message === "GENERATION_IN_PROGRESS") {
         return new Response(
           JSON.stringify({ error: { code: "CONFLICT", message: "Another generation is in progress" } }),
           { status: 409, headers: { "Content-Type": "application/json" } }
         );
       }
-      if (msg === "DECK_NOT_FOUND") {
+      if (message === "DECK_NOT_FOUND") {
         return new Response(JSON.stringify({ error: { code: "NOT_FOUND", message: "Deck not found" } }), {
           status: 404,
           headers: { "Content-Type": "application/json" },
         });
       }
-      if (msg === "FORBIDDEN") {
+      if (message === "FORBIDDEN") {
         return new Response(JSON.stringify({ error: { code: "FORBIDDEN", message: "You do not own this deck" } }), {
           status: 403,
           headers: { "Content-Type": "application/json" },
