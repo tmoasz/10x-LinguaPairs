@@ -11,7 +11,7 @@ import type {
   GeneratedPairDTO,
 } from "@/types";
 
-const DAILY_LIMIT = 20;
+const DAILY_LIMIT = 3;
 
 interface GenerationRow {
   id: string;
