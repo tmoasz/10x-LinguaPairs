@@ -41,6 +41,7 @@ jobs:
 
   deploy:
     name: Deploy to Cloudflare
+    environment: production
     runs-on: ubuntu-latest
     needs: unit-tests
     steps:
