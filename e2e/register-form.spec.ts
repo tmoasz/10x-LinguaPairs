@@ -6,6 +6,7 @@ import { config as loadEnv } from "dotenv";
 import { expect, test } from "@playwright/test";
 
 import { deleteTestUser } from "./helpers/db.helper";
+import { generateTempEmail } from "./helpers/email.helper";
 import { RegisterPage } from "./pages/register.page";
 
 const __filename = fileURLToPath(import.meta.url);
@@ -18,19 +19,16 @@ if (existsSync(envTestPath)) {
 }
 
 // Use environment variables from either .env.test or GitHub Actions secrets
-const envTestAccountEmail = process.env.E2E_USERNAME;
+// E2E_PASSWORD is used for temporary registration test accounts
 const envTestAccountPassword = process.env.E2E_PASSWORD;
 
-if (!envTestAccountEmail || !envTestAccountPassword) {
+if (!envTestAccountPassword) {
   throw new Error(
-    "Missing E2E_USERNAME or E2E_PASSWORD in environment. " +
-      "Add them to .env.test (local) or configure as GitHub Secrets (CI/CD)."
+    "Missing E2E_PASSWORD in environment. " + "Add it to .env.test (local) or configure as GitHub Secrets (CI/CD)."
   );
 }
 
-const TEST_ACCOUNT_EMAIL = envTestAccountEmail;
 const TEST_ACCOUNT_PASSWORD = envTestAccountPassword;
-const TEST_ACCOUNT_USER_ID = process.env.E2E_USERNAME_ID;
 
 test.describe("Register Form", () => {
   test.describe.configure({ mode: "serial" });
@@ -106,12 +104,12 @@ test.describe("Register Form", () => {
     await registerPage.goto();
     await expect(registerPage.form).toBeVisible();
 
-    // Use a fixed account to keep registration flows deterministic
-    const email = TEST_ACCOUNT_EMAIL;
+    // Use a temporary email for each test run to avoid conflicts
+    const email = generateTempEmail();
     const password = TEST_ACCOUNT_PASSWORD;
-    let cleanupUserId = TEST_ACCOUNT_USER_ID;
+    let cleanupUserId: string | undefined = undefined;
 
-    // Ensure user is cleaned up before test
+    // Ensure user is cleaned up before test (in case of previous test failure)
     await deleteTestUser(email, cleanupUserId);
 
     try {

@@ -131,8 +131,6 @@ jobs:
         uses: actions/github-script@v8
         with:
           script: |
-            const core = require('@actions/core');
-            const { github, context } = require('@actions/github');
             const pr = context.payload.pull_request;
             if (!pr) {
               core.info('No pull request context detected. Skipping comment.');

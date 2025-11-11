@@ -1,67 +1,169 @@
-# E2E Tests Directory
+# E2E Testing Guide
 
-This directory contains end-to-end tests using Playwright.
+## Overview
 
-## ⚠️ Important: Real E2E Tests
+This directory contains end-to-end tests for 10x-LinguaPairs using Playwright.
 
-These tests are **true end-to-end tests** that hit the actual API and database. They are NOT UI-only tests with mocks.
+## Test Strategy
+
+We use a **hybrid approach** for E2E testing:
+
+### 1. Registration Tests
+- **Email**: `temp.{timestamp}.{random}@go2.pl` (generated dynamically)
+- **Password**: `E2E_PASSWORD` (from environment)
+- **Purpose**: Test the full registration flow with a fresh user each time
+- **Cleanup**: User is deleted after test completion
+
+### 2. Login & Action Tests (Future)
+- **Email**: `E2E_USERNAME` (from environment)
+- **Password**: `E2E_PASSWORD` (from environment)
+- **Purpose**: Test login, logout, and authenticated user actions
+- **Cleanup**: User persists between test runs
+
+## Environment Variables
+
+### Required for All Tests
+```bash
+E2E_PASSWORD=YourStrongPassword123!
+SUPABASE_URL=https://your-project.supabase.co
+SUPABASE_SERVICE_ROLE_KEY=your-service-role-key
+```
+
+### Required for Login/Action Tests (Future)
+```bash
+E2E_USERNAME=your-test-user@example.com
+E2E_USERNAME_ID=uuid-of-the-user  # Optional, improves cleanup performance
+```
 
 ## Setup
 
-### 1. Create `.env.test` file
+### Local Development
 
-Create a `.env.test` file in the project root with your test database credentials:
-
-```env
-SUPABASE_URL=your_test_supabase_url
-SUPABASE_KEY=your_test_supabase_anon_key
-SUPABASE_SERVICE_ROLE_KEY=your_test_supabase_service_role_key
-```
-
-**Important:**
-
-- Use a **separate test database** (not production!)
-- The `SUPABASE_SERVICE_ROLE_KEY` is required for test cleanup (deleting test users)
-- You can find the service role key in your Supabase project settings under "API" → "Service Role Key"
-
-### 2. Run tests
+1. Create `.env.test` in the project root:
 
 ```bash
-# Build and run E2E tests
-bun test:e2e
+# Registration tests (required)
+E2E_PASSWORD=YourStrongPassword123!
 
-# Run with UI
-bun test:e2e:ui
+# Login tests (add when implementing login tests)
+# E2E_USERNAME=test@example.com
+# E2E_USERNAME_ID=00000000-0000-0000-0000-000000000000
 
-# Debug mode
-bun test:e2e:debug
-
-# Generate tests using codegen
-bun test:e2e:codegen
+# Supabase (required for cleanup)
+SUPABASE_URL=https://your-project.supabase.co
+SUPABASE_SERVICE_ROLE_KEY=your-service-role-key
 ```
 
-## Structure
+2. Install dependencies:
 
-- `fixtures/` - Test fixtures and setup utilities
-- `pages/` - Page Object Model implementations
-- `helpers/` - Test utilities (e.g., database cleanup helpers)
-- `*.spec.ts` - Test specifications
+```bash
+bun install
+```
 
-## Test Cleanup
+3. Run tests:
 
-Tests automatically clean up test users before and after each test using the `helpers/db.helper.ts` utility. This ensures:
+```bash
+bun run test:e2e
+```
 
-- Tests don't interfere with each other
-- Test database stays clean
-- Tests can be run multiple times safely
+### CI/CD (GitHub Actions)
 
-## Writing Tests
+Configure secrets in your GitHub repository:
+- `E2E_PASSWORD`
+- `E2E_USERNAME` (when login tests are added)
+- `SUPABASE_URL`
+- `SUPABASE_SERVICE_ROLE_KEY`
 
-Follow the Page Object Model pattern for maintainability:
+## Creating the Persistent E2E User
 
-1. Create page objects in `pages/` directory
-2. Write test specifications in `*.spec.ts` files
-3. Use descriptive test names and organize with `describe` blocks
-4. Import cleanup helpers if needed: `import { deleteTestUser } from "./helpers/db.helper"`
+When you implement login tests, you'll need to create a persistent test user manually:
 
-For more information, see the [Playwright documentation](https://playwright.dev/).
+### Option 1: Via Supabase Dashboard
+1. Go to Authentication → Users
+2. Create a new user with email matching `E2E_USERNAME`
+3. Copy the user ID and set it as `E2E_USERNAME_ID`
+
+### Option 2: Via CLI (Recommended)
+```bash
+# Coming soon: setup script to create E2E user
+bun run test:e2e:setup
+```
+
+## Test Structure
+
+```
+e2e/
+├── helpers/
+│   ├── db.helper.ts       # Database cleanup utilities
+│   └── email.helper.ts    # Email generation for registration tests
+├── pages/
+│   └── register.page.ts   # Page Object Models
+├── register-form.spec.ts  # Registration flow tests
+└── README.md             # This file
+```
+
+## Writing New Tests
+
+### Registration Tests
+Use temporary emails for each test:
+
+```typescript
+import { generateTempEmail } from "./helpers/email.helper";
+
+test("test registration flow", async ({ page }) => {
+  const email = generateTempEmail();
+  const password = process.env.E2E_PASSWORD;
+  
+  try {
+    // ... test logic
+  } finally {
+    // Cleanup
+    await deleteTestUser(email);
+  }
+});
+```
+
+### Login/Action Tests (Future)
+Use the persistent E2E user:
+
+```typescript
+test("test login flow", async ({ page }) => {
+  const email = process.env.E2E_USERNAME;
+  const password = process.env.E2E_PASSWORD;
+  
+  // ... test logic
+  // No cleanup needed - user persists
+});
+```
+
+## Troubleshooting
+
+### Registration Tests Fail with "User already exists"
+- Check if cleanup is working (requires `SUPABASE_SERVICE_ROLE_KEY`)
+- Temporary emails should be unique, but check for clock issues
+
+### Login Tests Fail (Future)
+- Ensure `E2E_USERNAME` user exists in the database
+- Verify email is confirmed (check Supabase dashboard)
+- Check password matches `E2E_PASSWORD`
+
+### Cleanup Fails
+- Verify `SUPABASE_SERVICE_ROLE_KEY` is set correctly
+- Check Supabase project has admin API access enabled
+- Service role key should have full admin privileges
+
+## Benefits of This Approach
+
+✅ **Registration tests** always test with fresh users (realistic)
+✅ **Parallel execution** possible for registration tests
+✅ **Fast login tests** (no need to create/delete user each time)
+✅ **Clear separation** between test types
+✅ **Easy debugging** (persistent user for login tests)
+
+## Future Improvements
+
+- [ ] Add setup script to create persistent E2E user
+- [ ] Add login tests using `E2E_USERNAME`
+- [ ] Add logout tests
+- [ ] Add authenticated action tests
+- [ ] Add flow tests (serial) testing full user lifecycle

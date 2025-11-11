@@ -38,12 +38,21 @@ const adminClient = createClient(supabaseUrl, supabaseServiceKey, {
 });
 
 /**
+ * Validates if a string is a valid UUID v4.
+ */
+function isValidUUID(uuid: string): boolean {
+  const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+  return uuidRegex.test(uuid);
+}
+
+/**
  * Delete a user from the test database.
  * Prefers deleting by Supabase user ID when provided, falling back to email lookup.
  */
 export async function deleteTestUser(email: string, userId?: string): Promise<void> {
   try {
-    if (userId) {
+    // Only use userId if it's a valid UUID
+    if (userId && isValidUUID(userId)) {
       const { error: deleteByIdError } = await adminClient.auth.admin.deleteUser(userId);
 
       if (!deleteByIdError) {
