@@ -82,8 +82,10 @@ jobs:
         run: bun run build
 
       - name: Deploy to Cloudflare Pages
+        id: deployment
         uses: cloudflare/wrangler-action@v3
         with:
           apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
           accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
-          command: pages deploy dist --project-name 10x-linguapairs --branch master --commit-hash ${{ github.sha }}
+          command: pages deploy dist --project-name='10x-linguapairs'
+          gitHubToken: ${{ secrets.GITHUB_TOKEN }}
