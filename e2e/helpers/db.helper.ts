@@ -2,20 +2,26 @@ import { createClient } from "@supabase/supabase-js";
 import { config } from "dotenv";
 import { fileURLToPath } from "url";
 import { dirname, resolve } from "path";
+import { existsSync } from "fs";
 
 // Get __dirname equivalent in ES modules
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
 
-// Load .env.test for E2E tests
-config({ path: resolve(__dirname, "../../.env.test") });
+// Load .env.test if it exists (local development)
+const envTestPath = resolve(__dirname, "../../.env.test");
+if (existsSync(envTestPath)) {
+  config({ path: envTestPath });
+}
 
+// Use environment variables from either .env.test or GitHub Actions secrets
 const supabaseUrl = process.env.SUPABASE_URL;
 const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.SUPABASE_KEY;
 
 if (!supabaseUrl || !supabaseServiceKey) {
   throw new Error(
-    "Missing SUPABASE_URL or SUPABASE_SERVICE_ROLE_KEY in .env.test. " +
+    "Missing SUPABASE_URL or SUPABASE_SERVICE_ROLE_KEY in environment. " +
+      "Add them to .env.test (local) or configure as GitHub Secrets (CI/CD). " +
       "For E2E tests, you need a service role key to delete users."
   );
 }

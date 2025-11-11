@@ -80,7 +80,9 @@ jobs:
       NODE_ENV: integration
       SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
       SUPABASE_KEY: ${{ secrets.SUPABASE_KEY }}
-      OPENROUTER_API_KEY: ${{ secrets.OPENROUTER_API_KEY }}
+      E2E_USERNAME: ${{ vars.E2E_USERNAME }}
+      E2E_PASSWORD: ${{ secrets.E2E_PASSWORD }}
+      E2E_USERNAME_ID: ${{ secrets.E2E_USERNAME_ID }}
     steps:
       - name: Checkout
         uses: actions/checkout@v5

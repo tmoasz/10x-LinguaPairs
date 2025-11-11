@@ -1,5 +1,6 @@
 import { dirname, resolve } from "path";
 import { fileURLToPath } from "url";
+import { existsSync } from "fs";
 
 import { config as loadEnv } from "dotenv";
 import { expect, test } from "@playwright/test";
@@ -10,14 +11,20 @@ import { RegisterPage } from "./pages/register.page";
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
 
-loadEnv({ path: resolve(__dirname, "../.env.test") });
+// Load .env.test if it exists (local development)
+const envTestPath = resolve(__dirname, "../.env.test");
+if (existsSync(envTestPath)) {
+  loadEnv({ path: envTestPath });
+}
 
+// Use environment variables from either .env.test or GitHub Actions secrets
 const envTestAccountEmail = process.env.E2E_USERNAME;
 const envTestAccountPassword = process.env.E2E_PASSWORD;
 
 if (!envTestAccountEmail || !envTestAccountPassword) {
   throw new Error(
-    "Missing E2E_USERNAME or E2E_PASSWORD in environment. Add them to .env.test before running E2E tests."
+    "Missing E2E_USERNAME or E2E_PASSWORD in environment. " +
+      "Add them to .env.test (local) or configure as GitHub Secrets (CI/CD)."
   );
 }
 
