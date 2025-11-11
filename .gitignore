@@ -16,6 +16,7 @@ pnpm-debug.log*
 # environment variables
 .env
 .env.production
+.env*
 
 # macOS-specific files
 .DS_Store
@@ -39,6 +40,8 @@ coverage/
 .nyc_output/
 .playwright*
 playwright-report/
+test-results/
+.vitest/
 
 # Hosting outputs
 .vercel/

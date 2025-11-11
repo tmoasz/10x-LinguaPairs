@@ -348,9 +348,21 @@ const isAuthenticated = Boolean(user);
 
 <script is:inline>
   const signoutButtons = document.querySelectorAll("[data-signout]");
+
+  function handleSignoutError(target) {
+    target.disabled = false;
+    target.classList.remove("opacity-70");
+    const message = document.createElement("div");
+    message.textContent = "Nie udało się wylogować. Spróbuj ponownie.";
+    message.className =
+      "mt-3 rounded-full bg-red-500/80 px-4 py-2 text-center text-xs font-semibold text-white shadow-lg";
+    target.insertAdjacentElement("afterend", message);
+    setTimeout(() => message.remove(), 4000);
+  }
+
   if (signoutButtons.length) {
     signoutButtons.forEach((button) => {
-      button.addEventListener("click", async (event) => {
+      button.addEventListener("click", (event) => {
         event.preventDefault();
         const target = event.currentTarget;
         if (!(target instanceof HTMLButtonElement)) return;
@@ -358,22 +370,14 @@ const isAuthenticated = Boolean(user);
         target.disabled = true;
         target.classList.add("opacity-70");
 
-        try {
-          const res = await fetch("/api/auth/signout", { method: "POST" });
-          if (!res.ok) {
-            throw new Error("Signout failed");
-          }
-          window.location.href = "/auth/login";
-        } catch (error) {
-          target.disabled = false;
-          target.classList.remove("opacity-70");
-          const message = document.createElement("div");
-          message.textContent = "Nie udało się wylogować. Spróbuj ponownie.";
-          message.className =
-            "mt-3 rounded-full bg-red-500/80 px-4 py-2 text-center text-xs font-semibold text-white shadow-lg";
-          target.insertAdjacentElement("afterend", message);
-          setTimeout(() => message.remove(), 4000);
-        }
+        fetch("/api/auth/signout", { method: "POST" })
+          .then((res) => {
+            if (!res.ok) {
+              throw new Error("Signout failed");
+            }
+            window.location.href = "/auth/login";
+          })
+          .catch(() => handleSignoutError(target));
       });
     });
   }

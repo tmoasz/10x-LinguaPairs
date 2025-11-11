@@ -135,13 +135,15 @@ export default function RegisterForm() {
   // Success state
   if (success) {
     return (
-      <div className="text-center space-y-6 animate-fade-in">
+      <div data-testid="register-success" className="text-center space-y-6 animate-fade-in">
         <div className="inline-flex items-center justify-center w-16 h-16 bg-green-500/10 rounded-full">
           <CheckCircle2 className="w-8 h-8 text-green-500" />
         </div>
         <div>
-          <h3 className="text-xl font-semibold text-foreground mb-2">Sprawdź swoją skrzynkę!</h3>
-          <p className="text-sm text-muted-foreground">
+          <h3 data-testid="register-success-heading" className="text-xl font-semibold text-foreground mb-2">
+            Sprawdź swoją skrzynkę!
+          </h3>
+          <p data-testid="register-success-description" className="text-sm text-muted-foreground">
             Wysłaliśmy link aktywacyjny na adres <strong>{formData.email}</strong>.
             <br />
             Kliknij w link, aby aktywować konto i rozpocząć naukę.
@@ -150,6 +152,7 @@ export default function RegisterForm() {
         <div className="pt-4 border-t border-border">
           <p className="text-xs text-muted-foreground mb-4">Nie otrzymałeś wiadomości?</p>
           <Button
+            data-testid="register-resend-button"
             variant="ghost"
             onClick={async () => {
               const emailToResend = resendEmail || formData.email;
@@ -202,7 +205,7 @@ export default function RegisterForm() {
   }
 
   return (
-    <form onSubmit={handleSubmit} className="space-y-5" noValidate>
+    <form data-testid="register-form" onSubmit={handleSubmit} className="space-y-5" noValidate>
       {/* Email */}
       <div className="space-y-2">
         <Label htmlFor="email">Adres e-mail</Label>
@@ -215,6 +218,7 @@ export default function RegisterForm() {
             name="email"
             type="email"
             autoComplete="username"
+            data-testid="register-email-input"
             value={formData.email}
             onChange={(e) => handleChange("email", e.target.value)}
             onBlur={() => handleBlur("email")}
@@ -226,7 +230,11 @@ export default function RegisterForm() {
           />
         </div>
         {errors.email && (
-          <p id="email-error" className="text-sm text-destructive flex items-center gap-1 animate-fade-in">
+          <p
+            id="email-error"
+            data-testid="register-email-error"
+            className="text-sm text-destructive flex items-center gap-1 animate-fade-in"
+          >
             <AlertCircle className="w-4 h-4" />
             {errors.email}
           </p>
@@ -245,6 +253,7 @@ export default function RegisterForm() {
             name="password"
             type="password"
             autoComplete="new-password"
+            data-testid="register-password-input"
             value={formData.password}
             onChange={(e) => handleChange("password", e.target.value)}
             onBlur={() => handleBlur("password")}
@@ -258,7 +267,7 @@ export default function RegisterForm() {
 
         {/* Password strength indicator */}
         {formData.password && !errors.password && (
-          <div className="space-y-1 animate-fade-in">
+          <div data-testid="register-password-strength" className="space-y-1 animate-fade-in">
             <div className="flex gap-1">
               <div
                 className={`h-1 flex-1 rounded-full transition-all duration-300 ${
@@ -302,7 +311,11 @@ export default function RegisterForm() {
         )}
 
         {errors.password && (
-          <p id="password-error" className="text-sm text-destructive flex items-center gap-1 animate-fade-in">
+          <p
+            id="password-error"
+            data-testid="register-password-error"
+            className="text-sm text-destructive flex items-center gap-1 animate-fade-in"
+          >
             <AlertCircle className="w-4 h-4" />
             {errors.password}
           </p>
@@ -321,6 +334,7 @@ export default function RegisterForm() {
             name="passwordConfirm"
             type="password"
             autoComplete="new-password"
+            data-testid="register-password-confirm-input"
             value={formData.passwordConfirm}
             onChange={(e) => handleChange("passwordConfirm", e.target.value)}
             onBlur={() => handleBlur("passwordConfirm")}
@@ -332,7 +346,11 @@ export default function RegisterForm() {
           />
         </div>
         {errors.passwordConfirm && (
-          <p id="passwordConfirm-error" className="text-sm text-destructive flex items-center gap-1 animate-fade-in">
+          <p
+            id="passwordConfirm-error"
+            data-testid="register-password-confirm-error"
+            className="text-sm text-destructive flex items-center gap-1 animate-fade-in"
+          >
             <AlertCircle className="w-4 h-4" />
             {errors.passwordConfirm}
           </p>
@@ -340,7 +358,7 @@ export default function RegisterForm() {
       </div>
 
       {/* Submit button */}
-      <Button type="submit" disabled={isLoading} className="w-full" size="lg">
+      <Button data-testid="register-submit-button" type="submit" disabled={isLoading} className="w-full" size="lg">
         {isLoading ? (
           <>
             <Loader2 className="w-5 h-5 animate-spin mr-2" />

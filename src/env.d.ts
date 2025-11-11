@@ -21,6 +21,7 @@ interface ImportMetaEnv {
   readonly OPENROUTER_TIMEOUT_MS?: string;
   readonly OPENROUTER_APP_TITLE?: string;
   readonly OPENROUTER_SITE_URL?: string;
+  readonly DEFAULT_USER_ID?: string;
   // more env variables...
 }
 

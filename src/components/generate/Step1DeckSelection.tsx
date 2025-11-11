@@ -47,10 +47,12 @@ export default function Step1DeckSelection({
 
   return (
     <div className="w-full space-y-6">
-      <div>
-        <h2 className="text-xl font-semibold mb-1">Wybierz talię</h2>
-        <p className="text-sm text-muted-foreground">Wygenerowane pary słówek zostaną dodane do wybranej talii</p>
-      </div>
+      {!isOnboardingFlow && (
+        <div>
+          <h2 className="text-xl font-semibold mb-1">Wybierz talię</h2>
+          <p className="text-sm text-muted-foreground">Wygenerowane pary słówek zostaną dodane do wybranej talii</p>
+        </div>
+      )}
 
       {/* Show DeckPicker only if not onboarding and not in create mode */}
       {!isOnboardingFlow && !showCreateForm && (

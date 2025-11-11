@@ -61,7 +61,6 @@ export const GET: APIRoute = async (context) => {
   const userId = user.id;
 
   try {
-
     // Parse query parameters
     const url = new URL(context.request.url);
     const page = Math.max(1, parseInt(url.searchParams.get("page") || "1", 10));

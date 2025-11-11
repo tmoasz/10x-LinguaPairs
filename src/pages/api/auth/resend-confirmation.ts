@@ -44,7 +44,7 @@ export const POST: APIRoute = async ({ request, cookies }) => {
           headers: { "Content-Type": "application/json" },
         });
       }
-    } catch (err) {
+    } catch {
       // Jeśli resend nie jest dostępne w tej wersji Supabase, informujemy użytkownika
       // że może spróbować ponownie zarejestrować się lub skontaktować z supportem
       return new Response(

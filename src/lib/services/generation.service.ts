@@ -1,5 +1,6 @@
 import type { SupabaseClient } from "@/db/supabase.client";
 import { aiProvider } from "@/lib/services/ai.provider";
+import { getErrorMessage } from "@/lib/utils/error.utils";
 import type {
   GenerationContentType,
   GenerationRegister,
@@ -307,7 +308,6 @@ export const generationService = {
     const startedAt = new Date().toISOString();
     await supabase.from("generations").update({ status: "running", started_at: startedAt }).eq("id", genId);
 
-    const t0 = Date.now();
     try {
       const providerRes = await aiProvider.generateFromTopic({
         topic_id: payload.topic_id,
@@ -317,7 +317,6 @@ export const generationService = {
         exclude_pairs: payload.exclude_pairs,
       });
 
-      const duration = Date.now() - t0;
       await supabase
         .from("generations")
         .update({ status: "succeeded", finished_at: new Date().toISOString() })
@@ -329,9 +328,9 @@ export const generationService = {
         pairs_generated: providerRes.pairs.length,
         metadata: { ...providerRes.metadata },
       };
-    } catch (err: any) {
-      await markFailedAndLog(supabase, created.deck_id, genId, err);
-      throw err;
+    } catch (error: unknown) {
+      await markFailedAndLog(supabase, created.deck_id, genId, error);
+      throw error;
     }
   },
 
@@ -406,9 +405,9 @@ export const generationService = {
         pairs_generated: providerRes.pairs.length,
         metadata: { ...providerRes.metadata },
       };
-    } catch (err: any) {
-      await markFailedAndLog(supabase, created.deck_id, genId, err);
-      throw err;
+    } catch (error: unknown) {
+      await markFailedAndLog(supabase, created.deck_id, genId, error);
+      throw error;
     }
   },
 
@@ -499,9 +498,9 @@ export const generationService = {
         pairs_generated: providerRes.pairs.length,
         metadata: { ...providerRes.metadata },
       };
-    } catch (err: any) {
-      await markFailedAndLog(supabase, created.deck_id, genId, err);
-      throw err;
+    } catch (error: unknown) {
+      await markFailedAndLog(supabase, created.deck_id, genId, error);
+      throw error;
     }
   },
 };
@@ -520,7 +519,7 @@ async function ensureDeckOwnedByUser(supabase: SupabaseClient, userId: string, d
   if (data.owner_user_id !== userId) throw new Error("FORBIDDEN");
 }
 
-async function markFailedAndLog(supabase: SupabaseClient, deckId: string, generationId: string, err: any) {
+async function markFailedAndLog(supabase: SupabaseClient, deckId: string, generationId: string, error: unknown) {
   /** Marks the generation as failed and appends a row to pair_generation_errors. */
   try {
     await supabase
@@ -532,7 +531,7 @@ async function markFailedAndLog(supabase: SupabaseClient, deckId: string, genera
   }
 
   try {
-    const message = typeof err?.message === "string" ? err.message : "Unknown error";
+    const message = getErrorMessage(error) ?? "Unknown error";
     await supabase.from("pair_generation_errors").insert({
       deck_id: deckId,
       provider: "stub",
