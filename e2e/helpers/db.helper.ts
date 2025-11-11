@@ -32,11 +32,27 @@ const adminClient = createClient(supabaseUrl, supabaseServiceKey, {
 });
 
 /**
- * Delete a user by email from the test database.
- * This is used to clean up test data after E2E tests.
+ * Delete a user from the test database.
+ * Prefers deleting by Supabase user ID when provided, falling back to email lookup.
  */
-export async function deleteTestUser(email: string): Promise<void> {
+export async function deleteTestUser(email: string, userId?: string): Promise<void> {
   try {
+    if (userId) {
+      const { error: deleteByIdError } = await adminClient.auth.admin.deleteUser(userId);
+
+      if (!deleteByIdError) {
+        return;
+      }
+
+      // User no longer exists - allow fallback to email in case a new ID was issued
+      if (deleteByIdError.status !== 404) {
+        if (deleteByIdError.status === 403 || deleteByIdError.code === "not_admin") {
+          return;
+        }
+        console.error(`Error deleting user by id ${userId}:`, deleteByIdError);
+      }
+    }
+
     // First, get the user by email
     const { data: users, error: listError } = await adminClient.auth.admin.listUsers();
 
@@ -72,6 +88,7 @@ export async function deleteTestUser(email: string): Promise<void> {
     if (error && typeof error === "object" && "status" in error && error.status === 403) {
       return;
     }
-    console.error(`Error in deleteTestUser for ${email}:`, error);
+    const userHint = userId ? `${email} (id: ${userId})` : email;
+    console.error(`Error in deleteTestUser for ${userHint}:`, error);
   }
 }
