@@ -60,8 +60,8 @@ export default defineConfig({
   /* Run your local dev server before starting the tests */
   webServer: {
     // Use .env.test for E2E tests - this script loads env vars from .env.test
-    command: "bun run preview:test-env",
-    url: "http://localhost:4321/", // Trailing slash may help
+    command: "cross-env PORT=4321 bun --env-file=.env.test dist/server/entry.mjs",
+    url: "http://localhost:4321",
     reuseExistingServer: !process.env.CI,
     timeout: 180 * 1000, // Increased timeout for build + server startup
     stdout: "pipe", // Show server output
