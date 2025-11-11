@@ -2,20 +2,26 @@ import { createClient } from "@supabase/supabase-js";
 import { config } from "dotenv";
 import { fileURLToPath } from "url";
 import { dirname, resolve } from "path";
+import { existsSync } from "fs";
 
 // Get __dirname equivalent in ES modules
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
 
-// Load .env.test for E2E tests
-config({ path: resolve(__dirname, "../../.env.test") });
+// Load .env.test if it exists (local development)
+const envTestPath = resolve(__dirname, "../../.env.test");
+if (existsSync(envTestPath)) {
+  config({ path: envTestPath });
+}
 
+// Use environment variables from either .env.test or GitHub Actions secrets
 const supabaseUrl = process.env.SUPABASE_URL;
 const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.SUPABASE_KEY;
 
 if (!supabaseUrl || !supabaseServiceKey) {
   throw new Error(
-    "Missing SUPABASE_URL or SUPABASE_SERVICE_ROLE_KEY in .env.test. " +
+    "Missing SUPABASE_URL or SUPABASE_SERVICE_ROLE_KEY in environment. " +
+      "Add them to .env.test (local) or configure as GitHub Secrets (CI/CD). " +
       "For E2E tests, you need a service role key to delete users."
   );
 }
@@ -32,11 +38,36 @@ const adminClient = createClient(supabaseUrl, supabaseServiceKey, {
 });
 
 /**
- * Delete a user by email from the test database.
- * This is used to clean up test data after E2E tests.
+ * Validates if a string is a valid UUID v4.
  */
-export async function deleteTestUser(email: string): Promise<void> {
+function isValidUUID(uuid: string): boolean {
+  const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+  return uuidRegex.test(uuid);
+}
+
+/**
+ * Delete a user from the test database.
+ * Prefers deleting by Supabase user ID when provided, falling back to email lookup.
+ */
+export async function deleteTestUser(email: string, userId?: string): Promise<void> {
   try {
+    // Only use userId if it's a valid UUID
+    if (userId && isValidUUID(userId)) {
+      const { error: deleteByIdError } = await adminClient.auth.admin.deleteUser(userId);
+
+      if (!deleteByIdError) {
+        return;
+      }
+
+      // User no longer exists - allow fallback to email in case a new ID was issued
+      if (deleteByIdError.status !== 404) {
+        if (deleteByIdError.status === 403 || deleteByIdError.code === "not_admin") {
+          return;
+        }
+        console.error(`Error deleting user by id ${userId}:`, deleteByIdError);
+      }
+    }
+
     // First, get the user by email
     const { data: users, error: listError } = await adminClient.auth.admin.listUsers();
 
@@ -72,6 +103,7 @@ export async function deleteTestUser(email: string): Promise<void> {
     if (error && typeof error === "object" && "status" in error && error.status === 403) {
       return;
     }
-    console.error(`Error in deleteTestUser for ${email}:`, error);
+    const userHint = userId ? `${email} (id: ${userId})` : email;
+    console.error(`Error in deleteTestUser for ${userHint}:`, error);
   }
 }

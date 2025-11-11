@@ -1,0 +1,155 @@
+name: Pull Request Checks
+
+on:
+  pull_request:
+    branches:
+      - master
+      - dev
+    types:
+      - opened
+      - synchronize
+      - reopened
+      - ready_for_review
+
+permissions:
+  contents: read
+
+concurrency:
+  group: pull-request-${{ github.event.pull_request.number || github.run_id }}
+  cancel-in-progress: false
+
+jobs:
+  lint:
+    name: Lint
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v5
+
+      - name: Setup Bun
+        uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: 1.3.2
+
+      - name: Install dependencies
+        run: bun install --frozen-lockfile
+
+      - name: Run lint
+        run: bun run lint
+
+  unit-tests:
+    name: Unit Tests
+    runs-on: ubuntu-latest
+    needs: lint
+    permissions:
+      contents: read
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v5
+
+      - name: Setup Bun
+        uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: 1.3.2
+
+      - name: Install dependencies
+        run: bun install --frozen-lockfile
+
+      - name: Run unit tests with coverage
+        run: bun run test:coverage
+
+      - name: Upload unit coverage
+        if: always()
+        uses: actions/upload-artifact@v5
+        with:
+          name: unit-coverage
+          path: coverage
+          if-no-files-found: error
+
+  e2e-tests:
+    name: E2E Tests
+    environment: integration
+    runs-on: ubuntu-latest
+    needs: lint
+    permissions:
+      contents: read
+    env:
+      APP_ENV: integration
+      NODE_ENV: integration
+      SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+      SUPABASE_KEY: ${{ secrets.SUPABASE_KEY }}
+      E2E_USERNAME: ${{ vars.E2E_USERNAME }}
+      E2E_PASSWORD: ${{ secrets.E2E_PASSWORD }}
+      E2E_USERNAME_ID: ${{ secrets.E2E_USERNAME_ID }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v5
+
+      - name: Setup Bun
+        uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: 1.3.2
+
+      - name: Install dependencies
+        run: bun install --frozen-lockfile
+
+      - name: Install Playwright browsers
+        run: bunx playwright install --with-deps
+
+      - name: Run e2e tests with coverage
+        run: |
+          bun run build
+          bunx playwright test
+
+      - name: Upload Playwright report
+        if: failure()
+        uses: actions/upload-artifact@v5
+        with:
+          name: playwright-report
+          path: playwright-report
+          if-no-files-found: ignore
+
+  status-comment:
+    name: Status Comment
+    runs-on: ubuntu-latest
+    needs:
+      - lint
+      - unit-tests
+      - e2e-tests
+    if: ${{ success() }}
+    permissions:
+      contents: read
+      pull-requests: write
+    env:
+      LINT_RESULT: ${{ needs.lint.result }}
+      UNIT_RESULT: ${{ needs['unit-tests'].result }}
+      E2E_RESULT: ${{ needs['e2e-tests'].result }}
+    steps:
+      - name: Post pull request status comment
+        uses: actions/github-script@v8
+        with:
+          script: |
+            const pr = context.payload.pull_request;
+            if (!pr) {
+              core.info('No pull request context detected. Skipping comment.');
+              return;
+            }
+            const owner = context.repo.owner;
+            const repo = context.repo.repo;
+            const body = [
+              '### ✅ Pull Request checks passed',
+              '',
+              `- Lint: ${process.env.LINT_RESULT}`,
+              `- Unit tests: ${process.env.UNIT_RESULT}`,
+              `- E2E tests: ${process.env.E2E_RESULT}`,
+              '',
+              'All required checks succeeded. ✅'
+            ].join('\n');
+            await github.rest.issues.createComment({
+              owner,
+              repo,
+              issue_number: pr.number,
+              body
+            });

@@ -4,15 +4,10 @@
 
 #### PLAYWRIGHT
 
-- Initialize configuration only with Chromium/Desktop Chrome browser
-- Use browser contexts for isolating test environments
-- Implement the Page Object Model for maintainable tests
-- Use locators for resilient element selection
-- Leverage API testing for backend validation
-- Implement visual comparison with expect(page).toHaveScreenshot()
-- Use the codegen tool for test recording
-- Leverage trace viewer for debugging test failures
-- Implement test hooks for setup and teardown
-- Use expect assertions with specific matchers
-- Leverage parallel execution for faster test runs
+- Default to the Chromium/Desktop Chrome project, but focus on semantic assertions (headings, copy, aria state) instead of `expect(page).toHaveScreenshot()`.
+- Always wait for hydration/readiness (e.g. `await expect(form).toBeVisible()` or `waitForLoadState("networkidle")`) before mutating inputs so SSR/React transitions do not wipe values.
+- Keep suites that share state (e.g. a single Supabase test user) in `test.describe.configure({ mode: "serial" })` and scope cleanup hooks only to the tests that actually mutate external data.
+- Implement the Page Object Model with resilient locators (`getByTestId`) and explicit helper methods per flow.
+- Use backend helpers (Supabase admin client, API polling) for setup/teardown instead of UI gymnastics; prefer deleting by stable IDs when available.
+- Capture traces/videos on failure for diagnostics, but rely on Playwright's list/html reporters for day-to-day runs.
 
