@@ -99,15 +99,7 @@ jobs:
       - name: Run e2e tests with coverage
         run: |
           bun run build
-          bunx playwright test --coverage
-
-      - name: Upload e2e coverage
-        if: always()
-        uses: actions/upload-artifact@v5
-        with:
-          name: e2e-coverage
-          path: playwright-report/coverage
-          if-no-files-found: ignore
+          bunx playwright test
 
       - name: Upload Playwright report
         if: failure()
