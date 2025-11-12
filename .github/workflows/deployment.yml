@@ -90,5 +90,6 @@ jobs:
         with:
           apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
           accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
-          command: pages deploy dist --project-name='10x-linguapairs'
           gitHubToken: ${{ secrets.GITHUB_TOKEN }}
+          wranglerVersion: "4.47.0"
+          command: pages deploy dist --project-name='10x-linguapairs'
