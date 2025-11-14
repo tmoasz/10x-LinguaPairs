@@ -8,6 +8,7 @@
 
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Plus } from "lucide-react";
+import FlagIcon from "@/components/FlagIcon";
 import type { DeckListItemDTO } from "@/types";
 
 interface DeckPickerProps {
@@ -51,14 +52,16 @@ export default function DeckPicker({ decks, selectedDeckId, onSelect, onCreateNe
           {/* Existing decks */}
           {decks.map((deck) => (
             <SelectItem key={deck.id} value={deck.id}>
-              <div className="flex flex-col gap-1 py-1">
-                <div className="font-medium">{deck.title}</div>
-                <div className="flex items-center gap-2 text-xs text-muted-foreground">
-                  <span>
-                    {deck.lang_a.flag_emoji ?? deck.lang_a.code} ↔ {deck.lang_b.flag_emoji ?? deck.lang_b.code}
-                  </span>
-                  <span>•</span>
-                  <span>{deck.pairs_count} par</span>
+              <div className="flex items-center gap-2 w-full">
+                <span className="font-medium flex-1 truncate">{deck.title}</span>
+                <div className="flex items-center gap-1.5">
+                  <div className="flex items-center gap-1">
+                    <FlagIcon code={deck.lang_a.code} />
+                    <span className="text-muted-foreground">↔</span>
+                    <FlagIcon code={deck.lang_b.code} />
+                  </div>
+                  <span className="text-xs text-muted-foreground">•</span>
+                  <span className="text-xs text-muted-foreground">{deck.pairs_count} par</span>
                 </div>
               </div>
             </SelectItem>
