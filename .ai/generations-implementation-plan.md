@@ -6,8 +6,8 @@ Punkty końcowe umożliwiają generowanie par słownictwa przy użyciu AI oraz z
 
 Zakres obejmuje trzy endpointy tworzące generację oraz jeden statusowy:
 
-- POST `/api/generate/from-topic` – generacja 30 par na podstawie tematu.
-- POST `/api/generate/from-text` – generacja 30 par na podstawie opisu tekstowego.
+- POST `/api/generate/from-topic` – generacja 50 par na podstawie tematu.
+- POST `/api/generate/from-text` – generacja 50 par na podstawie opisu tekstowego.
 - POST `/api/generate/extend` – generacja dodatkowych 10 par dla istniejącej talii (+10).
 - GET `/api/decks/:deckId/generation` – odczyt aktywnej generacji (status; już istnieje w repo, zachowujemy).
 
@@ -41,7 +41,7 @@ Zakres obejmuje trzy endpointy tworzące generację oraz jeden statusowy:
 ## 3. Szczegóły odpowiedzi
 
 - Sukces 201 Created (synchroniczne generowanie): `GenerationResponseDTO`
-  - Pola kluczowe: `generation_id`, `deck_id`, `pairs_generated` (30 lub 10), `pairs[]`, `metadata{ generation_time_ms, cache_hit, cost_usd?, prompt_hash? }`, `quota{ used_today, remaining }`
+  - Pola kluczowe: `generation_id`, `deck_id`, `pairs_generated` (50 lub 10), `pairs[]`, `metadata{ generation_time_ms, cache_hit, cost_usd?, prompt_hash? }`, `quota{ used_today, remaining }`
 - Odczyt statusu 200 OK: aktywna generacja (`id`, `status`, `deck_id`, `pairs_requested`, `created_at`, `started_at`)
 - Błędy:
   - 400 Bad Request (błędy biznesowe danych wejściowych)
@@ -160,7 +160,7 @@ Zakres obejmuje trzy endpointy tworzące generację oraz jeden statusowy:
 
 - Limit dzienny: 3/dzień/liczą się tylko `status='succeeded'`
 - Unikalne indeksy (migracja) wymuszają 1 aktywną generację per user i per deck – obsłuż konflikt (SQL 23505) jako `409 Conflict`
-- Pairs count: dokładnie 30 (topic/text) lub 10 (extend)
+- Pairs count: dokładnie 50 (topic/text) lub 10 (extend)
 - Każda para: typ zgodny z `content_type`; dla `auto` dystrybucja (60/30/10) – best‑effort, w MVP dopuszczalne odchylenie, ale liczba = N
 - Długość stron par: ≤ 8 tokenów (MVP: licz tokeny jako słowa rozdzielone whitespace)
 - `exclude_pairs` (topic/text): nie zwracaj par o ID w tej liście; w extend dodatkowo wyklucz wszystkie istniejące pary decku (flagged/known)

@@ -2,7 +2,7 @@
 
 ## 1. Przegląd
 
-Widok **Generowanie** to kreator jednokranowy, który umożliwia zalogowanym użytkownikom utworzenie zestawu 30 par słówek w istniejącej lub nowej talii. Użytkownik przechodzi przez trzy kroki: wybór/utworzenie talii, wybór źródła generacji (temat z predefiniowanej listy lub własny tekst), oraz konfigurację parametrów generacji (typ treści i rejestr). Widok wyświetla informacje o limicie dziennym (quota) i blokuje generację, gdy limit został przekroczony. Po pomyślnym wygenerowaniu następuje przekierowanie do szczegółów talii.
+Widok **Generowanie** to kreator jednokranowy, który umożliwia zalogowanym użytkownikom utworzenie zestawu 50 par słówek w istniejącej lub nowej talii. Użytkownik przechodzi przez trzy kroki: wybór/utworzenie talii, wybór źródła generacji (temat z predefiniowanej listy lub własny tekst), oraz konfigurację parametrów generacji (typ treści i rejestr). Widok wyświetla informacje o limicie dziennym (quota) i blokuje generację, gdy limit został przekroczony. Po pomyślnym wygenerowaniu następuje przekierowanie do szczegółów talii.
 
 **Główne funkcje:**
 

@@ -38,7 +38,7 @@ export type Database = {
           input_text: string | null;
           content_type: string; // 'auto' | 'words' | 'phrases' | 'mini-phrases'
           register: string; // 'neutral' | 'informal' | 'formal'
-          pairs_requested: number; // 10 or 30
+          pairs_requested: number; // 10 or 50
           status: string; // 'pending' | 'running' | 'succeeded' | 'failed'
           created_at: string;
           started_at: string | null;
@@ -213,36 +213,6 @@ export type Database = {
           },
         ];
       };
-      pair_tags: {
-        Row: {
-          pair_id: string;
-          tag_id: string;
-        };
-        Insert: {
-          pair_id: string;
-          tag_id: string;
-        };
-        Update: {
-          pair_id?: string;
-          tag_id?: string;
-        };
-        Relationships: [
-          {
-            foreignKeyName: "pair_tags_pair_id_fkey";
-            columns: ["pair_id"];
-            isOneToOne: false;
-            referencedRelation: "pairs";
-            referencedColumns: ["id"];
-          },
-          {
-            foreignKeyName: "pair_tags_tag_id_fkey";
-            columns: ["tag_id"];
-            isOneToOne: false;
-            referencedRelation: "tags";
-            referencedColumns: ["id"];
-          },
-        ];
-      };
       pairs: {
         Row: {
           added_at: string;
@@ -317,27 +287,6 @@ export type Database = {
           timezone?: string | null;
           updated_at?: string;
           username?: string;
-        };
-        Relationships: [];
-      };
-      tags: {
-        Row: {
-          description: string | null;
-          id: string;
-          name: string;
-          slug: string;
-        };
-        Insert: {
-          description?: string | null;
-          id?: string;
-          name: string;
-          slug: string;
-        };
-        Update: {
-          description?: string | null;
-          id?: string;
-          name?: string;
-          slug?: string;
         };
         Relationships: [];
       };

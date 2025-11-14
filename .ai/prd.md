@@ -2,7 +2,7 @@
 
 ## 1. Przegląd produktu
 
-10x-LinguaPairs to aplikacja webowa (PWA) wspierająca szybką naukę słownictwa poprzez automatyczne generowanie i interaktywną naukę praktycznych par tłumaczeń PL↔EN. Użytkownik podaje temat z predefiniowanej listy lub własny opis, a system tworzy zestaw 30 par (słowa, zwroty, mini-frazy), które można utrwalać w mini-grze łączenia. Postęp śledzony jest w prostym modelu Leitner, a dane-operacje są logowane dla poprawy jakości i kosztów.
+10x-LinguaPairs to aplikacja webowa (PWA) wspierająca szybką naukę słownictwa poprzez automatyczne generowanie i interaktywną naukę praktycznych par tłumaczeń PL↔EN. Użytkownik podaje temat z predefiniowanej listy lub własny opis, a system tworzy zestaw 50 par (słowa, zwroty, mini-frazy), które można utrwalać w mini-grze łączenia. Postęp śledzony jest w prostym modelu Leitner, a dane-operacje są logowane dla poprawy jakości i kosztów.
 
 ## 2. Problem użytkownika
 
@@ -15,7 +15,7 @@ Użytkownicy języków obcych tracą czas na ręczne tworzenie fiszek i mają tr
 ## 3. Wymagania funkcjonalne
 
 1. Generacja zestawów:
-   - 30 par PL↔EN na podstawie tematu (lista 20 kategorii) lub opisu ≤ 5000 znaków.
+   - 50 par PL↔EN na podstawie tematu (lista 20 kategorii) lub opisu ≤ 5000 znaków.
    - Filtr typu treści: auto | słowa | zwroty | mini-frazy.
    - Przełącznik rejestru: neutralny | nieformalny | formalny.
    - Dokładna deduplikacja, limit ≤ 8 tokenów na stronę pary.
@@ -40,7 +40,7 @@ Użytkownicy języków obcych tracą czas na ręczne tworzenie fiszek i mają tr
    - PWA przechowuje 10 ostatnich zestawów.
    - Backend cache na kluczu (topic_id/tekst_hash + parametry).
 9. Telemetria/logi:
-   - Czas generacji, cache-hit, liczba flag, koszt/30 par.
+   - Czas generacji, cache-hit, liczba flag, koszt/50 par (≈$0.02 per 50).
    - Zapis pełnego promptu/kontekstu (SHA tekstu).
 
 ## 4. Granice produktu (MVP)
@@ -57,18 +57,18 @@ Użytkownicy języków obcych tracą czas na ręczne tworzenie fiszek i mają tr
 
 ### US-001: Generacja zestawu z tematu
 
-- **Opis**: Jako zalogowany użytkownik chcę wybrać temat z listy, aby otrzymać 30 par słówek dostosowanych do tematu.
+- **Opis**: Jako zalogowany użytkownik chcę wybrać temat z listy, aby otrzymać 50 par słówek dostosowanych do tematu.
 - **Kryteria akceptacji**:
-  - a) Wybór dowolnego tematu z listy generuje 30 par w <10 s.
+  - a) Wybór dowolnego tematu z listy generuje 50 par w <15 s.
   - b) Paradygmat 60/30/10 słowa/zwroty/mini-frazy.
   - c) Pary spełniają kontrakt danych i ≤8 tokenów na stronę.
 
 ### US-002: Generacja z własnego opisu
 
-- **Opis**: Jako zalogowany użytkownik chcę wkleić opis ≤5000 znaków i wygenerować 30 par adekwatnych do kontekstu.
+- **Opis**: Jako zalogowany użytkownik chcę wkleić opis ≤5000 znaków i wygenerować 50 par adekwatnych do kontekstu.
 - **Kryteria akceptacji**:
   - a) System akceptuje opis do 5000 znaków.
-  - b) Wynik zawiera 30 unikalnych par.
+  - b) Wynik zawiera 50 unikalnych par.
 
 ### US-003: Ustawienie rejestru
 
@@ -164,16 +164,16 @@ Użytkownicy języków obcych tracą czas na ręczne tworzenie fiszek i mają tr
 ## 6. Metryki sukcesu
 
 1. Funkcjonalne
-   - 95 % żądań generuje pełne 30 par w <10 s.
+   - 95 % żądań generuje pełne 50 par w <15 s.
    - ≥90 % poprawnych działań siatki (brak błędów tasowania, anty-cheat).
    - Dokładność obliczeń Leitner ≥99 % (audit log).
    - „+10” bez duplikatów w 99 % przypadków.
    - Ewentualny cache PWA ładuje zestaw offline w <2 s.
 2. Operacyjne
-   - Średni czas generacji <8 s, 95th percentile <12 s.
+   - Średni czas generacji <12 s, 95th percentile <20 s.
    - Cache-hit rate backend ≥40 % po 30 dniach od startu.
    - Średnia liczba flag <0,5 na zestaw.
-   - Koszt modeli ≤0,02 USD za 30 par.
+   - Koszt modeli ≤0,03 USD za 50 par.
 3. Użytkowe (mierzone po MVP)
    - Retencja D7 ≥25 % zalogowanych użytkowników.
    - Średnia liczba sesji/tydzień ≥3.

@@ -109,7 +109,7 @@ export default function QuotaInfo({ quota, isLoading = false }: QuotaInfoProps) 
 
       {/* Info text */}
       <p className="text-xs text-muted-foreground">
-        Każda generacja tworzy 30 nowych par słówek. Limit resetuje się codziennie o północy (00:00) w Twojej strefie
+        Każda generacja tworzy 50 nowych par słówek. Limit resetuje się codziennie o północy (00:00) w Twojej strefie
         czasowej.
       </p>
     </div>

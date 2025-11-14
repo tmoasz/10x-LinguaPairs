@@ -21,7 +21,8 @@
     "test:e2e": "bun run build && playwright test",
     "test:e2e:ui": "bun run build && playwright test --ui",
     "test:e2e:debug": "bun run build && playwright test --debug",
-    "test:e2e:codegen": "playwright codegen"
+    "test:e2e:codegen": "playwright codegen",
+    "smoke:openrouter": "bun smoke/smoke-openrouter.ts"
   },
   "dependencies": {
     "@astrojs/cloudflare": "^12.6.10",
@@ -96,5 +97,13 @@
     "*.md": [
       "markdownlint-cli2 --fix"
     ]
+  },
+  "overrides": {
+    "react": "^19.2.0",
+    "react-dom": "^19.2.0"
+  },
+  "resolutions": {
+    "react": "^19.2.0",
+    "react-dom": "^19.2.0"
   }
 }

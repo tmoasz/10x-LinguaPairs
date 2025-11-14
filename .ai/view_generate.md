@@ -19,7 +19,7 @@
 
 ## Czym jest ten widok?
 
-**Widok Generowanie** (`/generate`) to kreator 3-krokowy, który pozwala użytkownikowi wygenerować 30 par słówek używając AI.
+**Widok Generowanie** (`/generate`) to kreator 3-krokowy, który pozwala użytkownikowi wygenerować 50 par słówek używając AI.
 
 ### 🎯 Co robi ten widok krok po kroku:
 
@@ -415,7 +415,7 @@ Znajdź komponent i po prostu zmień tekst:
 <Button>Generuj pary</Button>
 
 // TERAZ:
-<Button>Wygeneruj 30 par słówek</Button>
+<Button>Wygeneruj 50 par słówek</Button>
 ```
 
 **Przykład: Zmiana komunikatu błędu**

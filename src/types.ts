@@ -15,9 +15,7 @@ import type { Tables, TablesInsert, TablesUpdate, Enums } from "./db/database.ty
 export type Profile = Tables<"profiles">;
 export type Deck = Tables<"decks">;
 export type Pair = Tables<"pairs">;
-export type Tag = Tables<"tags">;
 export type Language = Tables<"languages">;
-export type PairTag = Tables<"pair_tags">;
 export type UserPairState = Tables<"user_pair_state">;
 export type DeckShareLink = Tables<"deck_share_links">;
 
@@ -135,29 +133,7 @@ export type LanguageRefDTO = Pick<LanguageDTO, "id" | "code" | "name" | "flag_em
 export type LanguageRefExtendedDTO = Pick<LanguageDTO, "id" | "code" | "name" | "flag_emoji">;
 
 // ============================================================================
-// 4. Tag DTOs
-// ============================================================================
-
-/**
- * Tag DTO - derived from tags table
- */
-export type TagDTO = Pick<Tag, "id" | "slug" | "name" | "description">;
-
-/**
- * Tag reference in responses (minimal info)
- */
-export type TagRefDTO = Pick<Tag, "id" | "slug" | "name">;
-
-/**
- * GET /api/tags - Response
- */
-export interface TagsListDTO {
-  tags: TagDTO[];
-  count: number;
-}
-
-// ============================================================================
-// 5. Deck DTOs
+// 4. Deck DTOs
 // ============================================================================
 
 /**
@@ -248,19 +224,18 @@ export interface DecksListDTO {
 }
 
 // ============================================================================
-// 6. Pair DTOs
+// 5. Pair DTOs
 // ============================================================================
 
 /**
  * Basic pair DTO - used in list views
- * Derived from pairs table with associated tags
+ * Derived directly from pairs table
  */
 export interface PairDTO {
   id: string;
   deck_id: string;
   term_a: string;
   term_b: string;
-  tags: TagRefDTO[];
   added_at: string;
   updated_at: string;
 }
@@ -279,7 +254,6 @@ export interface PairDetailDTO extends PairDTO {
 export interface CreatePairDTO {
   term_a?: string;
   term_b?: string;
-  tags?: string[]; // Array of tag UUIDs
   auto_translate?: boolean;
 }
 
@@ -289,7 +263,6 @@ export interface CreatePairDTO {
 export interface UpdatePairDTO {
   term_a?: string;
   term_b?: string;
-  tags?: string[]; // Array of tag UUIDs
 }
 
 /**
@@ -321,7 +294,7 @@ export interface PairFlagResponseDTO {
 }
 
 // ============================================================================
-// 7. Generation DTOs (AI-Powered)
+// 6. Generation DTOs (AI-Powered)
 // ============================================================================
 
 /**
@@ -401,7 +374,6 @@ export interface GeneratedPairDTO {
   type: GenerationContentType;
   register: GenerationRegister;
   source: "ai_generated";
-  tags: TagRefDTO[];
 }
 
 /**
@@ -428,7 +400,7 @@ export interface GenerationResponseDTO {
 }
 
 // ============================================================================
-// 8. Progress Tracking DTOs (Leitner SRS)
+// 7. Progress Tracking DTOs (Leitner SRS)
 // ============================================================================
 
 /**
@@ -575,7 +547,7 @@ export interface BatchReviewResponseDTO {
 }
 
 // ============================================================================
-// 9. Share Link DTOs
+// 8. Share Link DTOs
 // ============================================================================
 
 /**
@@ -617,7 +589,7 @@ export interface SharedDeckDTO {
 }
 
 // ============================================================================
-// 10. Curated Decks DTOs
+// 9. Curated Decks DTOs
 // ============================================================================
 
 /**
@@ -650,12 +622,11 @@ export interface CuratedDeckDetailDTO {
     id: string;
     term_a: string;
     term_b: string;
-    tags: TagRefDTO[];
   }[];
 }
 
 // ============================================================================
-// 11. Common Utility DTOs
+// 10. Common Utility DTOs
 // ============================================================================
 
 /**
@@ -703,7 +674,6 @@ export interface DeckListQueryParams extends PaginationQueryParams {
  */
 export interface PairListQueryParams extends PaginationQueryParams {
   search?: string;
-  tags?: string; // Comma-separated UUIDs
 }
 
 /**
@@ -722,7 +692,7 @@ export interface DueReviewQueryParams {
 }
 
 // ============================================================================
-// 12. Telemetry & Logging Types
+// 11. Telemetry & Logging Types
 // ============================================================================
 
 /**
@@ -774,7 +744,7 @@ export interface FlagTelemetryDTO {
 }
 
 // ============================================================================
-// 13. Command Model Helpers
+// 12. Command Model Helpers
 // ============================================================================
 
 /**

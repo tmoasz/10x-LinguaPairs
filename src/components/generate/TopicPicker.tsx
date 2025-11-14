@@ -72,7 +72,7 @@ export default function TopicPicker({ selectedTopicId, onSelect }: TopicPickerPr
 
       {/* Helper text */}
       <p className="mt-4 text-sm text-muted-foreground">
-        Wybierz temat, aby AI wygenerowało dla Ciebie 30 par słówek związanych z wybraną tematyką.
+        Wybierz temat, aby AI wygenerowało dla Ciebie 50 par słówek związanych z wybraną tematyką.
       </p>
     </div>
   );

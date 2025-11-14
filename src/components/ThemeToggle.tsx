@@ -45,11 +45,13 @@ export default function ThemeToggle({ className }: { className?: string }) {
   };
 
   // Zapobiegaj flash of wrong theme - nie renderuj dopóki nie jest zamontowany
+  // Zwracamy pusty placeholder zamiast Switch, bo Switch używa hooków React
+  // które nie działają podczas SSR
   if (!mounted) {
     return (
-      <div className={cn("flex items-center gap-2", className)}>
+      <div className={cn("flex items-center gap-2", className)} aria-label="Loading theme toggle">
         <Sun className="size-4 text-muted-foreground" />
-        <Switch checked={false} disabled aria-label="Toggle theme" />
+        <div className="h-[1.15rem] w-8 rounded-full bg-input" aria-hidden="true" />
         <Moon className="size-4 text-muted-foreground" />
       </div>
     );
