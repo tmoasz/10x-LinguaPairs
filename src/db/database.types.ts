@@ -260,6 +260,58 @@ export type Database = {
           },
         ];
       };
+      pair_flags: {
+        Row: {
+          deck_id: string;
+          flagged_at: string;
+          flagged_by: string | null;
+          id: string;
+          pair_id: string;
+          reason: string;
+          status: string;
+        };
+        Insert: {
+          deck_id: string;
+          flagged_at?: string;
+          flagged_by?: string | null;
+          id?: string;
+          pair_id: string;
+          reason: string;
+          status?: string;
+        };
+        Update: {
+          deck_id?: string;
+          flagged_at?: string;
+          flagged_by?: string | null;
+          id?: string;
+          pair_id?: string;
+          reason?: string;
+          status?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "pair_flags_deck_id_fkey";
+            columns: ["deck_id"];
+            isOneToOne: false;
+            referencedRelation: "decks";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "pair_flags_flagged_by_fkey";
+            columns: ["flagged_by"];
+            isOneToOne: false;
+            referencedRelation: "profiles";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "pair_flags_pair_id_fkey";
+            columns: ["pair_id"];
+            isOneToOne: false;
+            referencedRelation: "pairs";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
       profiles: {
         Row: {
           created_at: string;
