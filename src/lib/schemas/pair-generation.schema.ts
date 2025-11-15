@@ -24,24 +24,38 @@ const pairItemProperties = {
   register: { type: "string", enum: ["neutral", "informal", "formal"] },
 } as const;
 
+const pairItemSchema = {
+  type: "object",
+  properties: pairItemProperties,
+  required: ["term_a", "term_b", "type", "register"],
+  additionalProperties: false,
+} as const;
+
+export interface PairGenerationJsonSchema {
+  type: "object";
+  properties: {
+    pairs: {
+      type: "array";
+      items: typeof pairItemSchema;
+      minItems: number;
+      maxItems: number;
+    };
+  };
+  required: ["pairs"];
+  additionalProperties: false;
+}
+
 /**
  * Builds strict JSON Schema for OpenRouter response_format.
  * Min/max items set to requested count to enforce exact size.
  */
-export function buildPairGenerationJsonSchema(count: number): Record<string, unknown> {
-  const itemSchema = {
-    type: "object",
-    properties: pairItemProperties,
-    required: ["term_a", "term_b", "type", "register"],
-    additionalProperties: false,
-  } as const;
-
+export function buildPairGenerationJsonSchema(count: number): PairGenerationJsonSchema {
   return {
     type: "object",
     properties: {
       pairs: {
         type: "array",
-        items: itemSchema,
+        items: pairItemSchema,
         minItems: count,
         maxItems: count,
       },

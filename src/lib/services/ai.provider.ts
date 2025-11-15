@@ -1,3 +1,4 @@
+/* eslint-disable no-console -- Debug logging in development mode only */
 import crypto from "crypto";
 
 import type {
@@ -19,19 +20,15 @@ import { buildPairGenerationJsonSchema, type PairGenerationOutput } from "@/lib/
 import { createOpenRouterService, OpenRouterService } from "@/lib/services/openrouter.service";
 import type { ChatMessage, ChatRequestOptions } from "@/lib/services/openrouter.types";
 
-const runtimeEnv =
-  typeof import.meta !== "undefined" && (import.meta as Record<string, unknown>).env
-    ? (import.meta as { env: Record<string, string | undefined> }).env
-    : {};
-
-const DEFAULT_PRIMARY_MODEL = runtimeEnv.OPENROUTER_PAIR_MODEL || "openai/gpt-5-mini";
-const DEFAULT_FALLBACK_MODEL = runtimeEnv.OPENROUTER_PAIR_FALLBACK_MODEL || "openai/gpt-5";
+const DEFAULT_PRIMARY_MODEL = import.meta.env.OPENROUTER_PAIR_MODEL || "openai/gpt-5-mini";
+const DEFAULT_FALLBACK_MODEL = import.meta.env.OPENROUTER_PAIR_FALLBACK_MODEL || "openai/gpt-5";
 const INFERENCE_PARAMS = {
   temperature: 0.4,
   top_p: 0.9,
   max_tokens: 12800,
 } as const;
 const SCHEMA_NAME = "pair_generation";
+const isDev = import.meta.env.DEV;
 
 type OpenRouterLike = Pick<OpenRouterService, "chatJson">;
 
@@ -90,6 +87,13 @@ export class OpenRouterAIProvider {
 
   async generateFromTopic(params: TopicGenerationParams): Promise<ProviderResult> {
     const count = params.count || 50;
+
+    if (isDev) {
+      console.log(
+        `[AI_PROVIDER] generateFromTopic: topic=${params.topic_id}, count=${count}, langA=${params.langA.code}, langB=${params.langB.code}, type=${params.content_type}, register=${params.register}`
+      );
+    }
+
     const userMessage = buildTopicUserMessage({
       topicId: params.topic_id,
       topicLabel: params.topic_label ?? params.topic_id,
@@ -126,6 +130,14 @@ export class OpenRouterAIProvider {
 
   async generateFromText(params: TextGenerationParams): Promise<ProviderResult> {
     const count = params.count || 50;
+
+    if (isDev) {
+      const textPreview = params.text.length > 50 ? params.text.substring(0, 50) + "..." : params.text;
+      console.log(
+        `[AI_PROVIDER] generateFromText: text="${textPreview}", count=${count}, langA=${params.langA.code}, langB=${params.langB.code}, type=${params.content_type}, register=${params.register}`
+      );
+    }
+
     const userMessage = buildTextUserMessage({
       text: params.text,
       contentType: params.content_type,
@@ -160,6 +172,13 @@ export class OpenRouterAIProvider {
 
   async extend(params: ExtendGenerationParams): Promise<ProviderResult> {
     const count = params.count || 10;
+
+    if (isDev) {
+      console.log(
+        `[AI_PROVIDER] extend: topic=${params.topic_id || "N/A"}, count=${count}, langA=${params.langA.code}, langB=${params.langB.code}, type=${params.content_type}, register=${params.register}, banlist=${params.banlist?.length || 0} items`
+      );
+    }
+
     const userMessage = buildExtendUserMessage({
       topicId: params.topic_id,
       topicLabel: params.topic_label,
@@ -211,11 +230,28 @@ export class OpenRouterAIProvider {
     const metadata = { kind: params.promptSeed.kind };
     const start = this.now();
 
+    if (isDev) {
+      console.log(
+        `[AI_PROVIDER] runGeneration: requesting ${params.count} pairs, banlist=${params.banlist?.length || 0} items, using model=${this.primaryModel}${this.fallbackModel ? ` (fallback: ${this.fallbackModel})` : ""}`
+      );
+    }
+
     const { pairs, model } = await this.invokeWithFallback(messages, schema, metadata);
     const duration = Math.max(0, this.now() - start);
 
+    if (isDev) {
+      console.log(`[AI_PROVIDER] AI response received: ${pairs.length} raw pairs from model=${model} (${duration}ms)`);
+    }
+
     const sanitized = this.normalizePairs(pairs, params.banlist);
     const prompt_hash = hashRecord(params.promptSeed);
+
+    if (isDev) {
+      console.log(
+        `[AI_PROVIDER] Normalization: ${pairs.length} raw → ${sanitized.length} valid pairs (excluded: ${pairs.length - sanitized.length})`
+      );
+      console.log(`[AI_PROVIDER] Generation complete: ${sanitized.length} pairs in ${duration}ms, model=${model}`);
+    }
 
     return {
       pairs: sanitized,
@@ -236,12 +272,21 @@ export class OpenRouterAIProvider {
     metadata: Record<string, unknown>
   ): Promise<{ pairs: PairGenerationOutput["pairs"]; model: string }> {
     try {
+      if (isDev) {
+        console.log(`[AI_PROVIDER] Invoking primary model: ${this.primaryModel}`);
+      }
       const response = await this.callModel(this.primaryModel, messages, schema, metadata);
       return { pairs: response.parsed.pairs, model: this.primaryModel };
     } catch (error) {
       if (this.fallbackModel && this.fallbackModel !== this.primaryModel) {
+        if (isDev) {
+          console.warn(`[AI_PROVIDER] Primary model failed, using fallback: ${this.fallbackModel}`, error);
+        }
         const response = await this.callModel(this.fallbackModel, messages, schema, { ...metadata, fallback: true });
         return { pairs: response.parsed.pairs, model: this.fallbackModel };
+      }
+      if (isDev) {
+        console.error(`[AI_PROVIDER] Generation failed (no fallback available):`, error);
       }
       throw error;
     }
@@ -260,9 +305,29 @@ export class OpenRouterAIProvider {
       metadata,
     };
 
+    if (isDev) {
+      console.log(
+        `[AI_PROVIDER] Calling OpenRouter: model=${model}, messages=${messages.length}, params=${JSON.stringify(INFERENCE_PARAMS)}`
+      );
+    }
+
+    const callStart = this.now();
     const response = await this.openRouter.chatJson<PairGenerationOutput>(options, SCHEMA_NAME, schema);
+    const callDuration = this.now() - callStart;
+
+    if (isDev) {
+      console.log(
+        `[AI_PROVIDER] OpenRouter response: ${callDuration}ms, parsed=${!!response.parsed}, pairs=${response.parsed?.pairs?.length || 0}`
+      );
+    }
 
     if (!response.parsed || !Array.isArray(response.parsed.pairs)) {
+      if (isDev) {
+        console.error(`[AI_PROVIDER] Invalid response structure:`, {
+          parsed: !!response.parsed,
+          pairsIsArray: Array.isArray(response.parsed?.pairs),
+        });
+      }
       throw new Error("PAIR_GENERATION_INVALID_RESPONSE");
     }
 
@@ -274,20 +339,44 @@ export class OpenRouterAIProvider {
     const seen = new Set<string>();
     const banned = new Set((banlist ?? []).map(normalizeTerm).filter(Boolean));
 
+    if (isDev && banlist && banlist.length > 0) {
+      console.log(`[AI_PROVIDER] Normalizing with banlist: ${banned.size} banned terms`);
+    }
+
+    let skippedEmpty = 0;
+    let skippedTokenLimit = 0;
+    let skippedBanned = 0;
+    let skippedDuplicate = 0;
+
     for (const pair of pairs) {
-      if (!pair.term_a || !pair.term_b) continue;
+      if (!pair.term_a || !pair.term_b) {
+        skippedEmpty++;
+        continue;
+      }
 
       const termA = enforceTokenLimit(pair.term_a);
       const termB = enforceTokenLimit(pair.term_b);
-      if (!termA || !termB) continue;
+      if (!termA || !termB) {
+        skippedTokenLimit++;
+        continue;
+      }
 
       const normA = normalizeTerm(termA);
       const normB = normalizeTerm(termB);
-      if (!normA || !normB) continue;
-      if (banned.has(normA) || banned.has(normB)) continue;
+      if (!normA || !normB) {
+        skippedTokenLimit++;
+        continue;
+      }
+      if (banned.has(normA) || banned.has(normB)) {
+        skippedBanned++;
+        continue;
+      }
 
       const key = `${normA}::${normB}`;
-      if (seen.has(key)) continue;
+      if (seen.has(key)) {
+        skippedDuplicate++;
+        continue;
+      }
       seen.add(key);
 
       normalized.push({
@@ -298,6 +387,12 @@ export class OpenRouterAIProvider {
         register: pair.register,
         source: "ai_generated",
       });
+    }
+
+    if (isDev && (skippedEmpty > 0 || skippedTokenLimit > 0 || skippedBanned > 0 || skippedDuplicate > 0)) {
+      console.log(
+        `[AI_PROVIDER] Normalization stats: empty=${skippedEmpty}, tokenLimit=${skippedTokenLimit}, banned=${skippedBanned}, duplicate=${skippedDuplicate}`
+      );
     }
 
     return normalized;
