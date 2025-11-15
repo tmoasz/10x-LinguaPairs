@@ -336,7 +336,9 @@ export default function DeckDetailView({ deckId }: DeckDetailViewProps) {
                         <TooltipTrigger className="text-xs text-muted-foreground underline underline-offset-2">
                           Dlaczego ważny?
                         </TooltipTrigger>
-                        <TooltipContent>Lepszy opis = lepsze generacje.</TooltipContent>
+                        <TooltipContent>
+                          Lepszy opis = lepsze generacje. Opis będzie wzięty pod uwagę przy generowaniu par.
+                        </TooltipContent>
                       </Tooltip>
                     </div>
                     <textarea
@@ -391,7 +393,9 @@ export default function DeckDetailView({ deckId }: DeckDetailViewProps) {
           <header className="flex flex-wrap items-center justify-between gap-4 border-b border-border/60 px-6 py-4">
             <div>
               <h2 className="text-xl font-semibold">Lista par</h2>
-              <p className="text-sm text-muted-foreground">Zgłaszaj niepoprawne tłumaczenia przed nauką lub challenge.</p>
+              <p className="text-sm text-muted-foreground">
+                Zgłaszaj niepoprawne tłumaczenia przed nauką lub challenge.
+              </p>
             </div>
             <span className="text-sm text-muted-foreground">
               {pairPagination

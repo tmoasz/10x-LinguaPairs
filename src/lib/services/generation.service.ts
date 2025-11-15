@@ -305,6 +305,7 @@ export const generationService = {
 
     const deck = await ensureDeckOwnedByUser(supabase, userId, payload.deck_id);
     const { langA, langB } = await getDeckLanguages(supabase, deck);
+    const deckDescription = deck.description ?? undefined;
     const banlist = await fetchPairTermsByIds(supabase, payload.exclude_pairs ?? []);
 
     const contentType: GenerationContentType = payload.content_type ?? "auto";
@@ -361,6 +362,7 @@ export const generationService = {
         langA,
         langB,
         banlist,
+        deckDescription,
       });
 
       await insertGeneratedPairs(supabase, payload.deck_id, providerRes.pairs);
@@ -418,6 +420,7 @@ export const generationService = {
 
     const deck = await ensureDeckOwnedByUser(supabase, userId, payload.deck_id);
     const { langA, langB } = await getDeckLanguages(supabase, deck);
+    const deckDescription = deck.description ?? undefined;
     const banlist = await fetchPairTermsByIds(supabase, payload.exclude_pairs ?? []);
 
     const contentType: GenerationContentType = payload.content_type ?? "auto";
@@ -472,6 +475,7 @@ export const generationService = {
         langA,
         langB,
         banlist,
+        deckDescription,
       });
 
       await insertGeneratedPairs(supabase, payload.deck_id, providerRes.pairs);
@@ -546,6 +550,7 @@ export const generationService = {
 
     const deck = await ensureDeckOwnedByUser(supabase, userId, payload.deck_id);
     const { langA, langB } = await getDeckLanguages(supabase, deck);
+    const deckDescription = deck.description ?? undefined;
     const banlist = await fetchDeckPairTerms(supabase, payload.deck_id);
 
     const contentType: GenerationContentType = payload.content_type ?? "auto";
@@ -603,6 +608,7 @@ export const generationService = {
         topic_label: baseGen.topic_id ? getTopicLabel(baseGen.topic_id as TopicID) : undefined,
         text: baseGen.input_text ?? undefined,
         banlist,
+        deckDescription,
       });
 
       await insertGeneratedPairs(supabase, payload.deck_id, providerRes.pairs);
@@ -646,13 +652,14 @@ interface DeckRecord {
   owner_user_id: string;
   lang_a: string;
   lang_b: string;
+  description: string | null;
 }
 
 async function ensureDeckOwnedByUser(supabase: SupabaseClient, userId: string, deckId: string): Promise<DeckRecord> {
   /** Ensures the deck exists and is owned by the user; returns deck with languages. */
   const { data, error } = await supabase
     .from("decks")
-    .select("id, owner_user_id, lang_a, lang_b")
+    .select("id, owner_user_id, lang_a, lang_b, description")
     .eq("id", deckId)
     .single();
 

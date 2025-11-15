@@ -47,6 +47,7 @@ interface BasePromptParams {
   langA: LanguageSpec;
   langB: LanguageSpec;
   banlist?: string[];
+  deckDescription?: string;
 }
 
 interface TopicGenerationParams extends BasePromptParams {
@@ -103,6 +104,7 @@ export class OpenRouterAIProvider {
       langA: params.langA,
       langB: params.langB,
       banlist: params.banlist,
+      deckDescription: params.deckDescription,
     });
 
     const promptSeed = {
@@ -115,6 +117,7 @@ export class OpenRouterAIProvider {
       langA: params.langA.code,
       langB: params.langB.code,
       banlist_hash: hashList(params.banlist),
+      deck_description_hash: params.deckDescription ? hashString(params.deckDescription) : undefined,
     };
 
     return this.runGeneration({
@@ -146,6 +149,7 @@ export class OpenRouterAIProvider {
       langA: params.langA,
       langB: params.langB,
       banlist: params.banlist,
+      deckDescription: params.deckDescription,
     });
 
     const promptSeed = {
@@ -157,6 +161,7 @@ export class OpenRouterAIProvider {
       langA: params.langA.code,
       langB: params.langB.code,
       banlist_hash: hashList(params.banlist),
+      deck_description_hash: params.deckDescription ? hashString(params.deckDescription) : undefined,
     };
 
     return this.runGeneration({
@@ -189,6 +194,7 @@ export class OpenRouterAIProvider {
       langA: params.langA,
       langB: params.langB,
       banlist: params.banlist,
+      deckDescription: params.deckDescription,
     });
 
     const promptSeed = {
@@ -202,6 +208,7 @@ export class OpenRouterAIProvider {
       langA: params.langA.code,
       langB: params.langB.code,
       banlist_hash: hashList(params.banlist),
+      deck_description_hash: params.deckDescription ? hashString(params.deckDescription) : undefined,
     };
 
     return this.runGeneration({

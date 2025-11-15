@@ -55,6 +55,20 @@ describe("prompts/generation builders", () => {
     expect(afterAvoid.indexOf("Ala ma kota")).toBe(afterAvoid.lastIndexOf("Ala ma kota"));
   });
 
+  it("buildTopicUserMessage optionally includes deck description", () => {
+    const msg = buildTopicUserMessage({
+      topicId: "business",
+      topicLabel: "Biznes",
+      contentType: "words",
+      register: "formal",
+      count: 10,
+      langA,
+      langB,
+      deckDescription: "Słownictwo przydatne w rozmowach sprzedażowych i negocjacjach.",
+    });
+    expect(msg.content).toContain("Deck description (use this to match tone and topic): Słownictwo przydatne");
+  });
+
   it("buildTextUserMessage clips long context and includes params", () => {
     const long = "x".repeat(1000);
     const msg = buildTextUserMessage({
@@ -70,6 +84,21 @@ describe("prompts/generation builders", () => {
     // clipped context ends with ellipsis
     expect(msg.content).toContain("…\ncontent_type=phrases, register=formal, count=30");
     expect(msg.content).toContain("A=pl, B=en");
+  });
+
+  it("buildTextUserMessage appends deck description when provided", () => {
+    const msg = buildTextUserMessage({
+      text: "Dowolny kontekst do generowania par.",
+      contentType: "words",
+      register: "neutral",
+      count: 15,
+      langA,
+      langB,
+      deckDescription: "Popularne terminy marketingowe dla SaaS.",
+    });
+    expect(msg.content).toContain(
+      "Deck description (use this to match tone and topic): Popularne terminy marketingowe"
+    );
   });
 
   it("buildExtendUserMessage prefers topic context over text when both provided", () => {
@@ -88,5 +117,21 @@ describe("prompts/generation builders", () => {
     expect(msg.content).toContain("Topic: food — Jedzenie i Picie");
     expect(msg.content).toContain("Extension: +10 new unique pairs");
     expect(msg.content).toContain("Avoid: zupa");
+  });
+
+  it("buildExtendUserMessage appends deck description", () => {
+    const msg = buildExtendUserMessage({
+      topicId: "travel",
+      topicLabel: "Podróże",
+      contentType: "phrases",
+      register: "informal",
+      count: 10,
+      langA,
+      langB,
+      deckDescription: "Zwroty konwersacyjne na lotnisku i dworcu.",
+    });
+    expect(msg.content).toContain(
+      "Deck description (use this to match tone and topic): Zwroty konwersacyjne na lotnisku"
+    );
   });
 });

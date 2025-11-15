@@ -26,19 +26,23 @@
 ### 2.2. Komponenty
 
 **Wydzielone/wspólne:**
+
 - `DeckPicker` - przeniesiony do `src/components/decks/DeckPicker.tsx` (wspólny dla generation i decks view)
 - `DeckDetailView` - już istnieje w `src/components/decks/DeckDetailView.tsx`, rozszerzyć o akcje
 
 **Nowe:**
+
 - `DeckHubView` - główny komponent strony `/decks` (zawiera DeckPicker + DeckDetailView + akcje)
 - `DeckActions` - komponent z przyciskami akcji (Learn, Challenge, Progress, Generate more)
 
 ### 2.3. Endpointy API
 
 **Nowy:**
+
 - `GET /api/decks/last-used` - zwraca ostatnio użyty deck (DeckDetailDTO | null)
 
 **Istniejące (używane):**
+
 - `GET /api/decks` - lista decków użytkownika
 - `GET /api/decks/:id` - szczegóły decka
 - `GET /api/decks/:id/pairs` - lista par w decku
@@ -64,6 +68,7 @@
    - Zachować obecną funkcjonalność
 
 **Pliki do modyfikacji:**
+
 - `src/components/generate/DeckPicker.tsx` → przenieść do `src/components/decks/DeckPicker.tsx`
 - `src/components/generate/Step1DeckSelection.tsx` → zaktualizować import
 
@@ -74,6 +79,7 @@
 **Plik**: `src/pages/api/decks/last-used.ts`
 
 **Logika (priorytet):**
+
 1. Znajdź deck z najnowszym `last_reviewed_at` (z `user_pair_state`)
 2. Jeśli brak → znajdź deck z najnowszym `updated_at`
 3. Jeśli brak → znajdź deck z najnowszym `created_at`
@@ -117,7 +123,8 @@ export const GET: APIRoute = async (context) => {
     // Pobierz szczegóły decka
     const { data: deck, error } = await supabase
       .from("decks")
-      .select(`
+      .select(
+        `
         id,
         owner_user_id,
         title,
@@ -128,7 +135,8 @@ export const GET: APIRoute = async (context) => {
         created_at,
         updated_at,
         profiles!decks_owner_user_id_fkey(id, username)
-      `)
+      `
+      )
       .eq("id", lastUsedState.deck_id)
       .is("deleted_at", null)
       .maybeSingle();
@@ -138,7 +146,11 @@ export const GET: APIRoute = async (context) => {
       const [langA, langB, pairsCount] = await Promise.all([
         supabase.from("languages").select("id, code, name, flag_emoji").eq("id", deck.lang_a).single(),
         supabase.from("languages").select("id, code, name, flag_emoji").eq("id", deck.lang_b).single(),
-        supabase.from("pairs").select("id", { count: "exact", head: true }).eq("deck_id", deck.id).is("deleted_at", null),
+        supabase
+          .from("pairs")
+          .select("id", { count: "exact", head: true })
+          .eq("deck_id", deck.id)
+          .is("deleted_at", null),
       ]);
 
       const response: DeckDetailDTO = {
@@ -168,7 +180,8 @@ export const GET: APIRoute = async (context) => {
   // Opcja 2: Ostatnio edytowany
   const { data: lastEdited } = await supabase
     .from("decks")
-    .select(`
+    .select(
+      `
       id,
       owner_user_id,
       title,
@@ -179,7 +192,8 @@ export const GET: APIRoute = async (context) => {
       created_at,
       updated_at,
       profiles!decks_owner_user_id_fkey(id, username)
-    `)
+    `
+    )
     .eq("owner_user_id", user.id)
     .is("deleted_at", null)
     .order("updated_at", { ascending: false })
@@ -201,6 +215,7 @@ export const GET: APIRoute = async (context) => {
 ```
 
 **Uwagi:**
+
 - Użyj `.maybeSingle()` zamiast `.single()` aby uniknąć błędów gdy brak wyników
 - Zwróć `null` zamiast błędu 404 gdy użytkownik nie ma decków
 - Rozważ cache (np. 5 minut) dla tego endpointu
@@ -210,6 +225,7 @@ export const GET: APIRoute = async (context) => {
 **Plik**: `src/pages/decks/index.astro` (lub `src/pages/decks.astro`)
 
 **Funkcjonalność SSR:**
+
 - Sprawdź czy użytkownik jest zalogowany (middleware już to robi)
 - Sprawdź query params: `?auto-select=true` lub `?deck=:id`
 - Jeśli `auto-select=true`: pobierz ostatni deck z API
@@ -269,6 +285,7 @@ if (deckIdParam) {
 **Plik**: `src/components/decks/DeckHubView.tsx`
 
 **Funkcjonalność:**
+
 - Wyświetla `DeckPicker` na górze (combobox do wyboru decka)
 - Wyświetla `DeckDetailView` dla wybranego decka
 - Wyświetla `DeckActions` z przyciskami akcji
@@ -296,7 +313,7 @@ export default function DeckHubView({ initialDeckId }: DeckHubViewProps) {
         const data = await response.json();
         if (response.ok) {
           setDecks(data.decks ?? []);
-          
+
           // Auto-wybór jeśli nie wybrano i jest initialDeckId
           if (!selectedDeckId && initialDeckId) {
             setSelectedDeckId(initialDeckId);
@@ -377,6 +394,7 @@ export default function DeckHubView({ initialDeckId }: DeckHubViewProps) {
 **Plik**: `src/components/decks/DeckActions.tsx`
 
 **Funkcjonalność:**
+
 - Przyciski akcji dla wybranego decka:
   - **Nauka** → `/learn/user/:deckId`
   - **Challenge** → `/challenge/user/:deckId`
@@ -449,6 +467,7 @@ export default function DeckActions({ deckId }: DeckActionsProps) {
 **Miejsce 1: Middleware** (`src/middleware/index.ts`)
 
 **Logika:**
+
 - Jeśli użytkownik jest zalogowany i trafia na `/`:
   - Sprawdź czy ma decki
   - Jeśli ma → redirect do `/decks?auto-select=true`
@@ -478,6 +497,7 @@ if (user && url.pathname === "/") {
 **Miejsce 2: LoginForm** (`src/components/auth/LoginForm.tsx`)
 
 **Logika:**
+
 - Po udanym logowaniu:
   - Jeśli `redirect` param istnieje → użyj go
   - W przeciwnym razie → sprawdź czy użytkownik ma decki
@@ -496,7 +516,7 @@ async function handleSubmit(e: React.FormEvent) {
     // Sprawdź redirect param
     const urlParams = new URLSearchParams(window.location.search);
     const redirectParam = urlParams.get("redirect");
-    
+
     if (redirectParam && redirectParam.startsWith("/")) {
       window.location.href = redirectParam;
       return;
@@ -506,7 +526,7 @@ async function handleSubmit(e: React.FormEvent) {
     try {
       const decksResponse = await fetch("/api/decks?limit=1");
       const decksData = await decksResponse.json();
-      
+
       if (decksData.decks && decksData.decks.length > 0) {
         window.location.href = "/decks?auto-select=true";
       } else {
@@ -525,6 +545,7 @@ async function handleSubmit(e: React.FormEvent) {
 **Plik**: `src/pages/decks/[id].astro`
 
 **Funkcjonalność:**
+
 - Redirect do `/decks?deck=:id` (zachowanie spójności z głównym widokiem)
 
 **Implementacja:**
@@ -603,21 +624,20 @@ return Astro.redirect(`/decks?deck=${id}`);
 
 ## 7. Uwagi techniczne
 
-1. **Performance**: 
+1. **Performance**:
    - Rozważyć cache dla `last-used` endpointu (5-10 minut)
    - Lazy loading dla DeckDetailView jeśli deck ma dużo par
 
-2. **RLS**: 
+2. **RLS**:
    - Wszystkie zapytania muszą respektować RLS (użytkownik widzi tylko swoje decki)
 
-3. **Offline**: 
+3. **Offline**:
    - Rozważyć cache ostatniego decka w localStorage dla PWA
 
-4. **Accessibility**: 
+4. **Accessibility**:
    - DeckPicker powinien być dostępny klawiaturą
    - Akcje powinny mieć odpowiednie aria-labels
 
-5. **Error handling**: 
+5. **Error handling**:
    - Graceful degradation przy błędach API
    - Komunikaty błędów w języku polskim
-

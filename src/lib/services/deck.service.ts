@@ -177,10 +177,7 @@ async function fetchOwnerProfile(supabase: SupabaseClient, userId: string) {
 }
 
 async function fetchLanguageMap(supabase: SupabaseClient, ids: string[]): Promise<Map<string, LanguageRefExtendedDTO>> {
-  const { data, error } = await supabase
-    .from("languages")
-    .select("id, code, name, flag_emoji")
-    .in("id", ids);
+  const { data, error } = await supabase.from("languages").select("id, code, name, flag_emoji").in("id", ids);
 
   if (error) {
     console.error("Error fetching languages:", error);
