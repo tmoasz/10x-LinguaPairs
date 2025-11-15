@@ -1,10 +1,13 @@
 import { describe, it, expect } from "vitest";
-import { buildPairGenerationJsonSchema } from "@/lib/schemas/pair-generation.schema";
+import {
+  buildPairGenerationJsonSchema,
+  type PairGenerationJsonSchema,
+} from "@/lib/schemas/pair-generation.schema";
 
 describe("schemas/pair-generation", () => {
   it("builds strict schema with exact item count", () => {
     const count = 50;
-    const schema = buildPairGenerationJsonSchema(count) as any;
+    const schema: PairGenerationJsonSchema = buildPairGenerationJsonSchema(count);
 
     expect(schema.type).toBe("object");
     expect(schema.additionalProperties).toBe(false);

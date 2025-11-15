@@ -1,0 +1,28 @@
+---
+export const prerender = false;
+
+const supabase = Astro.locals.supabase;
+const user = Astro.locals.user;
+
+if (!supabase || !user || !user.id) {
+  return Astro.redirect(`/auth/login?redirect=${encodeURIComponent("/decks")}`);
+}
+
+const { data: decks, error } = await supabase
+  .from("decks")
+  .select("id")
+  .eq("owner_user_id", user.id)
+  .is("deleted_at", null)
+  .order("updated_at", { ascending: false })
+  .limit(1);
+
+if (error) {
+  throw new Error(`Failed to fetch decks: ${error.message}`);
+}
+
+if (decks && decks.length > 0) {
+  return Astro.redirect(`/decks/${decks[0].id}`);
+}
+
+return Astro.redirect("/generate");
+---

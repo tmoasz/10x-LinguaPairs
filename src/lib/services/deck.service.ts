@@ -8,7 +8,7 @@ import type {
   UpdateDeckDTO,
 } from "@/types";
 
-type DeckRow = {
+interface DeckRow {
   id: string;
   owner_user_id: string;
   title: string;
@@ -18,14 +18,7 @@ type DeckRow = {
   visibility: DeckDetailDTO["visibility"];
   created_at: string;
   updated_at: string;
-};
-
-type LanguageRow = {
-  id: string;
-  code: string;
-  name: string;
-  flag_emoji: string | null;
-};
+}
 
 export const deckService = {
   async createDeck(supabase: SupabaseClient, userId: string, data: CreateDeckDTO): Promise<CreateDeckResponseDTO> {

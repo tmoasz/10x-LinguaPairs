@@ -1,7 +1,7 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import type { ChatJsonResponse, ChatRequestOptions } from "@/lib/services/openrouter.types";
 import { OpenRouterAIProvider } from "@/lib/services/ai.provider";
-import type { PairGenerationOutput } from "@/lib/schemas/pair-generation.schema";
+import type { PairGenerationJsonSchema, PairGenerationOutput } from "@/lib/schemas/pair-generation.schema";
 import type { GenerationContentType, GenerationRegister, TopicID } from "@/types";
 import type { LanguageSpec } from "@/lib/prompts/generation";
 
@@ -24,7 +24,7 @@ function createProvider(overrides?: { response?: ChatJson; nowSequence?: number[
     } satisfies ChatJson);
 
   const chatJson = vi
-    .fn<[ChatRequestOptions, string, Record<string, unknown>], Promise<ChatJson>>()
+    .fn<[ChatRequestOptions, string, PairGenerationJsonSchema], Promise<ChatJson>>()
     .mockResolvedValue(response);
 
   let uuidCalls = 0;
@@ -99,7 +99,7 @@ describe("OpenRouterAIProvider", () => {
     const [options, schemaName, schema] = chatJson.mock.calls[0];
     expect(schemaName).toBe("pair_generation");
     expect(schema).toHaveProperty(["properties", "pairs", "minItems"], 2);
-    expect((schema as any).properties.pairs.maxItems).toBe(2);
+    expect(schema.properties.pairs.maxItems).toBe(2);
 
     expect(options.model).toBeDefined();
     expect(options.messages[0].role).toBe("system");
