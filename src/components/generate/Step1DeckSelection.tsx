@@ -7,7 +7,7 @@
  */
 
 import { useState } from "react";
-import DeckPicker from "./DeckPicker";
+import DeckPicker from "@/components/decks/DeckPicker";
 import CreateDeckInline from "./CreateDeckInline";
 import { isOnboarding } from "./utils";
 import type { DeckListItemDTO, LanguageDTO, CreateDeckDTO } from "@/types";
