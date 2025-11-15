@@ -7,9 +7,61 @@ import { getErrorMessage } from "@/lib/utils/error.utils";
 /**
  * POST /api/generate/from-topic
  * Returns 201 with GenerationResponseDTO (MVP synchronous generation).
+ *
+ * GET /api/generate/from-topic
+ * Returns 200 with active generation status for the user, or 204 if none.
  */
 
 export const prerender = false;
+
+export const GET: APIRoute = async (context) => {
+  const supabase = context.locals.supabase;
+
+  if (!supabase) {
+    return new Response(
+      JSON.stringify({
+        error: { code: "INTERNAL_ERROR", message: "Database connection not available" },
+      }),
+      { status: 500, headers: { "Content-Type": "application/json" } }
+    );
+  }
+
+  // Check authentication
+  const user = context.locals.user;
+  if (!user || !user.id) {
+    return new Response(JSON.stringify({ error: { code: "UNAUTHORIZED", message: "User not authenticated" } }), {
+      status: 401,
+      headers: { "Content-Type": "application/json" },
+    });
+  }
+
+  const userId = user.id;
+
+  try {
+    const active = await generationService.getActiveForUser(supabase, userId);
+    if (!active) {
+      return new Response(null, { status: 204 });
+    }
+
+    return new Response(
+      JSON.stringify({
+        id: active.id,
+        status: active.status,
+        deck_id: active.deck_id,
+        pairs_requested: active.pairs_requested,
+        created_at: active.created_at,
+        started_at: active.started_at,
+      }),
+      { status: 200, headers: { "Content-Type": "application/json" } }
+    );
+  } catch (error) {
+    console.error("Unexpected error in GET /api/generate/from-topic:", error);
+    return new Response(
+      JSON.stringify({ error: { code: "INTERNAL_ERROR", message: "An unexpected error occurred" } }),
+      { status: 500, headers: { "Content-Type": "application/json" } }
+    );
+  }
+};
 
 export const POST: APIRoute = async (context) => {
   const supabase = context.locals.supabase;
