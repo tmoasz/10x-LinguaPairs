@@ -10,14 +10,14 @@
 
 ## 2. Stos testowy i pakiety
 
-| Warstwa          | Narzędzie / pakiet                         | Uwagi                                                                 |
-|-----------------|---------------------------------------------|-----------------------------------------------------------------------|
-| Runtime         | Bun                                         | Obsługuje `bun run <script>` dla wszystkich testów.                   |
-| Testy unit/integration | `vitest`, `@vitest/ui`, `@vitest/coverage-v8` | jsdom, globalne API, raporty pokrycia.                                |
-| React Testing   | `@testing-library/react`, `@testing-library/jest-dom`, `@testing-library/user-event` | Interakcje komponentów.                                               |
-| DOM             | `jsdom`, `happy-dom`                        | Alternatywne implementacje DOM.                                      |
-| Vite plugin     | `@vitejs/plugin-react`                      | Integracja z Vitest.                                                  |
-| Testy E2E       | `@playwright/test`                          | Steruje Chromium desktop (instalowany przez `bunx playwright install`). |
+| Warstwa                | Narzędzie / pakiet                                                                   | Uwagi                                                                   |
+| ---------------------- | ------------------------------------------------------------------------------------ | ----------------------------------------------------------------------- |
+| Runtime                | Bun                                                                                  | Obsługuje `bun run <script>` dla wszystkich testów.                     |
+| Testy unit/integration | `vitest`, `@vitest/ui`, `@vitest/coverage-v8`                                        | jsdom, globalne API, raporty pokrycia.                                  |
+| React Testing          | `@testing-library/react`, `@testing-library/jest-dom`, `@testing-library/user-event` | Interakcje komponentów.                                                 |
+| DOM                    | `jsdom`, `happy-dom`                                                                 | Alternatywne implementacje DOM.                                         |
+| Vite plugin            | `@vitejs/plugin-react`                                                               | Integracja z Vitest.                                                    |
+| Testy E2E              | `@playwright/test`                                                                   | Steruje Chromium desktop (instalowany przez `bunx playwright install`). |
 
 ## 3. Struktura katalogów testowych
 
@@ -64,7 +64,7 @@ Artefakty ignorowane w `.gitignore`: `coverage/`, `.vitest/`, `test-results/`, `
   "test:e2e:ui": "bun run build && playwright test --ui",
   "test:e2e:debug": "bun run build && playwright test --debug",
   "test:e2e:codegen": "playwright codegen",
-  "smoke:openrouter": "bun smoke/smoke-openrouter.ts"
+  "smoke:openrouter": "bun smoke/smoke-openrouter.ts",
 }
 ```
 

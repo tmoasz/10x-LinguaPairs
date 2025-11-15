@@ -10,6 +10,7 @@ export interface LanguageSpec {
 }
 
 const EXCERPT_MAX_CHARS = 300;
+const DECK_DESCRIPTION_MAX_CHARS = 500;
 const BANLIST_MAX_ITEMS = 240; // per updated plan
 
 function clip(text: string, max: number): string {
@@ -82,6 +83,7 @@ export function buildTopicUserMessage(params: {
   langA: LanguageSpec;
   langB: LanguageSpec;
   banlist?: string[];
+  deckDescription?: string;
 }): ChatMessage {
   const avoid = normalizeBanlist(params.banlist);
   const lines = [
@@ -89,6 +91,11 @@ export function buildTopicUserMessage(params: {
     `content_type=${params.contentType}, register=${params.register}, count=${params.count}`,
     `A=${params.langA.code}, B=${params.langB.code}`,
   ];
+  if (params.deckDescription) {
+    lines.push(
+      `Deck description (use this to match tone and topic): ${clip(params.deckDescription, DECK_DESCRIPTION_MAX_CHARS)}`
+    );
+  }
   if (avoid.length > 0) {
     lines.push(`Avoid: ${avoid.join(", ")}`);
   }
@@ -103,6 +110,7 @@ export function buildTextUserMessage(params: {
   langA: LanguageSpec;
   langB: LanguageSpec;
   banlist?: string[];
+  deckDescription?: string;
 }): ChatMessage {
   const avoid = normalizeBanlist(params.banlist);
   const context = clip(params.text, EXCERPT_MAX_CHARS);
@@ -111,6 +119,11 @@ export function buildTextUserMessage(params: {
     `content_type=${params.contentType}, register=${params.register}, count=${params.count}`,
     `A=${params.langA.code}, B=${params.langB.code}`,
   ];
+  if (params.deckDescription) {
+    lines.push(
+      `Deck description (use this to match tone and topic): ${clip(params.deckDescription, DECK_DESCRIPTION_MAX_CHARS)}`
+    );
+  }
   if (avoid.length > 0) {
     lines.push(`Avoid: ${avoid.join(", ")}`);
   }
@@ -128,6 +141,7 @@ export function buildExtendUserMessage(params: {
   langA: LanguageSpec;
   langB: LanguageSpec;
   banlist?: string[];
+  deckDescription?: string;
 }): ChatMessage {
   const avoid = normalizeBanlist(params.banlist);
   const lines: string[] = [];
@@ -135,6 +149,11 @@ export function buildExtendUserMessage(params: {
     lines.push(`Topic: ${params.topicId} — ${params.topicLabel}`);
   } else if (params.text) {
     lines.push(`Context: ${clip(params.text, EXCERPT_MAX_CHARS)}`);
+  }
+  if (params.deckDescription) {
+    lines.push(
+      `Deck description (use this to match tone and topic): ${clip(params.deckDescription, DECK_DESCRIPTION_MAX_CHARS)}`
+    );
   }
   lines.push(
     `content_type=${params.contentType}, register=${params.register}, count=${params.count}`,

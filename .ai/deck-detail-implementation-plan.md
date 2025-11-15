@@ -29,7 +29,7 @@ Widok ma służyć jako „hub” do:
 
 ## 2. Zakres i powiązane endpointy
 
-W ramach tego planu obejmujemy 4 endpointy API:
+W ramach tego planu obejmujemy 5 endpointów API:
 
 1. `GET /api/decks/:deckId`
    - zwraca metadane talii (bez listy par),
@@ -49,6 +49,10 @@ W ramach tego planu obejmujemy 4 endpointy API:
    - DTO request: `FlagPairDTO`,
    - DTO response: `PairFlagResponseDTO`.
 
+5. `DELETE /api/decks/:deckId/pairs/:pairId`
+   - usuwa parę z talii (tylko właściciel talii),
+   - body: brak, odpowiedź: status `204 No Content`.
+
 Wszystkie wymienione DTO są już zdefiniowane w `src/types.ts`:
 
 - `DeckDetailDTO`, `UpdateDeckDTO`, `PairsListDTO`, `PairDTO`,
@@ -58,31 +62,15 @@ Wszystkie wymienione DTO są już zdefiniowane w `src/types.ts`:
 
 Warto wdrożyć to w 2 krokach:
 
-### Faza 1: Stubbed API + UI
+### Faza 1: Stubbed API + UI _(zrealizowane — historyczna notatka)_
 
-- Zaimplementować endpointy z prostymi, statycznymi mockami (bez realnego Supabase):
-  - `GET /api/decks/:deckId` → zwraca stały `DeckDetailDTO`.
-  - `GET /api/decks/:deckId/pairs` → zwraca listę kilku przykładowych `PairDTO` w `PairsListDTO`.
-  - `POST /api/decks/:deckId/pairs/:pairId/flag` → przyjmuje dowolny `reason` i zwraca statyczny `PairFlagResponseDTO`.
-  - `PATCH /api/decks/:deckId` → zwraca zmodyfikowaną kopię mockowego `DeckDetailDTO`.
-- Zbudować widok talii (frontend) korzystający z tych endpointów:
-  - wczytywanie meta-danych talii i listy par,
-  - UI do flagowania pary,
-  - UI do edycji opisu/tytułu talii (dla właściciela).
-- Dzięki temu:
-  - przepływ UI (Deck Detail → Review & Flagging) będzie „prawdziwy” z punktu widzenia przeglądarki,
-  - backend może być w kolejnym kroku podmieniony na realne wywołania Supabase bez zmiany kontraktu.
+- Pierwotnie wdrożone jako etap szybkiego prototypu: mockowe endpointy i widok korzystający z nich.
+- Obecnie w repozytorium mamy w pełni działające API oparte na Supabase (Faza 2). Poniższy opis zostawiamy jako archiwum podejścia „thin slice”.
 
-### Faza 2: Podpięcie pod Supabase
+### Faza 2: Podpięcie pod Supabase _(status: ukończone)_
 
-- Podmienić mocki na rzeczywistą logikę w service layer:
-  - nowy serwis `deckService.getDeckById(...)`,
-  - nowy serwis `deckService.updateDeck(...)`,
-  - analogiczny serwis dla par, np. `pairService.listPairsByDeck(...)`, `pairService.flagPair(...)`.
-- Zaimplementować walidację (Zod) dla:
-  - `UpdateDeckDTO` (PATCH),
-  - `FlagPairDTO` (POST flag).
-- Dodać logikę autoryzacyjną (właściciel, widoczność) zgodnie z sekcją 5.
+- Endpointy działają już na realnych danych Supabase (serwisy `deckService`, `pairService` itd.).
+- Walidacje Zod i logika autoryzacji opisane niżej są wdrożone; kolejne zmiany wchodzą na żywych danych, bez potrzeby wracania do mocków.
 
 ## 4. Szczegóły zachowania per endpoint
 
@@ -212,8 +200,7 @@ Warto wdrożyć to w 2 krokach:
 **Request (Command Model)**:
 
 - `FlagPairDTO`:
-  - `reason: string` – krótki kod/tekst powodu (np. "wrong_translation", "typo", "offensive"),
-  - `details?: string` – opcjonalny opis od użytkownika.
+  - `reason: string` – krótki opis powodu (np. błędne tłumaczenie, literówka, treść ofensywna).
 
 **Zachowanie**:
 
@@ -239,6 +226,30 @@ Warto wdrożyć to w 2 krokach:
 - `401 UNAUTHORIZED` – użytkownik niezalogowany.
 - `403 FORBIDDEN` – użytkownik nie ma prawa dostępu do talii.
 - `404 NOT_FOUND` – talia lub para nie istnieje / nie należy do tej talii.
+
+### 4.5. DELETE /api/decks/:deckId/pairs/:pairId – usunięcie pary z talii
+
+**Cel**: umożliwić właścicielowi talii szybkie usuwanie par, które są niepotrzebne (np. użytkownik zna je już na wylot) lub nie spełniają wymagań.
+
+**Metoda**: `DELETE`  
+**URL**: `/api/decks/:deckId/pairs/:pairId`  
+**Autoryzacja**:
+
+- tylko właściciel talii (analogicznie jak PATCH na talii),
+- endpoint nie jest dostępny dla gości ani innych użytkowników.
+
+**Zachowanie**:
+
+- Walidacja, że talia istnieje oraz `pairId` należy do wskazanego `deckId`.
+- Soft delete: ustawienie `deleted_at` w tabeli `pairs` (rekord pozostaje dla historii/flag).
+- Frontend powinien usuwać parę z lokalnego stanu po udanym 204, zmniejszając `pairs_count` i `pagination.total`.
+
+**Typowe odpowiedzi**:
+
+- `204 NO_CONTENT` – para usunięta.
+- `401 UNAUTHORIZED` – użytkownik niezalogowany.
+- `403 FORBIDDEN` – użytkownik nie jest właścicielem talii.
+- `404 NOT_FOUND` – talia lub para nie istnieje / para nie należy do talii.
 
 ## 5. Zasady widoczności i autoryzacji (Deck Visibility)
 
@@ -278,13 +289,12 @@ Docelowy flow na frontendzie (React/Astro):
 3. Po sukcesie:
    - nagłówek widoku renderuje tytuł, opis, języki, ownera i liczbę par,
    - lista renderuje `term_a` / `term_b` w tabeli lub kartach,
-   - każdy wiersz ma przycisk „Zgłoś błąd”.
+   - każdy wiersz ma przycisk „Zgłoś błąd”, a właściciel dodatkowo widzi przycisk „Usuń”.
 4. Po kliknięciu „Zgłoś błąd”:
-   - frontend otwiera prosty modal/formularz z wyborem powodu (`reason`) i opcjonalnym `details`,
+   - frontend otwiera prosty modal/formularz z jednym polem tekstowym na powód (`reason`),
    - wysyła `POST /api/decks/:deckId/pairs/:pairId/flag`,
    - po 201:
-     - pokazuje toast „Zgłoszono błąd”,
-     - lokalnie oznacza parę jako flagged (np. ikonka), bez konieczności natychmiastowego odświeżania listy.
+     - pokazuje prosty komunikat/toast „Zgłoszono błąd” i lokalnie dezaktywuje przycisk dla tej pary (tekst „Zgłoszono”), bez dodatkowych liczników czy cięższych elementów UI.
 5. Właściciel talii:
    - może kliknąć przycisk „Edytuj opis”/„Edytuj meta” w nagłówku,
    - UI pokazuje edytowalne pole dla `title`/`description`,
@@ -292,6 +302,10 @@ Docelowy flow na frontendzie (React/Astro):
    - po 200:
      - UI podmienia lokalny stan talii z response,
      - wyświetla potwierdzenie.
+6. Usuwanie par (tylko właściciel):
+   - kliknięcie „Usuń” przy parze otwiera prosty modal potwierdzający,
+   - po akceptacji wysyłany jest `DELETE /api/decks/:deckId/pairs/:pairId`,
+   - po 204 UI usuwa parę lokalnie i aktualizuje licznik / paginację.
 
 **MVP vs później**:
 

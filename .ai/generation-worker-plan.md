@@ -56,7 +56,7 @@
   - Background task utrzymuje się po wysłaniu odpowiedzi (ważne: nie `await` na `waitUntil`).
   - Naturalny dostęp do Supabase (service role w Edge function).
 - **W**:
-  - Limit czasu Edge Functions (ok. 60s CPU/runtime) – musimy się w nim zmieścić (jak generacja trwa 30-40s, ok).
+  - Limit czasu Edge Functions (ok.2s CPU/ 150 sec runtime) – musimy się w nim zmieścić (jak generacja trwa 30-40s, ok).
   - Trzeba uważać przy równoległych uruchomieniach, by dwa wywołania nie pobrały tego samego joba (np. status `pending` -> `running`).
 - **O**:
   - Można w przyszłości dodać scheduler (np. "retry failed" wywoływany z innej funkcji).
@@ -89,7 +89,6 @@
 1. **Wybrać docelową platformę**:
    - Jeśli mamy możliwość utrzymania małego procesu (np. mały VPS), Node/Bun worker daje największą elastyczność.
    - Jeśli chcemy pozostać w ekosystemie Supabase bez dodatkowego hostingu, Edge Function + `waitUntil` jest bardzo realnym wariantem (ver. 3.2). **Cloudflare Workers nie rozważamy, by uniknąć dodatkowego vendor lock-in.**
-   - Niezależnie od wariantu warto rozdzielić „planowanie” od „wykonania” poprzez tabelę `generation_jobs` (lub nowe kolumny w `generations`). Backend zapisuje pełny `prompt_payload` (JSON), preferowany model, banlistę, itp., a worker po prostu używa tych danych do wywołania OpenRoutera. Możemy też logować `model_used`, `token_usage`, `cost_usd`, `attempts`.
 
 2. **Plan operacyjny dla Node/Bun job** (opcja A: dedykowany proces):
    - zdefiniować tabelę `generation_jobs` (lub użyć istniejącej `generations` z dodatkową kolumną `payload` + `retry_count`),
@@ -106,16 +105,17 @@
    - Monitoring: logowanie w Supabase + np. Slack webhook przy failu.
 
 3. **Plan operacyjny dla Supabase Edge Function** (opcja B: background tasks):
-   - Endpoint (np. `supabase/functions/generate_pairs`) przyjmuje minimalny request (np. `generation_id`), bo cała logika budowania promptu pozostaje w backendzie i zapisuje się w `generation_jobs.prompt_payload`.
-   - `runGeneration(generation_id)`:
-     1. Pobiera rekord `generations` i `generation_jobs` (zawierający payload, banlist, preferowany model).
-     2. Ustawia `status = running`, `started_at = now`.
-     3. Wywołuje OpenRouter z `prompt_payload` (obsługa fallback). Po sukcesie loguje `model_used`, `token_usage`, `cost_usd` w `generation_jobs`.
-     4. Normalizuje pary (może korzystać z tego samego schematu/validatora, co obecny `aiProvider`).
-     5. Zapisuje pary do `pairs`.
-     6. Aktualizuje `generations` (`status = succeeded`, `finished_at`, `pairs_generated`). Błąd → `failed` + wpis do `pair_generation_errors`.
-   - Endpoint od razu zwraca `202` i `generation_id`; UI pollowa status jak dotychczas.
-   - Limit czasu: jeśli generacja > 60s, job zostaje np. `pending` i worker spróbuje ponownie (retry/backoff).
+   - Endpoint (np. `supabase/functions/generate_pairs`) przyjmuje request, wstawia rekord do `generations` (status `pending` lub `running`) wraz z pełnym JSON-em promptu (parametry generacji).
+   - Wywołuje `EdgeRuntime.waitUntil(runGeneration(generation_id))` – w `runGeneration`:
+     1. Pobieramy rekord `generations`, ustawiamy `status = running`, `started_at = now`.
+     2. Budujemy request do OpenRoutera (bazując na zapisanym JSON-ie / parametrach).
+     3. Po otrzymaniu odpowiedzi normalizujemy pary (możemy reuse istniejącego `aiProvider` logic – trzeba przenieść go do modułu zadziałającego w Deno).
+     4. Wstawiamy pary do `pairs`.
+     5. `status = succeeded`, `finished_at = now`, `pairs_generated = n`.
+     6. W razie błędu – log do `pair_generation_errors`, `status = failed`, `finished_at = now`, `error_message`.
+   - W response zwracamy `202` i `generation_id`. Front pollowa status po API (np. `/api/decks/:deckId/generation`).
+   - Uwaga na limit czasu: jeśli generacja może trwać >60s, trzeba dodać mechanizm przerwania i ponowienia (np. job pozostaje w `pending`, worker restartuje się/nowa funkcja go podejmie).
+   - Należy pamiętać, by background task nie używał typowo Node’owych rzeczy (fs, net). Supabase Edge = Deno, więc fetch/crypto/globalThis są dostępne.
 
 4. **Zdefiniować API statusowe**:
    - `GET /api/generations/:id` lub obecny `GET /api/decks/:deckId/generation`.
@@ -136,7 +136,7 @@
 
 - **Największa wartość**: worker oddziela UI od czasu generacji i daje kontrolę nad kosztami OpenRoutera.
 - **Najbardziej uniwersalna opcja**: odrębny Node/Bun proces (albo mały kontener) kontrolujący kolejkę w bazie; wymaga jednak dodatkowej infrastruktury spoza Cloudflare Pages.
-- **Alternatywa w ekosystemie Supabase**: Edge Function z background tasks i zapisanym wcześniej `prompt_payload` + metadany, aby worker tylko wykonywał zadanie.
-- **MVP fallback**: dopóki nie wdrożymy workera, zostajemy przy obecnym modelu synchronicznym (łatwiejsza prezentacja). Dokument ten traktujemy jako plan na kolejną iterację.
+- **Alternatywa w ekosystemie Cloudflare**: Worker + Durable Object, ale trzeba zweryfikować limity czasowe.
+- **Supabase Functions** – tylko jeśli potwierdzimy, że limit czasu jest wystarczający; w przeciwnym razie generacja 50 par może się nie zmieścić.
 
-Warto przygotować PoC (np. worker w Node lub Supabase Edge), który korzysta z tabeli `generation_jobs`, zapisuje `model_used`, `token_usage`, `pairs_generated`, i sprawdzić czasy dla 50 par. Dzięki temu określimy limity concurrency i/lub retry oraz wprowadzimy bardziej skalowalny pipeline.\*\*\*
+Warto przygotować PoC (np. prosty worker w Node, odpalany lokalnie + manualne wywołanie) i sprawdzić, ile czasu trwa jedna generacja, czy chcemy mieć concurrency=1, oraz jak będziemy monitorować błędy. To pozwoli wybrać docelową opcję i rozpisać szczegółowe zadania implementacyjne.\*\*\*

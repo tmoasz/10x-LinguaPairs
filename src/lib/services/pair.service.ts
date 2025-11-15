@@ -4,7 +4,7 @@ import type { PairDTO, PairFlagResponseDTO, PairsListDTO } from "@/types";
 interface ListParams {
   deckId: string;
   page?: number;
-  limit?: number;
+  pageSize?: number;
   userId?: string;
 }
 
@@ -15,11 +15,16 @@ interface FlagParams {
   reason: string;
 }
 
+interface DeleteParams {
+  deckId: string;
+  pairId: string;
+}
+
 export const pairService = {
   async listByDeck(supabase: SupabaseClient, params: ListParams): Promise<PairsListDTO> {
     const page = Math.max(1, params.page ?? 1);
-    const limit = Math.min(200, Math.max(1, params.limit ?? 50));
-    const offset = (page - 1) * limit;
+    const pageSize = Math.min(200, Math.max(1, params.pageSize ?? 50));
+    const offset = (page - 1) * pageSize;
 
     const { data, count, error } = await supabase
       .from("pairs")
@@ -27,7 +32,7 @@ export const pairService = {
       .eq("deck_id", params.deckId)
       .is("deleted_at", null)
       .order("added_at", { ascending: true })
-      .range(offset, offset + limit - 1);
+      .range(offset, offset + pageSize - 1);
 
     if (error) {
       console.error("Error fetching pairs:", error);
@@ -63,13 +68,14 @@ export const pairService = {
     }));
 
     const total = count ?? 0;
-    const totalPages = total > 0 ? Math.max(1, Math.ceil(total / limit)) : 1;
+    const totalPages = total > 0 ? Math.max(1, Math.ceil(total / pageSize)) : 1;
 
     return {
       pairs,
       pagination: {
         page,
-        limit,
+        page_size: pageSize,
+        limit: pageSize,
         total,
         total_pages: totalPages,
       },
@@ -120,5 +126,25 @@ export const pairService = {
       reason: data.reason,
       flagged_at: data.flagged_at,
     };
+  },
+
+  async deletePair(supabase: SupabaseClient, params: DeleteParams): Promise<void> {
+    const { data, error } = await supabase
+      .from("pairs")
+      .update({ deleted_at: new Date().toISOString() })
+      .eq("id", params.pairId)
+      .eq("deck_id", params.deckId)
+      .is("deleted_at", null)
+      .select("id")
+      .maybeSingle();
+
+    if (error) {
+      console.error("Error deleting pair:", error);
+      throw new Error(`Failed to delete pair: ${error.message}`);
+    }
+
+    if (!data) {
+      throw new Error("PAIR_NOT_FOUND");
+    }
   },
 };

@@ -1,8 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
-import DeckPicker from "@/components/decks/DeckPicker";
 import FlagIcon from "@/components/FlagIcon";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
-import type { DeckDetailDTO, DeckListItemDTO, DecksListDTO, PairDTO } from "@/types";
+import type { DeckDetailDTO, PairDTO } from "@/types";
 
 interface DeckDetailViewProps {
   deckId: string;
@@ -12,7 +11,8 @@ interface PairsListResponse {
   pairs: PairDTO[];
   pagination: {
     page: number;
-    limit: number;
+    page_size: number;
+    limit?: number;
     total: number;
     total_pages: number;
   };
@@ -32,7 +32,6 @@ export default function DeckDetailView({ deckId }: DeckDetailViewProps) {
   const [deck, setDeck] = useState<DeckDetailDTO | null>(null);
   const [pairs, setPairs] = useState<PairDTO[]>([]);
   const [pairPagination, setPairPagination] = useState<PairsListResponse["pagination"] | null>(null);
-  const [userDecks, setUserDecks] = useState<DeckListItemDTO[] | null>(null);
   const [draftMeta, setDraftMeta] = useState({
     description: "",
     visibility: "public" as DeckDetailDTO["visibility"],
@@ -46,33 +45,11 @@ export default function DeckDetailView({ deckId }: DeckDetailViewProps) {
   const [flagReason, setFlagReason] = useState("");
   const [isSubmittingFlag, setIsSubmittingFlag] = useState(false);
   const [isLoadingMorePairs, setIsLoadingMorePairs] = useState(false);
+  const [deleteModal, setDeleteModal] = useState<{ pairId: string; termA: string; termB: string } | null>(null);
+  const [deleteError, setDeleteError] = useState<string | null>(null);
+  const [isDeletingPair, setIsDeletingPair] = useState(false);
 
-  useEffect(() => {
-    let ignore = false;
-    async function loadDecksList() {
-      try {
-        const response = await fetch("/api/decks?limit=100");
-        if (ignore) return;
-        if (response.status === 401 || response.status === 403) {
-          setUserDecks([]);
-          return;
-        }
-        const data = await parseResponse<DecksListDTO>(response);
-        if (!ignore) {
-          setUserDecks(data.decks ?? []);
-        }
-      } catch (error) {
-        console.error("Failed to load user's decks list", error);
-        if (!ignore) {
-          setUserDecks([]);
-        }
-      }
-    }
-    loadDecksList();
-    return () => {
-      ignore = true;
-    };
-  }, []);
+  const canManageDeck = Boolean(deck?.can_manage);
 
   useEffect(() => {
     let ignore = false;
@@ -99,7 +76,6 @@ export default function DeckDetailView({ deckId }: DeckDetailViewProps) {
         setPairPagination(parsedPairs.pagination);
         setPairsError(null);
         setFlaggedPairs(buildFlaggedMap(parsedPairs.pairs ?? []));
-        setPairPagination(parsedPairs.pagination);
         setDraftMeta({
           description: parsedDeck.description ?? "",
           visibility: parsedDeck.visibility,
@@ -128,31 +104,6 @@ export default function DeckDetailView({ deckId }: DeckDetailViewProps) {
 
     return (deck.description ?? "") !== draftMeta.description || deck.visibility !== draftMeta.visibility;
   }, [deck, draftMeta]);
-
-  const deckOptions = useMemo<DeckListItemDTO[]>(() => {
-    if (userDecks && userDecks.length > 0) {
-      return userDecks;
-    }
-
-    if (!deck) {
-      return [];
-    }
-
-    return [
-      {
-        id: deck.id,
-        owner_user_id: deck.owner_user_id,
-        title: deck.title,
-        description: deck.description ?? "",
-        lang_a: deck.lang_a,
-        lang_b: deck.lang_b,
-        visibility: deck.visibility,
-        pairs_count: pairPagination?.total ?? pairs.length,
-        created_at: deck.created_at,
-        updated_at: deck.updated_at,
-      },
-    ];
-  }, [deck, pairs.length, pairPagination, userDecks]);
 
   async function handleSaveMeta() {
     if (!deck || !hasMetaChanges) {
@@ -207,6 +158,23 @@ export default function DeckDetailView({ deckId }: DeckDetailViewProps) {
     setFlagError(null);
   }
 
+  function openDeleteModal(pair: PairDTO) {
+    if (!canManageDeck) {
+      return;
+    }
+    setDeleteModal({
+      pairId: pair.id,
+      termA: pair.term_a,
+      termB: pair.term_b,
+    });
+    setDeleteError(null);
+  }
+
+  function closeDeleteModal() {
+    setDeleteModal(null);
+    setDeleteError(null);
+  }
+
   async function submitFlag() {
     if (!flagModal) {
       return;
@@ -233,13 +201,70 @@ export default function DeckDetailView({ deckId }: DeckDetailViewProps) {
       });
 
       await parseResponse(response);
-      setFlaggedPairs((prev) => ({ ...prev, [flagModal.pairId]: true }));
       closeFlagModal();
     } catch (error) {
       const message = error instanceof Error ? error.message : "Nie udało się zgłosić pary.";
       setFlagError(message);
     } finally {
       setIsSubmittingFlag(false);
+    }
+  }
+
+  async function confirmDeletePair() {
+    if (!deleteModal) {
+      return;
+    }
+
+    setIsDeletingPair(true);
+    setDeleteError(null);
+
+    try {
+      const response = await fetch(`/api/decks/${deckId}/pairs/${deleteModal.pairId}`, {
+        method: "DELETE",
+      });
+
+      if (!response.ok) {
+        throw new Error(await extractErrorMessage(response));
+      }
+
+      setPairs((prev) => prev.filter((pair) => pair.id !== deleteModal.pairId));
+      setFlaggedPairs((prev) => {
+        if (!prev[deleteModal.pairId]) {
+          return prev;
+        }
+        const { [deleteModal.pairId]: _removed, ...rest } = prev;
+        void _removed;
+        return rest;
+      });
+      setPairPagination((prev) => {
+        if (!prev) {
+          return prev;
+        }
+        const nextTotal = Math.max(0, prev.total - 1);
+        const nextTotalPages = nextTotal > 0 ? Math.max(1, Math.ceil(nextTotal / prev.page_size)) : 1;
+        return {
+          ...prev,
+          page_size: prev.page_size,
+          limit: prev.page_size,
+          total: nextTotal,
+          total_pages: nextTotalPages,
+          page: Math.min(prev.page, nextTotalPages),
+        };
+      });
+      setDeck((prev) => {
+        if (!prev) {
+          return prev;
+        }
+        return {
+          ...prev,
+          pairs_count: Math.max(0, prev.pairs_count - 1),
+        };
+      });
+      closeDeleteModal();
+    } catch (error) {
+      setDeleteError(error instanceof Error ? error.message : "Nie udało się usunąć pary.");
+    } finally {
+      setIsDeletingPair(false);
     }
   }
 
@@ -269,17 +294,6 @@ export default function DeckDetailView({ deckId }: DeckDetailViewProps) {
     }
   }
 
-  function handleDeckSelect(nextDeckId: string) {
-    if (!nextDeckId || nextDeckId === deckId) {
-      return;
-    }
-    window.location.href = `/decks/${nextDeckId}`;
-  }
-
-  function handleCreateDeckShortcut() {
-    window.location.href = "/generate";
-  }
-
   if (loadState === "loading") {
     return (
       <div className="rounded-xl border border-border bg-card px-6 py-8 text-center text-muted-foreground shadow-sm">
@@ -300,90 +314,80 @@ export default function DeckDetailView({ deckId }: DeckDetailViewProps) {
     <>
       <div className="space-y-6">
         <section className="rounded-2xl border border-border bg-card text-card-foreground shadow-sm">
-          <div className="space-y-6 p-6">
-            <div className="space-y-2">
-              <p className="text-xs uppercase tracking-wide text-muted-foreground/80">Twoje talie</p>
-              <DeckPicker
-                decks={deckOptions}
-                selectedDeckId={deck.id}
-                onSelect={handleDeckSelect}
-                onCreateNew={handleCreateDeckShortcut}
-              />
+          <div className="space-y-4 p-6">
+            <div className="flex flex-wrap items-center gap-3">
+              <h1 className="text-2xl font-semibold">{deck.title}</h1>
+              <span className="rounded-full bg-muted px-3 py-1 text-xs font-semibold text-muted-foreground">
+                {pairPagination?.total ?? pairs.length} par
+              </span>
             </div>
-
-            <div className="space-y-4 rounded-xl border border-border/50 p-5">
-              <div className="flex flex-wrap items-center gap-3">
-                <h1 className="text-2xl font-semibold">{deck.title}</h1>
-                <span className="rounded-full bg-muted px-3 py-1 text-xs font-semibold text-muted-foreground">
-                  {pairPagination?.total ?? pairs.length} par
-                </span>
-              </div>
-              <div className="flex flex-wrap items-center gap-4 text-sm text-muted-foreground">
-                <LanguagePair langA={deck.lang_a} langB={deck.lang_b} />
-                <span>•</span>
-                <span>Właściciel: {deck.owner.username}</span>
-                <span>•</span>
-                <span>Widoczność: {visibilityLabels[deck.visibility]}</span>
-              </div>
-              <TooltipProvider delayDuration={150}>
-                <div className="space-y-4 rounded-xl border border-border/50 bg-background/60 p-5">
-                  <div className="space-y-2">
-                    <div className="flex items-center justify-between gap-2">
-                      <label className="text-sm font-medium text-foreground" htmlFor="deck-description-input">
-                        Opis
-                      </label>
-                      <Tooltip>
-                        <TooltipTrigger className="text-xs text-muted-foreground underline underline-offset-2">
-                          Dlaczego ważny?
-                        </TooltipTrigger>
-                        <TooltipContent>Lepszy opis = lepsze generacje.</TooltipContent>
-                      </Tooltip>
-                    </div>
-                    <textarea
-                      id="deck-description-input"
-                      value={draftMeta.description}
-                      onChange={(event) => setDraftMeta((prev) => ({ ...prev, description: event.target.value }))}
-                      rows={3}
-                      className="w-full rounded-md border border-border bg-background px-3 py-2 text-sm"
-                      placeholder="Dodaj krótki opis talii..."
-                    />
-                  </div>
-                  <div className="space-y-2">
-                    <label className="text-sm font-medium text-foreground" htmlFor="deck-visibility-input">
-                      Widoczność
+            <div className="flex flex-wrap items-center gap-4 text-sm text-muted-foreground">
+              <LanguagePair langA={deck.lang_a} langB={deck.lang_b} />
+              <span>•</span>
+              <span>Właściciel: {deck.owner.username}</span>
+              <span>•</span>
+              <span>Widoczność: {visibilityLabels[deck.visibility]}</span>
+            </div>
+            <TooltipProvider delayDuration={150}>
+              <div className="space-y-4 rounded-xl border border-border/50 bg-background/60 p-5">
+                <div className="space-y-2">
+                  <div className="flex items-center justify-between gap-2">
+                    <label className="text-sm font-medium text-foreground" htmlFor="deck-description-input">
+                      Opis
                     </label>
-                    <select
-                      id="deck-visibility-input"
-                      value={draftMeta.visibility}
-                      onChange={(event) =>
-                        setDraftMeta((prev) => ({
-                          ...prev,
-                          visibility: event.target.value as DeckDetailDTO["visibility"],
-                        }))
-                      }
-                      className="w-full rounded-md border border-border bg-background px-3 py-2 text-sm"
-                    >
-                      {Object.entries(visibilityLabels).map(([value, label]) => (
-                        <option key={value} value={value}>
-                          {label}
-                        </option>
-                      ))}
-                    </select>
+                    <Tooltip>
+                      <TooltipTrigger className="text-xs text-muted-foreground underline underline-offset-2">
+                        Dlaczego ważny?
+                      </TooltipTrigger>
+                      <TooltipContent>
+                        Lepszy opis = lepsze generacje. Opis będzie wzięty pod uwagę przy generowaniu par.
+                      </TooltipContent>
+                    </Tooltip>
                   </div>
-
-                  {metaError ? <p className="text-sm text-destructive">{metaError}</p> : null}
-
-                  <button
-                    type="button"
-                    className="inline-flex w-full items-center justify-center rounded-md bg-primary px-4 py-2 text-sm font-medium text-primary-foreground transition hover:bg-primary/90 disabled:cursor-not-allowed disabled:opacity-60"
-                    disabled={!hasMetaChanges || isSavingMeta}
-                    onClick={handleSaveMeta}
-                  >
-                    {isSavingMeta ? "Zapisywanie..." : "Zapisz opis i widoczność"}
-                  </button>
+                  <textarea
+                    id="deck-description-input"
+                    value={draftMeta.description}
+                    onChange={(event) => setDraftMeta((prev) => ({ ...prev, description: event.target.value }))}
+                    rows={3}
+                    className="w-full rounded-md border border-border bg-background px-3 py-2 text-sm"
+                    placeholder="Dodaj krótki opis talii..."
+                  />
                 </div>
-              </TooltipProvider>
-            </div>
+                <div className="space-y-2">
+                  <label className="text-sm font-medium text-foreground" htmlFor="deck-visibility-input">
+                    Widoczność
+                  </label>
+                  <select
+                    id="deck-visibility-input"
+                    value={draftMeta.visibility}
+                    onChange={(event) =>
+                      setDraftMeta((prev) => ({
+                        ...prev,
+                        visibility: event.target.value as DeckDetailDTO["visibility"],
+                      }))
+                    }
+                    className="w-full rounded-md border border-border bg-background px-3 py-2 text-sm"
+                  >
+                    {Object.entries(visibilityLabels).map(([value, label]) => (
+                      <option key={value} value={value}>
+                        {label}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+
+                {metaError ? <p className="text-sm text-destructive">{metaError}</p> : null}
+
+                <button
+                  type="button"
+                  className="inline-flex w-full items-center justify-center rounded-md bg-primary px-4 py-2 text-sm font-medium text-primary-foreground transition hover:bg-primary/90 disabled:cursor-not-allowed disabled:opacity-60"
+                  disabled={!hasMetaChanges || isSavingMeta}
+                  onClick={handleSaveMeta}
+                >
+                  {isSavingMeta ? "Zapisywanie..." : "Zapisz opis i widoczność"}
+                </button>
+              </div>
+            </TooltipProvider>
           </div>
         </section>
 
@@ -391,7 +395,9 @@ export default function DeckDetailView({ deckId }: DeckDetailViewProps) {
           <header className="flex flex-wrap items-center justify-between gap-4 border-b border-border/60 px-6 py-4">
             <div>
               <h2 className="text-xl font-semibold">Lista par</h2>
-              <p className="text-sm text-muted-foreground">Zgłaszaj niepoprawne tłumaczenia przed nauką lub challenge.</p>
+              <p className="text-sm text-muted-foreground">
+                Zgłaszaj niepoprawne tłumaczenia przed nauką lub challenge.
+              </p>
             </div>
             <span className="text-sm text-muted-foreground">
               {pairPagination
@@ -414,25 +420,39 @@ export default function DeckDetailView({ deckId }: DeckDetailViewProps) {
                       <span className="text-center text-muted-foreground">⟷</span>
                       <span className="break-words text-center text-base font-medium">{pair.term_b}</span>
                     </div>
-                    <button
-                      type="button"
-                      onClick={() => openFlagModal(pair)}
-                      disabled={flaggedPairs[pair.id]}
-                      className={`inline-flex items-center rounded-md border px-3 py-1.5 text-sm font-medium transition ${
-                        flaggedPairs[pair.id]
-                          ? "border-emerald-200 bg-emerald-50 text-emerald-600 cursor-default"
-                          : "border-border text-foreground hover:bg-accent"
-                      }`}
-                    >
-                      {flaggedPairs[pair.id] ? "Zgłoszono" : "Zgłoś błąd"}
-                    </button>
+                    <div className="flex flex-wrap items-center gap-2">
+                      <button
+                        type="button"
+                        onClick={() => openFlagModal(pair)}
+                        disabled={flaggedPairs[pair.id]}
+                        className={`inline-flex items-center rounded-md border px-3 py-1.5 text-sm font-medium transition ${
+                          flaggedPairs[pair.id]
+                            ? "border-emerald-200 bg-emerald-50 text-emerald-600 cursor-default"
+                            : "border-border text-foreground hover:bg-accent"
+                        }`}
+                      >
+                        {flaggedPairs[pair.id] ? "Zgłoszono" : "Zgłoś błąd"}
+                      </button>
+                      {canManageDeck ? (
+                        <button
+                          type="button"
+                          onClick={() => openDeleteModal(pair)}
+                          disabled={isDeletingPair && deleteModal?.pairId === pair.id}
+                          className="inline-flex items-center rounded-md border border-destructive/40 px-3 py-1.5 text-sm font-medium text-destructive transition hover:bg-destructive/10 disabled:cursor-not-allowed disabled:opacity-60"
+                        >
+                          Usuń
+                        </button>
+                      ) : null}
+                    </div>
                   </div>
                 ))}
               </div>
             </div>
           )}
 
-          {pairPagination && pairPagination.total > 50 && pairPagination.page < pairPagination.total_pages ? (
+          {pairPagination &&
+          pairPagination.total > pairPagination.page_size &&
+          pairPagination.page < pairPagination.total_pages ? (
             <div className="border-t border-border/60 px-6 py-4 text-center">
               <button
                 type="button"
@@ -495,6 +515,41 @@ export default function DeckDetailView({ deckId }: DeckDetailViewProps) {
           </div>
         </div>
       ) : null}
+
+      {deleteModal ? (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-background/80 px-4 backdrop-blur-sm">
+          <div className="w-full max-w-md rounded-2xl border border-border bg-card p-6 shadow-xl">
+            <h3 className="text-lg font-semibold text-destructive">Usuń parę</h3>
+            <p className="text-sm text-muted-foreground">
+              Czy na pewno chcesz usunąć tę parę z talii?
+              <br />
+              <span className="font-medium text-foreground">
+                {deleteModal.termA} ↔ {deleteModal.termB}
+              </span>
+            </p>
+            {deleteError ? <p className="mt-3 text-sm text-destructive">{deleteError}</p> : null}
+
+            <div className="mt-6 flex flex-wrap items-center justify-end gap-3">
+              <button
+                type="button"
+                onClick={closeDeleteModal}
+                className="rounded-md border border-border px-4 py-2 text-sm font-medium text-foreground hover:bg-accent"
+                disabled={isDeletingPair}
+              >
+                Anuluj
+              </button>
+              <button
+                type="button"
+                onClick={confirmDeletePair}
+                disabled={isDeletingPair}
+                className="rounded-md bg-destructive px-4 py-2 text-sm font-medium text-destructive-foreground hover:bg-destructive/90 disabled:cursor-not-allowed disabled:opacity-60"
+              >
+                {isDeletingPair ? "Usuwanie..." : "Usuń parę"}
+              </button>
+            </div>
+          </div>
+        </div>
+      ) : null}
     </>
   );
 }
@@ -515,15 +570,6 @@ function LanguagePair({ langA, langB }: { langA: DeckDetailDTO["lang_a"]; langB:
   );
 }
 
-async function parseResponse<T = unknown>(response: Response): Promise<T> {
-  if (!response.ok) {
-    const errorMessage = await extractErrorMessage(response);
-    throw new Error(errorMessage);
-  }
-
-  return (await response.json()) as T;
-}
-
 function buildFlaggedMap(pairs: PairDTO[]): Record<string, boolean> {
   const next: Record<string, boolean> = {};
   for (const pair of pairs) {
@@ -532,6 +578,15 @@ function buildFlaggedMap(pairs: PairDTO[]): Record<string, boolean> {
     }
   }
   return next;
+}
+
+async function parseResponse<T = unknown>(response: Response): Promise<T> {
+  if (!response.ok) {
+    const errorMessage = await extractErrorMessage(response);
+    throw new Error(errorMessage);
+  }
+
+  return (await response.json()) as T;
 }
 
 async function extractErrorMessage(response: Response): Promise<string> {

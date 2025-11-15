@@ -1,28 +1,24 @@
 ---
+import Layout from "@/layouts/Layout.astro";
+import DeckHubView from "@/components/decks/DeckHubView";
+
 export const prerender = false;
 
-const supabase = Astro.locals.supabase;
 const user = Astro.locals.user;
-
-if (!supabase || !user || !user.id) {
+if (!user || !user.id) {
   return Astro.redirect(`/auth/login?redirect=${encodeURIComponent("/decks")}`);
 }
 
-const { data: decks, error } = await supabase
-  .from("decks")
-  .select("id")
-  .eq("owner_user_id", user.id)
-  .is("deleted_at", null)
-  .order("updated_at", { ascending: false })
-  .limit(1);
-
-if (error) {
-  throw new Error(`Failed to fetch decks: ${error.message}`);
-}
-
-if (decks && decks.length > 0) {
-  return Astro.redirect(`/decks/${decks[0].id}`);
-}
-
-return Astro.redirect("/generate");
+const url = new URL(Astro.request.url);
+const deckIdParam = url.searchParams.get("deck");
+const autoSelectQuery = url.searchParams.get("auto-select") === "true";
+const shouldAutoSelect = autoSelectQuery || !deckIdParam;
 ---
+
+<Layout title="Moje talie — LinguaPairs">
+  <main class="min-h-screen bg-background">
+    <div class="mx-auto w-full max-w-5xl px-4 py-10">
+      <DeckHubView initialDeckId={deckIdParam ?? null} autoSelectLast={shouldAutoSelect} client:only="react" />
+    </div>
+  </main>
+</Layout>

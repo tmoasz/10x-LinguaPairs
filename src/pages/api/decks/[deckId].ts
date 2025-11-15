@@ -65,7 +65,12 @@ export const GET: APIRoute = async ({ params, locals }) => {
       return notFoundResponse();
     }
 
-    return new Response(JSON.stringify(deck), {
+    const responseBody = {
+      ...deck,
+      can_manage: deckService.isOwner(deck, locals.user?.id),
+    };
+
+    return new Response(JSON.stringify(responseBody), {
       status: 200,
       headers: jsonHeaders,
     });
@@ -134,7 +139,12 @@ export const PATCH: APIRoute = async ({ params, request, locals }) => {
       return notFoundResponse();
     }
 
-    return new Response(JSON.stringify(updatedDeck), {
+    const responseBody = {
+      ...updatedDeck,
+      can_manage: deckService.isOwner(updatedDeck, userId),
+    };
+
+    return new Response(JSON.stringify(responseBody), {
       status: 200,
       headers: jsonHeaders,
     });

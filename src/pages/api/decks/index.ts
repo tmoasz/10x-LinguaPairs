@@ -163,6 +163,7 @@ export const GET: APIRoute = async (context) => {
         decks: [],
         pagination: {
           page,
+          page_size: limit,
           limit,
           total: totalCount || 0,
           total_pages: Math.ceil((totalCount || 0) / limit),
@@ -261,6 +262,7 @@ export const GET: APIRoute = async (context) => {
       decks: decksList,
       pagination: {
         page,
+        page_size: limit,
         limit,
         total: totalCount || 0,
         total_pages: totalPages,

@@ -41,14 +41,20 @@ export const GET: APIRoute = async ({ params, locals, request }) => {
 
     const url = new URL(request.url);
     const pageParamRaw = url.searchParams.get("page");
-    const limitParamRaw = url.searchParams.get("limit");
+    const pageSizeParamRaw = url.searchParams.get("page_size");
+    const legacyLimitParamRaw = url.searchParams.get("limit");
     const pageParam = pageParamRaw !== null ? Number(pageParamRaw) : undefined;
-    const limitParam = limitParamRaw !== null ? Number(limitParamRaw) : undefined;
+    const pageSizeParam =
+      pageSizeParamRaw !== null
+        ? Number(pageSizeParamRaw)
+        : legacyLimitParamRaw !== null
+          ? Number(legacyLimitParamRaw)
+          : undefined;
 
     const response = await pairService.listByDeck(supabase, {
       deckId,
       page: Number.isFinite(pageParam) ? Math.floor(pageParam) : undefined,
-      limit: Number.isFinite(limitParam) ? Math.floor(limitParam) : undefined,
+      pageSize: Number.isFinite(pageSizeParam) ? Math.floor(pageSizeParam) : undefined,
       userId: locals.user?.id ?? undefined,
     });
 
