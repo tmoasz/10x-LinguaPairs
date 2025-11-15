@@ -238,6 +238,7 @@ export interface PairDTO {
   term_b: string;
   added_at: string;
   updated_at: string;
+  flagged_by_me?: boolean;
 }
 
 /**
@@ -278,7 +279,6 @@ export interface PairsListDTO {
  */
 export interface FlagPairDTO {
   reason: string;
-  details?: string;
 }
 
 /**
@@ -289,7 +289,6 @@ export interface PairFlagResponseDTO {
   pair_id: string;
   flagged_by: string;
   reason: string;
-  details?: string;
   flagged_at: string;
 }
 
