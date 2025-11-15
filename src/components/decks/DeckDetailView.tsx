@@ -105,7 +105,6 @@ export default function DeckDetailView({ deckId }: DeckDetailViewProps) {
         setPairPagination(parsedPairs.pagination);
         setPairsError(null);
         setFlaggedPairs(buildFlaggedMap(parsedPairs.pairs ?? []));
-        setPairPagination(parsedPairs.pagination);
         setDraftMeta({
           description: parsedDeck.description ?? "",
           visibility: parsedDeck.visibility,
@@ -256,7 +255,6 @@ export default function DeckDetailView({ deckId }: DeckDetailViewProps) {
       });
 
       await parseResponse(response);
-      setFlaggedPairs((prev) => ({ ...prev, [flagModal.pairId]: true }));
       closeFlagModal();
     } catch (error) {
       const message = error instanceof Error ? error.message : "Nie udało się zgłosić pary.";
@@ -649,15 +647,6 @@ function LanguagePair({ langA, langB }: { langA: DeckDetailDTO["lang_a"]; langB:
   );
 }
 
-async function parseResponse<T = unknown>(response: Response): Promise<T> {
-  if (!response.ok) {
-    const errorMessage = await extractErrorMessage(response);
-    throw new Error(errorMessage);
-  }
-
-  return (await response.json()) as T;
-}
-
 function buildFlaggedMap(pairs: PairDTO[]): Record<string, boolean> {
   const next: Record<string, boolean> = {};
   for (const pair of pairs) {
@@ -666,6 +655,15 @@ function buildFlaggedMap(pairs: PairDTO[]): Record<string, boolean> {
     }
   }
   return next;
+}
+
+async function parseResponse<T = unknown>(response: Response): Promise<T> {
+  if (!response.ok) {
+    const errorMessage = await extractErrorMessage(response);
+    throw new Error(errorMessage);
+  }
+
+  return (await response.json()) as T;
 }
 
 async function extractErrorMessage(response: Response): Promise<string> {

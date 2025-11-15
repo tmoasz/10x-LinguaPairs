@@ -62,31 +62,15 @@ Wszystkie wymienione DTO są już zdefiniowane w `src/types.ts`:
 
 Warto wdrożyć to w 2 krokach:
 
-### Faza 1: Stubbed API + UI
+### Faza 1: Stubbed API + UI _(zrealizowane — historyczna notatka)_
 
-- Zaimplementować endpointy z prostymi, statycznymi mockami (bez realnego Supabase):
-  - `GET /api/decks/:deckId` → zwraca stały `DeckDetailDTO`.
-  - `GET /api/decks/:deckId/pairs` → zwraca listę kilku przykładowych `PairDTO` w `PairsListDTO`.
-  - `POST /api/decks/:deckId/pairs/:pairId/flag` → przyjmuje dowolny `reason` i zwraca statyczny `PairFlagResponseDTO`.
-  - `PATCH /api/decks/:deckId` → zwraca zmodyfikowaną kopię mockowego `DeckDetailDTO`.
-- Zbudować widok talii (frontend) korzystający z tych endpointów:
-  - wczytywanie meta-danych talii i listy par,
-  - UI do flagowania pary,
-  - UI do edycji opisu/tytułu talii (dla właściciela).
-- Dzięki temu:
-  - przepływ UI (Deck Detail → Review & Flagging) będzie „prawdziwy” z punktu widzenia przeglądarki,
-  - backend może być w kolejnym kroku podmieniony na realne wywołania Supabase bez zmiany kontraktu.
+- Pierwotnie wdrożone jako etap szybkiego prototypu: mockowe endpointy i widok korzystający z nich.
+- Obecnie w repozytorium mamy w pełni działające API oparte na Supabase (Faza 2). Poniższy opis zostawiamy jako archiwum podejścia „thin slice”.
 
-### Faza 2: Podpięcie pod Supabase
+### Faza 2: Podpięcie pod Supabase _(status: ukończone)_
 
-- Podmienić mocki na rzeczywistą logikę w service layer:
-  - nowy serwis `deckService.getDeckById(...)`,
-  - nowy serwis `deckService.updateDeck(...)`,
-  - analogiczny serwis dla par, np. `pairService.listPairsByDeck(...)`, `pairService.flagPair(...)`.
-- Zaimplementować walidację (Zod) dla:
-  - `UpdateDeckDTO` (PATCH),
-  - `FlagPairDTO` (POST flag).
-- Dodać logikę autoryzacyjną (właściciel, widoczność) zgodnie z sekcją 5.
+- Endpointy działają już na realnych danych Supabase (serwisy `deckService`, `pairService` itd.).
+- Walidacje Zod i logika autoryzacji opisane niżej są wdrożone; kolejne zmiany wchodzą na żywych danych, bez potrzeby wracania do mocków.
 
 ## 4. Szczegóły zachowania per endpoint
 
@@ -307,11 +291,10 @@ Docelowy flow na frontendzie (React/Astro):
    - lista renderuje `term_a` / `term_b` w tabeli lub kartach,
    - każdy wiersz ma przycisk „Zgłoś błąd”, a właściciel dodatkowo widzi przycisk „Usuń”.
 4. Po kliknięciu „Zgłoś błąd”:
-   - frontend otwiera prosty modal/formularz z wyborem powodu (`reason`) i opcjonalnym `details`,
+   - frontend otwiera prosty modal/formularz z jednym polem tekstowym na powód (`reason`),
    - wysyła `POST /api/decks/:deckId/pairs/:pairId/flag`,
    - po 201:
-     - pokazuje toast „Zgłoszono błąd”,
-     - lokalnie oznacza parę jako flagged (np. ikonka), bez konieczności natychmiastowego odświeżania listy.
+     - pokazuje prosty komunikat/toast „Zgłoszono błąd” i lokalnie dezaktywuje przycisk dla tej pary (tekst „Zgłoszono”), bez dodatkowych liczników czy cięższych elementów UI.
 5. Właściciel talii:
    - może kliknąć przycisk „Edytuj opis”/„Edytuj meta” w nagłówku,
    - UI pokazuje edytowalne pole dla `title`/`description`,
