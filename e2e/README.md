@@ -32,7 +32,8 @@ SUPABASE_URL=https://your-project.supabase.co
 SUPABASE_SERVICE_ROLE_KEY=your-service-role-key
 ```
 
-**Note:** 
+**Note:**
+
 - **Local E2E tests**: Use local Supabase (http://127.0.0.1:54321). The `preview:test` script automatically loads `.env.test` if it exists.
 - **CI/CD (GitHub Actions)**: Uses cloud Supabase from GitHub Secrets. The script detects CI environment and uses environment variables directly.
 
@@ -48,9 +49,11 @@ E2E_USERNAME_ID=uuid-of-the-user  # Optional, improves cleanup performance
 ### Local Development
 
 1. **Start local Supabase** (if not already running):
+
    ```bash
    ./node_modules/.bin/supabase start
    ```
+
    This will start Supabase on `http://127.0.0.1:54321` and provide you with the service role key.
 
 2. Create `.env.test` in the project root:

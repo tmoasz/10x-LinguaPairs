@@ -55,4 +55,3 @@ OPENROUTER_API_KEY=... bun run smoke:openrouter -- --topic travel --count 10
 ```
 
 > Uwaga: wszystko po `--` jest przekazywane jako argumenty do skryptu `smoke-openrouter.ts`.
-
