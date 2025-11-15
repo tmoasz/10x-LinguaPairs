@@ -87,6 +87,28 @@ export function useGenerateWizard() {
     }
   }, [decksLoaded, decks, syncWithDecks]);
 
+  // Auto-select deck from URL query parameter
+  useEffect(() => {
+    if (!decksLoaded || decks.length === 0) {
+      return;
+    }
+
+    // Read deck ID from URL query parameter
+    const urlParams = new URLSearchParams(window.location.search);
+    const deckIdFromUrl = urlParams.get("deck");
+
+    if (!deckIdFromUrl) {
+      return;
+    }
+
+    // Check if the deck exists in the loaded decks
+    const deckExists = decks.some((deck) => deck.id === deckIdFromUrl);
+
+    if (deckExists && state.selectedDeckId !== deckIdFromUrl) {
+      selectDeck(deckIdFromUrl);
+    }
+  }, [decksLoaded, decks, state.selectedDeckId, selectDeck]);
+
   useEffect(() => {
     if (!decksLoaded || !languagesLoaded) {
       return;

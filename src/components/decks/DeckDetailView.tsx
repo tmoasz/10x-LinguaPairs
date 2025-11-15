@@ -1,8 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
-import DeckPicker from "@/components/decks/DeckPicker";
 import FlagIcon from "@/components/FlagIcon";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
-import type { DeckDetailDTO, DeckListItemDTO, DecksListDTO, PairDTO } from "@/types";
+import type { DeckDetailDTO, PairDTO } from "@/types";
 
 interface DeckDetailViewProps {
   deckId: string;
@@ -33,7 +32,6 @@ export default function DeckDetailView({ deckId }: DeckDetailViewProps) {
   const [deck, setDeck] = useState<DeckDetailDTO | null>(null);
   const [pairs, setPairs] = useState<PairDTO[]>([]);
   const [pairPagination, setPairPagination] = useState<PairsListResponse["pagination"] | null>(null);
-  const [userDecks, setUserDecks] = useState<DeckListItemDTO[] | null>(null);
   const [draftMeta, setDraftMeta] = useState({
     description: "",
     visibility: "public" as DeckDetailDTO["visibility"],
@@ -52,33 +50,6 @@ export default function DeckDetailView({ deckId }: DeckDetailViewProps) {
   const [isDeletingPair, setIsDeletingPair] = useState(false);
 
   const canManageDeck = Boolean(deck?.can_manage);
-
-  useEffect(() => {
-    let ignore = false;
-    async function loadDecksList() {
-      try {
-        const response = await fetch("/api/decks?limit=100");
-        if (ignore) return;
-        if (response.status === 401 || response.status === 403) {
-          setUserDecks([]);
-          return;
-        }
-        const data = await parseResponse<DecksListDTO>(response);
-        if (!ignore) {
-          setUserDecks(data.decks ?? []);
-        }
-      } catch (error) {
-        console.error("Failed to load user's decks list", error);
-        if (!ignore) {
-          setUserDecks([]);
-        }
-      }
-    }
-    loadDecksList();
-    return () => {
-      ignore = true;
-    };
-  }, []);
 
   useEffect(() => {
     let ignore = false;
@@ -133,31 +104,6 @@ export default function DeckDetailView({ deckId }: DeckDetailViewProps) {
 
     return (deck.description ?? "") !== draftMeta.description || deck.visibility !== draftMeta.visibility;
   }, [deck, draftMeta]);
-
-  const deckOptions = useMemo<DeckListItemDTO[]>(() => {
-    if (userDecks && userDecks.length > 0) {
-      return userDecks;
-    }
-
-    if (!deck) {
-      return [];
-    }
-
-    return [
-      {
-        id: deck.id,
-        owner_user_id: deck.owner_user_id,
-        title: deck.title,
-        description: deck.description ?? "",
-        lang_a: deck.lang_a,
-        lang_b: deck.lang_b,
-        visibility: deck.visibility,
-        pairs_count: pairPagination?.total ?? pairs.length,
-        created_at: deck.created_at,
-        updated_at: deck.updated_at,
-      },
-    ];
-  }, [deck, pairs.length, pairPagination, userDecks]);
 
   async function handleSaveMeta() {
     if (!deck || !hasMetaChanges) {
@@ -348,17 +294,6 @@ export default function DeckDetailView({ deckId }: DeckDetailViewProps) {
     }
   }
 
-  function handleDeckSelect(nextDeckId: string) {
-    if (!nextDeckId || nextDeckId === deckId) {
-      return;
-    }
-    window.location.href = `/decks/${nextDeckId}`;
-  }
-
-  function handleCreateDeckShortcut() {
-    window.location.href = "/generate";
-  }
-
   if (loadState === "loading") {
     return (
       <div className="rounded-xl border border-border bg-card px-6 py-8 text-center text-muted-foreground shadow-sm">
@@ -379,92 +314,80 @@ export default function DeckDetailView({ deckId }: DeckDetailViewProps) {
     <>
       <div className="space-y-6">
         <section className="rounded-2xl border border-border bg-card text-card-foreground shadow-sm">
-          <div className="space-y-6 p-6">
-            <div className="space-y-2">
-              <p className="text-xs uppercase tracking-wide text-muted-foreground/80">Twoje talie</p>
-              <DeckPicker
-                decks={deckOptions}
-                selectedDeckId={deck.id}
-                onSelect={handleDeckSelect}
-                onCreateNew={handleCreateDeckShortcut}
-              />
+          <div className="space-y-4 p-6">
+            <div className="flex flex-wrap items-center gap-3">
+              <h1 className="text-2xl font-semibold">{deck.title}</h1>
+              <span className="rounded-full bg-muted px-3 py-1 text-xs font-semibold text-muted-foreground">
+                {pairPagination?.total ?? pairs.length} par
+              </span>
             </div>
-
-            <div className="space-y-4 rounded-xl border border-border/50 p-5">
-              <div className="flex flex-wrap items-center gap-3">
-                <h1 className="text-2xl font-semibold">{deck.title}</h1>
-                <span className="rounded-full bg-muted px-3 py-1 text-xs font-semibold text-muted-foreground">
-                  {pairPagination?.total ?? pairs.length} par
-                </span>
-              </div>
-              <div className="flex flex-wrap items-center gap-4 text-sm text-muted-foreground">
-                <LanguagePair langA={deck.lang_a} langB={deck.lang_b} />
-                <span>•</span>
-                <span>Właściciel: {deck.owner.username}</span>
-                <span>•</span>
-                <span>Widoczność: {visibilityLabels[deck.visibility]}</span>
-              </div>
-              <TooltipProvider delayDuration={150}>
-                <div className="space-y-4 rounded-xl border border-border/50 bg-background/60 p-5">
-                  <div className="space-y-2">
-                    <div className="flex items-center justify-between gap-2">
-                      <label className="text-sm font-medium text-foreground" htmlFor="deck-description-input">
-                        Opis
-                      </label>
-                      <Tooltip>
-                        <TooltipTrigger className="text-xs text-muted-foreground underline underline-offset-2">
-                          Dlaczego ważny?
-                        </TooltipTrigger>
-                        <TooltipContent>
-                          Lepszy opis = lepsze generacje. Opis będzie wzięty pod uwagę przy generowaniu par.
-                        </TooltipContent>
-                      </Tooltip>
-                    </div>
-                    <textarea
-                      id="deck-description-input"
-                      value={draftMeta.description}
-                      onChange={(event) => setDraftMeta((prev) => ({ ...prev, description: event.target.value }))}
-                      rows={3}
-                      className="w-full rounded-md border border-border bg-background px-3 py-2 text-sm"
-                      placeholder="Dodaj krótki opis talii..."
-                    />
-                  </div>
-                  <div className="space-y-2">
-                    <label className="text-sm font-medium text-foreground" htmlFor="deck-visibility-input">
-                      Widoczność
+            <div className="flex flex-wrap items-center gap-4 text-sm text-muted-foreground">
+              <LanguagePair langA={deck.lang_a} langB={deck.lang_b} />
+              <span>•</span>
+              <span>Właściciel: {deck.owner.username}</span>
+              <span>•</span>
+              <span>Widoczność: {visibilityLabels[deck.visibility]}</span>
+            </div>
+            <TooltipProvider delayDuration={150}>
+              <div className="space-y-4 rounded-xl border border-border/50 bg-background/60 p-5">
+                <div className="space-y-2">
+                  <div className="flex items-center justify-between gap-2">
+                    <label className="text-sm font-medium text-foreground" htmlFor="deck-description-input">
+                      Opis
                     </label>
-                    <select
-                      id="deck-visibility-input"
-                      value={draftMeta.visibility}
-                      onChange={(event) =>
-                        setDraftMeta((prev) => ({
-                          ...prev,
-                          visibility: event.target.value as DeckDetailDTO["visibility"],
-                        }))
-                      }
-                      className="w-full rounded-md border border-border bg-background px-3 py-2 text-sm"
-                    >
-                      {Object.entries(visibilityLabels).map(([value, label]) => (
-                        <option key={value} value={value}>
-                          {label}
-                        </option>
-                      ))}
-                    </select>
+                    <Tooltip>
+                      <TooltipTrigger className="text-xs text-muted-foreground underline underline-offset-2">
+                        Dlaczego ważny?
+                      </TooltipTrigger>
+                      <TooltipContent>
+                        Lepszy opis = lepsze generacje. Opis będzie wzięty pod uwagę przy generowaniu par.
+                      </TooltipContent>
+                    </Tooltip>
                   </div>
-
-                  {metaError ? <p className="text-sm text-destructive">{metaError}</p> : null}
-
-                  <button
-                    type="button"
-                    className="inline-flex w-full items-center justify-center rounded-md bg-primary px-4 py-2 text-sm font-medium text-primary-foreground transition hover:bg-primary/90 disabled:cursor-not-allowed disabled:opacity-60"
-                    disabled={!hasMetaChanges || isSavingMeta}
-                    onClick={handleSaveMeta}
-                  >
-                    {isSavingMeta ? "Zapisywanie..." : "Zapisz opis i widoczność"}
-                  </button>
+                  <textarea
+                    id="deck-description-input"
+                    value={draftMeta.description}
+                    onChange={(event) => setDraftMeta((prev) => ({ ...prev, description: event.target.value }))}
+                    rows={3}
+                    className="w-full rounded-md border border-border bg-background px-3 py-2 text-sm"
+                    placeholder="Dodaj krótki opis talii..."
+                  />
                 </div>
-              </TooltipProvider>
-            </div>
+                <div className="space-y-2">
+                  <label className="text-sm font-medium text-foreground" htmlFor="deck-visibility-input">
+                    Widoczność
+                  </label>
+                  <select
+                    id="deck-visibility-input"
+                    value={draftMeta.visibility}
+                    onChange={(event) =>
+                      setDraftMeta((prev) => ({
+                        ...prev,
+                        visibility: event.target.value as DeckDetailDTO["visibility"],
+                      }))
+                    }
+                    className="w-full rounded-md border border-border bg-background px-3 py-2 text-sm"
+                  >
+                    {Object.entries(visibilityLabels).map(([value, label]) => (
+                      <option key={value} value={value}>
+                        {label}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+
+                {metaError ? <p className="text-sm text-destructive">{metaError}</p> : null}
+
+                <button
+                  type="button"
+                  className="inline-flex w-full items-center justify-center rounded-md bg-primary px-4 py-2 text-sm font-medium text-primary-foreground transition hover:bg-primary/90 disabled:cursor-not-allowed disabled:opacity-60"
+                  disabled={!hasMetaChanges || isSavingMeta}
+                  onClick={handleSaveMeta}
+                >
+                  {isSavingMeta ? "Zapisywanie..." : "Zapisz opis i widoczność"}
+                </button>
+              </div>
+            </TooltipProvider>
           </div>
         </section>
 
