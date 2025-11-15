@@ -44,4 +44,6 @@ export default defineConfig({
     : node({
         mode: "standalone",
       }),
+  // Enable verbose logging in development
+  logLevel: process.env.NODE_ENV === "production" ? "error" : "debug",
 });
