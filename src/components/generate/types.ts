@@ -14,6 +14,7 @@ import type {
   LanguageDTO,
   QuotaDTO,
 } from "@/types";
+import { TOPIC_DEFINITIONS } from "@/lib/constants/topics";
 
 /**
  * Main wizard state - tracks all form data and UI state
@@ -97,130 +98,12 @@ export interface WizardData {
 
 /**
  * Predefined topics with labels, descriptions and icons
- * Based on TopicID enum from types.ts
+ * Generated from TOPIC_DEFINITIONS (single source of truth in @/lib/constants/topics)
  */
-export const TOPICS: TopicOption[] = [
-  {
-    id: "travel",
-    label: "Podróże i Turystyka",
-    description: "Słownictwo przydatne w podróży",
-    icon: "✈️",
-  },
-  {
-    id: "business",
-    label: "Biznes",
-    description: "Terminologia biznesowa i korporacyjna",
-    icon: "💼",
-  },
-  {
-    id: "food",
-    label: "Jedzenie i Picie",
-    description: "Nazwy potraw, składników i napojów",
-    icon: "🍕",
-  },
-  {
-    id: "technology",
-    label: "Technologia",
-    description: "IT, programowanie, urządzenia",
-    icon: "💻",
-  },
-  {
-    id: "health",
-    label: "Zdrowie",
-    description: "Medycyna, fitness, dobre samopoczucie",
-    icon: "🏥",
-  },
-  {
-    id: "education",
-    label: "Edukacja",
-    description: "Szkoła, nauka, uniwersytet",
-    icon: "📚",
-  },
-  {
-    id: "shopping",
-    label: "Zakupy",
-    description: "Sklepy, ubrania, płatności",
-    icon: "🛍️",
-  },
-  {
-    id: "family",
-    label: "Rodzina",
-    description: "Relacje rodzinne, członkowie rodziny",
-    icon: "👨‍👩‍👧‍👦",
-  },
-  {
-    id: "hobbies",
-    label: "Hobby",
-    description: "Zainteresowania i pasje",
-    icon: "🎨",
-  },
-  {
-    id: "sports",
-    label: "Sport",
-    description: "Dyscypliny sportowe, aktywność fizyczna",
-    icon: "⚽",
-  },
-  {
-    id: "nature",
-    label: "Przyroda",
-    description: "Zwierzęta, rośliny, środowisko",
-    icon: "🌳",
-  },
-  {
-    id: "culture",
-    label: "Kultura",
-    description: "Sztuka, muzyka, literatura",
-    icon: "🎭",
-  },
-  {
-    id: "emotions",
-    label: "Emocje",
-    description: "Uczucia, nastroje, stany psychiczne",
-    icon: "😊",
-  },
-  {
-    id: "time",
-    label: "Czas",
-    description: "Dni tygodnia, miesiące, pory roku",
-    icon: "⏰",
-  },
-  {
-    id: "weather",
-    label: "Pogoda",
-    description: "Warunki pogodowe, klimat",
-    icon: "🌤️",
-  },
-  {
-    id: "transport",
-    label: "Transport",
-    description: "Środki transportu, podróżowanie",
-    icon: "🚗",
-  },
-  {
-    id: "communication",
-    label: "Komunikacja",
-    description: "Rozmowa, języki, media",
-    icon: "💬",
-  },
-  {
-    id: "home",
-    label: "Dom",
-    description: "Meble, urządzenia domowe, pomieszczenia",
-    icon: "🏠",
-  },
-  {
-    id: "work",
-    label: "Praca",
-    description: "Zawody, biuro, kariera",
-    icon: "💼",
-  },
-  {
-    id: "emergency",
-    label: "Sytuacje Awaryjne",
-    description: "Pomoc, bezpieczeństwo, nagłe wypadki",
-    icon: "🚨",
-  },
-];
+export const TOPICS: TopicOption[] = (Object.keys(TOPIC_DEFINITIONS) as TopicID[]).map((id) => ({
+  id,
+  ...TOPIC_DEFINITIONS[id],
+}));
 
 /**
  * Default values for wizard state

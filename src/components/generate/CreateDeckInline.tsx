@@ -6,13 +6,14 @@
  * Validates input and shows errors inline
  */
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
 import { AlertCircle, Loader2 } from "lucide-react";
+import FlagIcon from "@/components/FlagIcon";
 import { validateCreateDeck } from "./utils";
 import type { CreateDeckDTO, LanguageDTO } from "@/types";
 
@@ -46,6 +47,7 @@ export default function CreateDeckInline({
 
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const isSubmittingRef = useRef(false);
 
   // Ensure lang_a is always set to Polish when languages are loaded
   useEffect(() => {
@@ -57,6 +59,11 @@ export default function CreateDeckInline({
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
+    // Prevent double submission - use ref for immediate check
+    if (isSubmittingRef.current || isSubmitting) {
+      return;
+    }
+
     // Validate
     const validationErrors = validateCreateDeck(formData);
     if (Object.keys(validationErrors).length > 0) {
@@ -64,6 +71,8 @@ export default function CreateDeckInline({
       return;
     }
 
+    // Set both ref and state to prevent double submission
+    isSubmittingRef.current = true;
     setIsSubmitting(true);
     setErrors({});
 
@@ -75,6 +84,7 @@ export default function CreateDeckInline({
         submit: error instanceof Error ? error.message : "Nie udało się utworzyć talii",
       });
     } finally {
+      isSubmittingRef.current = false;
       setIsSubmitting(false);
     }
   };
@@ -151,7 +161,7 @@ export default function CreateDeckInline({
               .map((lang) => (
                 <SelectItem key={lang.id} value={lang.id}>
                   <div className="flex items-center gap-2">
-                    {lang.flag_emoji && <span className="text-lg">{lang.flag_emoji}</span>}
+                    <FlagIcon code={lang.code} size="md" />
                     <span>{lang.name}</span>
                   </div>
                 </SelectItem>

@@ -348,7 +348,7 @@ List user's decks or public decks.
         "name": "English (US)"
       },
       "visibility": "public",
-      "pairs_count": 30,
+      "pairs_count": 50,
       "created_at": "2025-01-15T10:00:00Z",
       "updated_at": "2025-01-15T10:00:00Z"
     }
@@ -402,7 +402,7 @@ Get detailed information about a specific deck.
     "flag_emoji": "🇺🇸"
   },
   "visibility": "public",
-  "pairs_count": 30,
+  "pairs_count": 50,
   "created_at": "2025-01-15T10:00:00Z",
   "updated_at": "2025-01-15T10:00:00Z"
 }
@@ -799,7 +799,7 @@ Flag a pair as incorrect (error reporting).
 
 #### POST /api/generate/from-topic
 
-Generate 30 vocabulary pairs from a predefined topic.
+Generate 50 vocabulary pairs from a predefined topic.
 
 **Headers:**
 
@@ -829,7 +829,7 @@ Generate 30 vocabulary pairs from a predefined topic.
 {
   "generation_id": "uuid",
   "deck_id": "uuid",
-  "pairs_generated": 30,
+  "pairs_generated": 50,
   "pairs": [
     {
       "id": "uuid",
@@ -879,7 +879,7 @@ Generate 30 vocabulary pairs from a predefined topic.
 
 #### POST /api/generate/from-text
 
-Generate 30 vocabulary pairs from custom text description.
+Generate 50 vocabulary pairs from custom text description.
 
 **Headers:**
 
@@ -1280,7 +1280,7 @@ Access a shared deck via token (public endpoint).
     "description": "Description",
     "lang_a": {...},
     "lang_b": {...},
-    "pairs_count": 30
+    "pairs_count": 50
   },
   "pairs": [
     {
@@ -1339,7 +1339,7 @@ List pre-built curated decks available to guests.
       "description": "30 must-know phrases for travelers",
       "lang_a": {...},
       "lang_b": {...},
-      "pairs_count": 30,
+      "pairs_count": 50,
       "is_curated": true
     }
   ],
@@ -1366,7 +1366,7 @@ Get a curated deck with all pairs.
     "description": "30 must-know phrases for travelers",
     "lang_a": {...},
     "lang_b": {...},
-    "pairs_count": 30,
+    "pairs_count": 50,
     "is_curated": true
   },
   "pairs": [
@@ -1505,7 +1505,7 @@ Get a curated deck with all pairs.
 3. Check backend cache (key: topic/text hash + parameters)
 4. If cache miss, call AI service (OpenAI/Anthropic)
 5. Parse and validate AI response
-6. Ensure exactly 30 pairs (or 10 for "+10")
+6. Ensure exactly 50 pairs (or 10 for "+10")
 7. Create pairs in database
 8. Log telemetry (generation time, cost, cache hit, prompt hash)
 9. Return pairs + metadata

@@ -2,7 +2,7 @@
 
 ## 1. Przegląd produktu
 
-10x-LinguaPairs to aplikacja webowa (PWA) wspierająca szybką naukę słownictwa poprzez automatyczne generowanie i interaktywną naukę praktycznych par tłumaczeń PL↔EN. Użytkownik podaje temat z predefiniowanej listy lub własny opis, a system tworzy zestaw 30 par (słowa, zwroty, mini-frazy), które można utrwalać w mini-grze łączenia. Postęp śledzony jest w prostym modelu Leitner, a dane-operacje są logowane dla poprawy jakości i kosztów.
+10x-LinguaPairs to aplikacja webowa (PWA) wspierająca szybką naukę słownictwa poprzez automatyczne generowanie i interaktywną naukę praktycznych par tłumaczeń PL↔EN. Użytkownik podaje temat z predefiniowanej listy lub własny opis, a system tworzy zestaw 50 par (słowa, zwroty, mini-frazy), które można utrwalać w mini-grze łączenia. Postęp śledzony jest w prostym modelu Leitner, a dane-operacje są logowane dla poprawy jakości i kosztów.
 
 ## 2. Problem użytkownika
 
@@ -15,10 +15,10 @@ Użytkownicy języków obcych tracą czas na ręczne tworzenie fiszek i mają tr
 ## 3. Wymagania funkcjonalne
 
 1. Generacja zestawów:
-   - 30 par PL↔EN na podstawie tematu (lista 20 kategorii) lub opisu ≤ 5000 znaków.
+   - 50 par PL↔EN na podstawie tematu (lista 20 kategorii) lub opisu ≤ 5000 znaków.
    - Filtr typu treści: auto | słowa | zwroty | mini-frazy.
    - Przełącznik rejestru: neutralny | nieformalny | formalny.
-   - Dokładna deduplikacja, limit ≤ 8 tokenów na stronę pary.
+   - Dokładna deduplikacja, limit ≤ 8 słów na stronę pary.
    - „+10” dogenerowuje z wykluczeniem flagged i już znanych par.
    - Możliwość ręcznego dodania słowa i automatycznego tłumaczenia.
 2. Kontrakt danych pary: {l1, l2, type, register, source}.
@@ -40,7 +40,7 @@ Użytkownicy języków obcych tracą czas na ręczne tworzenie fiszek i mają tr
    - PWA przechowuje 10 ostatnich zestawów.
    - Backend cache na kluczu (topic_id/tekst_hash + parametry).
 9. Telemetria/logi:
-   - Czas generacji, cache-hit, liczba flag, koszt/30 par.
+   - Czas generacji, cache-hit, liczba flag, koszt/50 par (≈$0.02 per 50).
    - Zapis pełnego promptu/kontekstu (SHA tekstu).
 
 ## 4. Granice produktu (MVP)
@@ -57,18 +57,26 @@ Użytkownicy języków obcych tracą czas na ręczne tworzenie fiszek i mają tr
 
 ### US-001: Generacja zestawu z tematu
 
-- **Opis**: Jako zalogowany użytkownik chcę wybrać temat z listy, aby otrzymać 30 par słówek dostosowanych do tematu.
+- **Opis**: Jako zalogowany użytkownik chcę wybrać temat z listy, aby otrzymać 50 par słówek dostosowanych do tematu.
 - **Kryteria akceptacji**:
-  - a) Wybór dowolnego tematu z listy generuje 30 par w <10 s.
+  - a) Wybór dowolnego tematu z listy generuje 50 par w <15 s.
   - b) Paradygmat 60/30/10 słowa/zwroty/mini-frazy.
-  - c) Pary spełniają kontrakt danych i ≤8 tokenów na stronę.
+  - c) Pary spełniają kontrakt danych i ≤8 słów na stronę.
+
+#### Wariant MVP (US-001)
+
+- **Opis (MVP)**: Jako użytkownik (gość lub zalogowany) chcę wybrać temat i w <20 s dostać około 50 par słówek dostosowanych do tematu, żeby od razu móc odpalić tryb Nauki lub Challenge.
+- **Kryteria akceptacji (MVP)**:
+  - a) Wybieram temat z listy i w <20 s otrzymuję wygenerowany zestaw.
+  - b) Zestaw zawiera co najmniej 40 sensownych par zgodnych z kontraktem danych.
+  - c) Wynik jest stabilny – brak błędów uniemożliwiających wyświetlenie siatki Nauki/Challenge.
 
 ### US-002: Generacja z własnego opisu
 
-- **Opis**: Jako zalogowany użytkownik chcę wkleić opis ≤5000 znaków i wygenerować 30 par adekwatnych do kontekstu.
+- **Opis**: Jako zalogowany użytkownik chcę wkleić opis ≤5000 znaków i wygenerować 50 par adekwatnych do kontekstu.
 - **Kryteria akceptacji**:
   - a) System akceptuje opis do 5000 znaków.
-  - b) Wynik zawiera 30 unikalnych par.
+  - b) Wynik zawiera 50 unikalnych par.
 
 ### US-003: Ustawienie rejestru
 
@@ -113,6 +121,14 @@ Użytkownicy języków obcych tracą czas na ręczne tworzenie fiszek i mają tr
   - b) Przycisk „Pokaż więcej" zwiększa o 1 wiersz do maks. 10.
   - c) Połączona poprawnie para jest oznaczana, błędna aktywuje anty-cheat.
 
+#### Wariant MVP (US-008)
+
+- **Opis (MVP)**: Jako użytkownik chcę w prostym widoku siatki 2×5 łączyć pary i dostać wynik, żeby ćwiczyć tłumaczenia w angażujący sposób.
+- **Kryteria akceptacji (MVP)**:
+  - a) Widok Nauki ładuje siatkę 2×5 z jednego zestawu par.
+  - b) Poprawnie połączona para jest oznaczana (np. znika lub zmienia kolor) i nie może być połączona ponownie.
+  - c) Po zakończeniu rundy użytkownik widzi podsumowanie: liczbę poprawnych i błędnych połączeń.
+
 ### US-009: Anty-cheat
 
 - **Opis**: Jako system chcę po błędzie ukryć jedną poprawną parę i dodać fałszywkę, aby utrudnić losowe klikanie.
@@ -122,10 +138,21 @@ Użytkownicy języków obcych tracą czas na ręczne tworzenie fiszek i mają tr
 
 ### US-010: Tryb Challenge
 
-- **Opis**: Jako użytkownik chcę zagrać 3 rundy po 10 par (2×5), aby sprawdzić się pod presją czasu.
+- **Opis**: Jako użytkownik chcę rozwiązać określoną paczkę par na czas, aby sprawdzić swoją szybkość i skuteczność.
 - **Kryteria akceptacji**:
-  - a) Start Trybu Challenge wyświetla timer (domyślnie 60 s, TBC).
-  - b) Wynik każdej rundy aktualizuje procent poprawnych par w Leitner.
+  - a) Start Trybu Challenge uruchamia stoper i pokazuje licznik czasu rosnący w górę.
+  - b) Po zakończeniu rundy aplikacja pokazuje:
+    czas ukończenia,
+    liczbę poprawnych i błędnych par,
+    procent poprawnych.
+
+#### Wariant MVP (US-010)
+
+- **Opis (MVP)**: Jako użytkownik chcę zagrać jedną rundę Challenge (10 par na czas), aby sprawdzić swoją szybkość i skuteczność.
+- **Kryteria akceptacji (MVP)**:
+  - a) Start Trybu Challenge wczytuje 10 par i uruchamia prosty stoper (licznik czasu rosnący w górę).
+  - b) Po zakończeniu rundy aplikacja pokazuje czas ukończenia oraz liczbę poprawnych i błędnych par.
+  - c) Wynik rundy jest zapisywany lokalnie (gość) lub w profilu użytkownika (jeśli jest zalogowany).
 
 ### US-011: Progres Leitner
 
@@ -161,19 +188,27 @@ Użytkownicy języków obcych tracą czas na ręczne tworzenie fiszek i mają tr
   - a) Strona startowa pokazuje listę predefiniowanych setów.
   - b) Postęp gościa zapisywany lokalnie (localStorage/IndexedDB).
 
+#### Wariant MVP (US-015)
+
+- **Opis (MVP)**: Jako gość chcę na stronie startowej jednym kliknięciem uruchomić tryb Challenge na kuratorowanym secie, żeby natychmiast poczuć, jak działa aplikacja.
+- **Kryteria akceptacji (MVP)**:
+  - a) Landing page wyświetla wyraźny przycisk (np. „Zagraj od razu”).
+  - b) Kliknięcie przycisku bez rejestracji przenosi do Trybu Challenge z predefiniowanym zestawem.
+  - c) Po zakończeniu rundy wynik jest zapisany lokalnie (np. ostatni lub najlepszy wynik użytkownika).
+
 ## 6. Metryki sukcesu
 
 1. Funkcjonalne
-   - 95 % żądań generuje pełne 30 par w <10 s.
+   - 95 % żądań generuje pełne 50 par w <15 s.
    - ≥90 % poprawnych działań siatki (brak błędów tasowania, anty-cheat).
    - Dokładność obliczeń Leitner ≥99 % (audit log).
    - „+10” bez duplikatów w 99 % przypadków.
    - Ewentualny cache PWA ładuje zestaw offline w <2 s.
 2. Operacyjne
-   - Średni czas generacji <8 s, 95th percentile <12 s.
+   - Średni czas generacji <12 s, 95th percentile <20 s.
    - Cache-hit rate backend ≥40 % po 30 dniach od startu.
    - Średnia liczba flag <0,5 na zestaw.
-   - Koszt modeli ≤0,02 USD za 30 par.
+   - Koszt modeli ≤0,03 USD za 50 par.
 3. Użytkowe (mierzone po MVP)
    - Retencja D7 ≥25 % zalogowanych użytkowników.
    - Średnia liczba sesji/tydzień ≥3.

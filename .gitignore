@@ -54,6 +54,9 @@ Thumbs.db
 ehthumbs.db
 Desktop.ini
 
+# Supabase temporary files
+supabase/.temp/
+
 # Misc
 *.pid
 *.log

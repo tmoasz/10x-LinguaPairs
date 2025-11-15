@@ -1,12 +1,6 @@
+/* eslint-disable no-console -- Debug logging in development mode only */
 import crypto from "crypto";
-/**
- * Stub AI provider used in MVP.
- *
- * Generates deterministic-like pseudo content quickly in-memory and returns
- * GeneratedPairDTO[] with lightweight metadata. Enforces simple token limits
- * and supports the "auto" content type distribution. Replace with a real
- * provider integration in a later iteration.
- */
+
 import type {
   GeneratedPairDTO,
   GenerationContentType,
@@ -14,222 +8,447 @@ import type {
   GenerationRegister,
   TopicID,
 } from "@/types";
+import {
+  buildSystemMessage,
+  buildTopicUserMessage,
+  buildTextUserMessage,
+  buildExtendUserMessage,
+  getFewShotMessages,
+  type LanguageSpec,
+} from "@/lib/prompts/generation";
+import { buildPairGenerationJsonSchema, type PairGenerationOutput } from "@/lib/schemas/pair-generation.schema";
+import { createOpenRouterService, OpenRouterService } from "@/lib/services/openrouter.service";
+import type { ChatMessage, ChatRequestOptions } from "@/lib/services/openrouter.types";
 
-function sha256(input: string): string {
-  return crypto.createHash("sha256").update(input).digest("hex");
+const DEFAULT_PRIMARY_MODEL = import.meta.env.OPENROUTER_PAIR_MODEL || "openai/gpt-5-mini";
+const DEFAULT_FALLBACK_MODEL = import.meta.env.OPENROUTER_PAIR_FALLBACK_MODEL || "openai/gpt-5";
+const INFERENCE_PARAMS = {
+  temperature: 0.4,
+  top_p: 0.9,
+  max_tokens: 12800,
+} as const;
+const SCHEMA_NAME = "pair_generation";
+const isDev = import.meta.env.DEV;
+
+type OpenRouterLike = Pick<OpenRouterService, "chatJson">;
+
+export interface AiProviderDependencies {
+  openRouter: OpenRouterLike;
+  primaryModel?: string;
+  fallbackModel?: string;
+  uuid?: () => string;
+  now?: () => number;
 }
 
-function randInt(min: number, max: number): number {
-  return Math.floor(Math.random() * (max - min + 1)) + min;
+interface BasePromptParams {
+  content_type: GenerationContentType;
+  register: GenerationRegister;
+  count: number;
+  langA: LanguageSpec;
+  langB: LanguageSpec;
+  banlist?: string[];
 }
 
-function pick<T>(arr: T[]): T {
-  return arr[randInt(0, arr.length - 1)];
+interface TopicGenerationParams extends BasePromptParams {
+  topic_id: TopicID;
+  topic_label?: string;
 }
 
-function randomWord(): string {
-  const syllables = ["lo", "ra", "mi", "ta", "ka", "na", "zi", "po", "ve", "tu", "sha", "ri", "do"];
-  const count = randInt(1, 3);
-  let out = "";
-  for (let i = 0; i < count; i++) out += pick(syllables);
-  return out;
+interface TextGenerationParams extends BasePromptParams {
+  text: string;
 }
 
-function genPhrase(maxWords: number): string {
-  const n = randInt(1, Math.max(1, Math.min(4, maxWords)));
-  const words: string[] = [];
-  for (let i = 0; i < n; i++) words.push(randomWord());
-  return words.join(" ");
+interface ExtendGenerationParams extends BasePromptParams {
+  topic_id?: TopicID;
+  topic_label?: string;
+  text?: string;
 }
 
-function tokenCount(s: string): number {
-  return s.trim().split(/\s+/).filter(Boolean).length;
-}
-
-function makePairs(count: number, type: GenerationContentType, register: GenerationRegister): GeneratedPairDTO[] {
-  const pairs: GeneratedPairDTO[] = [];
-  for (let i = 0; i < count; i++) {
-    // Keep <= 8 tokens per side
-    let a = genPhrase(type === "words" ? 1 : type === "mini-phrases" ? 2 : 3);
-    let b = genPhrase(type === "words" ? 1 : type === "mini-phrases" ? 2 : 3);
-    if (tokenCount(a) > 8) a = a.split(/\s+/).slice(0, 8).join(" ");
-    if (tokenCount(b) > 8) b = b.split(/\s+/).slice(0, 8).join(" ");
-    pairs.push({
-      id: crypto.randomUUID(),
-      term_a: a,
-      term_b: b,
-      type,
-      register,
-      source: "ai_generated",
-      tags: [],
-    });
-  }
-  return pairs;
-}
-
-function distributeAuto(total: number): [number, number, number] {
-  const words = Math.round(total * 0.6);
-  const phrases = Math.round(total * 0.3);
-  const minis = Math.max(0, total - words - phrases);
-  return [words, phrases, minis];
-}
-
-/** Result returned by the AI provider stub. */
 export interface ProviderResult {
   pairs: GeneratedPairDTO[];
   metadata: GenerationMetadataDTO & { ai_model?: string };
   prompt_hash: string;
 }
 
+export class OpenRouterAIProvider {
+  private readonly openRouter: OpenRouterLike;
+  private readonly primaryModel: string;
+  private readonly fallbackModel: string | null;
+  private readonly uuid: () => string;
+  private readonly now: () => number;
+
+  constructor(deps: AiProviderDependencies) {
+    this.openRouter = deps.openRouter;
+    this.primaryModel = deps.primaryModel || DEFAULT_PRIMARY_MODEL;
+    this.fallbackModel = deps.fallbackModel ?? DEFAULT_FALLBACK_MODEL;
+    this.uuid = deps.uuid || (() => crypto.randomUUID());
+    this.now = deps.now || (() => Date.now());
+  }
+
+  async generateFromTopic(params: TopicGenerationParams): Promise<ProviderResult> {
+    const count = params.count || 50;
+
+    if (isDev) {
+      console.log(
+        `[AI_PROVIDER] generateFromTopic: topic=${params.topic_id}, count=${count}, langA=${params.langA.code}, langB=${params.langB.code}, type=${params.content_type}, register=${params.register}`
+      );
+    }
+
+    const userMessage = buildTopicUserMessage({
+      topicId: params.topic_id,
+      topicLabel: params.topic_label ?? params.topic_id,
+      contentType: params.content_type,
+      register: params.register,
+      count,
+      langA: params.langA,
+      langB: params.langB,
+      banlist: params.banlist,
+    });
+
+    const promptSeed = {
+      kind: "topic",
+      topic_id: params.topic_id,
+      topic_label: params.topic_label,
+      content_type: params.content_type,
+      register: params.register,
+      count,
+      langA: params.langA.code,
+      langB: params.langB.code,
+      banlist_hash: hashList(params.banlist),
+    };
+
+    return this.runGeneration({
+      count,
+      langA: params.langA,
+      langB: params.langB,
+      register: params.register,
+      userMessage,
+      promptSeed,
+      banlist: params.banlist,
+    });
+  }
+
+  async generateFromText(params: TextGenerationParams): Promise<ProviderResult> {
+    const count = params.count || 50;
+
+    if (isDev) {
+      const textPreview = params.text.length > 50 ? params.text.substring(0, 50) + "..." : params.text;
+      console.log(
+        `[AI_PROVIDER] generateFromText: text="${textPreview}", count=${count}, langA=${params.langA.code}, langB=${params.langB.code}, type=${params.content_type}, register=${params.register}`
+      );
+    }
+
+    const userMessage = buildTextUserMessage({
+      text: params.text,
+      contentType: params.content_type,
+      register: params.register,
+      count,
+      langA: params.langA,
+      langB: params.langB,
+      banlist: params.banlist,
+    });
+
+    const promptSeed = {
+      kind: "text",
+      text_hash: hashString(params.text),
+      content_type: params.content_type,
+      register: params.register,
+      count,
+      langA: params.langA.code,
+      langB: params.langB.code,
+      banlist_hash: hashList(params.banlist),
+    };
+
+    return this.runGeneration({
+      count,
+      langA: params.langA,
+      langB: params.langB,
+      register: params.register,
+      userMessage,
+      promptSeed,
+      banlist: params.banlist,
+    });
+  }
+
+  async extend(params: ExtendGenerationParams): Promise<ProviderResult> {
+    const count = params.count || 10;
+
+    if (isDev) {
+      console.log(
+        `[AI_PROVIDER] extend: topic=${params.topic_id || "N/A"}, count=${count}, langA=${params.langA.code}, langB=${params.langB.code}, type=${params.content_type}, register=${params.register}, banlist=${params.banlist?.length || 0} items`
+      );
+    }
+
+    const userMessage = buildExtendUserMessage({
+      topicId: params.topic_id,
+      topicLabel: params.topic_label,
+      text: params.text,
+      contentType: params.content_type,
+      register: params.register,
+      count,
+      langA: params.langA,
+      langB: params.langB,
+      banlist: params.banlist,
+    });
+
+    const promptSeed = {
+      kind: "extend",
+      topic_id: params.topic_id,
+      topic_label: params.topic_label,
+      text_hash: params.text ? hashString(params.text) : undefined,
+      content_type: params.content_type,
+      register: params.register,
+      count,
+      langA: params.langA.code,
+      langB: params.langB.code,
+      banlist_hash: hashList(params.banlist),
+    };
+
+    return this.runGeneration({
+      count,
+      langA: params.langA,
+      langB: params.langB,
+      register: params.register,
+      userMessage,
+      promptSeed,
+      banlist: params.banlist,
+    });
+  }
+
+  private async runGeneration(params: {
+    count: number;
+    langA: LanguageSpec;
+    langB: LanguageSpec;
+    register: GenerationRegister;
+    userMessage: ChatMessage;
+    promptSeed: Record<string, unknown>;
+    banlist?: string[];
+  }): Promise<ProviderResult> {
+    const schema = buildPairGenerationJsonSchema(params.count);
+    const systemMessage = buildSystemMessage({ langA: params.langA, langB: params.langB, register: params.register });
+    const messages = [systemMessage, ...getFewShotMessages(), params.userMessage];
+    const metadata = { kind: params.promptSeed.kind };
+    const start = this.now();
+
+    if (isDev) {
+      console.log(
+        `[AI_PROVIDER] runGeneration: requesting ${params.count} pairs, banlist=${params.banlist?.length || 0} items, using model=${this.primaryModel}${this.fallbackModel ? ` (fallback: ${this.fallbackModel})` : ""}`
+      );
+    }
+
+    const { pairs, model } = await this.invokeWithFallback(messages, schema, metadata);
+    const duration = Math.max(0, this.now() - start);
+
+    if (isDev) {
+      console.log(`[AI_PROVIDER] AI response received: ${pairs.length} raw pairs from model=${model} (${duration}ms)`);
+    }
+
+    const sanitized = this.normalizePairs(pairs, params.banlist);
+    const prompt_hash = hashRecord(params.promptSeed);
+
+    if (isDev) {
+      console.log(
+        `[AI_PROVIDER] Normalization: ${pairs.length} raw → ${sanitized.length} valid pairs (excluded: ${pairs.length - sanitized.length})`
+      );
+      console.log(`[AI_PROVIDER] Generation complete: ${sanitized.length} pairs in ${duration}ms, model=${model}`);
+    }
+
+    return {
+      pairs: sanitized,
+      metadata: {
+        generation_time_ms: duration,
+        cache_hit: false,
+        prompt_hash,
+        ai_model: model,
+        excluded_count: Math.max(0, pairs.length - sanitized.length),
+      },
+      prompt_hash,
+    };
+  }
+
+  private async invokeWithFallback(
+    messages: ChatMessage[],
+    schema: Record<string, unknown>,
+    metadata: Record<string, unknown>
+  ): Promise<{ pairs: PairGenerationOutput["pairs"]; model: string }> {
+    try {
+      if (isDev) {
+        console.log(`[AI_PROVIDER] Invoking primary model: ${this.primaryModel}`);
+      }
+      const response = await this.callModel(this.primaryModel, messages, schema, metadata);
+      return { pairs: response.parsed.pairs, model: this.primaryModel };
+    } catch (error) {
+      if (this.fallbackModel && this.fallbackModel !== this.primaryModel) {
+        if (isDev) {
+          console.warn(`[AI_PROVIDER] Primary model failed, using fallback: ${this.fallbackModel}`, error);
+        }
+        const response = await this.callModel(this.fallbackModel, messages, schema, { ...metadata, fallback: true });
+        return { pairs: response.parsed.pairs, model: this.fallbackModel };
+      }
+      if (isDev) {
+        console.error(`[AI_PROVIDER] Generation failed (no fallback available):`, error);
+      }
+      throw error;
+    }
+  }
+
+  private async callModel(
+    model: string,
+    messages: ChatMessage[],
+    schema: Record<string, unknown>,
+    metadata: Record<string, unknown>
+  ) {
+    const options: ChatRequestOptions = {
+      model,
+      messages,
+      params: { ...INFERENCE_PARAMS },
+      metadata,
+    };
+
+    if (isDev) {
+      console.log(
+        `[AI_PROVIDER] Calling OpenRouter: model=${model}, messages=${messages.length}, params=${JSON.stringify(INFERENCE_PARAMS)}`
+      );
+    }
+
+    const callStart = this.now();
+    const response = await this.openRouter.chatJson<PairGenerationOutput>(options, SCHEMA_NAME, schema);
+    const callDuration = this.now() - callStart;
+
+    if (isDev) {
+      console.log(
+        `[AI_PROVIDER] OpenRouter response: ${callDuration}ms, parsed=${!!response.parsed}, pairs=${response.parsed?.pairs?.length || 0}`
+      );
+    }
+
+    if (!response.parsed || !Array.isArray(response.parsed.pairs)) {
+      if (isDev) {
+        console.error(`[AI_PROVIDER] Invalid response structure:`, {
+          parsed: !!response.parsed,
+          pairsIsArray: Array.isArray(response.parsed?.pairs),
+        });
+      }
+      throw new Error("PAIR_GENERATION_INVALID_RESPONSE");
+    }
+
+    return response;
+  }
+
+  private normalizePairs(pairs: PairGenerationOutput["pairs"], banlist?: string[]): GeneratedPairDTO[] {
+    const normalized: GeneratedPairDTO[] = [];
+    const seen = new Set<string>();
+    const banned = new Set((banlist ?? []).map(normalizeTerm).filter(Boolean));
+
+    if (isDev && banlist && banlist.length > 0) {
+      console.log(`[AI_PROVIDER] Normalizing with banlist: ${banned.size} banned terms`);
+    }
+
+    let skippedEmpty = 0;
+    let skippedTokenLimit = 0;
+    let skippedBanned = 0;
+    let skippedDuplicate = 0;
+
+    for (const pair of pairs) {
+      if (!pair.term_a || !pair.term_b) {
+        skippedEmpty++;
+        continue;
+      }
+
+      const termA = enforceTokenLimit(pair.term_a);
+      const termB = enforceTokenLimit(pair.term_b);
+      if (!termA || !termB) {
+        skippedTokenLimit++;
+        continue;
+      }
+
+      const normA = normalizeTerm(termA);
+      const normB = normalizeTerm(termB);
+      if (!normA || !normB) {
+        skippedTokenLimit++;
+        continue;
+      }
+      if (banned.has(normA) || banned.has(normB)) {
+        skippedBanned++;
+        continue;
+      }
+
+      const key = `${normA}::${normB}`;
+      if (seen.has(key)) {
+        skippedDuplicate++;
+        continue;
+      }
+      seen.add(key);
+
+      normalized.push({
+        id: this.uuid(),
+        term_a: termA,
+        term_b: termB,
+        type: pair.type,
+        register: pair.register,
+        source: "ai_generated",
+      });
+    }
+
+    if (isDev && (skippedEmpty > 0 || skippedTokenLimit > 0 || skippedBanned > 0 || skippedDuplicate > 0)) {
+      console.log(
+        `[AI_PROVIDER] Normalization stats: empty=${skippedEmpty}, tokenLimit=${skippedTokenLimit}, banned=${skippedBanned}, duplicate=${skippedDuplicate}`
+      );
+    }
+
+    return normalized;
+  }
+}
+
+function hashRecord(data: Record<string, unknown>): string {
+  return crypto.createHash("sha256").update(JSON.stringify(data)).digest("hex");
+}
+
+function hashString(value: string): string {
+  return crypto.createHash("sha256").update(value).digest("hex");
+}
+
+function hashList(items?: string[]): string | undefined {
+  if (!items || items.length === 0) return undefined;
+  const normalized = items.map(normalizeTerm).filter(Boolean).sort();
+  if (normalized.length === 0) return undefined;
+  return crypto.createHash("sha256").update(normalized.join("|"), "utf8").digest("hex");
+}
+
+function enforceTokenLimit(value: string, maxTokens = 8): string {
+  const cleaned = value.replace(/\s+/g, " ").trim();
+  if (!cleaned) return "";
+  const tokens = cleaned.split(" ");
+  if (tokens.length <= maxTokens) return cleaned;
+  return tokens.slice(0, maxTokens).join(" ");
+}
+
+function normalizeTerm(value: string): string {
+  return value
+    .normalize("NFD")
+    .replace(/\p{Diacritic}/gu, "")
+    .toLowerCase()
+    .replace(/[^a-z0-9\s]/g, "")
+    .replace(/\s+/g, " ")
+    .trim();
+}
+
+let defaultProvider: OpenRouterAIProvider | null = null;
+
+function getDefaultProvider(): OpenRouterAIProvider {
+  if (!defaultProvider) {
+    defaultProvider = new OpenRouterAIProvider({
+      openRouter: createOpenRouterService(),
+    });
+  }
+  return defaultProvider;
+}
+
 export const aiProvider = {
-  /**
-   * Generates pairs from a predefined topic.
-   * Returns exactly `count` items, honoring content_type and register.
-   */
-  async generateFromTopic(params: {
-    topic_id: TopicID;
-    content_type: GenerationContentType;
-    register: GenerationRegister;
-    count: number;
-    exclude_pairs?: string[];
-  }): Promise<ProviderResult> {
-    const start = Date.now();
-    const prompt = JSON.stringify({ kind: "topic", ...params });
-    const prompt_hash = sha256(prompt);
-
-    let pairs: GeneratedPairDTO[] = [];
-    if (params.content_type === "auto") {
-      const [w, p, m] = distributeAuto(params.count);
-      pairs = [
-        ...makePairs(w, "words", params.register),
-        ...makePairs(p, "phrases", params.register),
-        ...makePairs(m, "mini-phrases", params.register),
-      ];
-    } else {
-      pairs = makePairs(params.count, params.content_type, params.register);
-    }
-
-    // Exclude by ID if requested
-    const exclude = new Set(params.exclude_pairs ?? []);
-    if (exclude.size > 0) {
-      pairs = pairs.filter((p) => !exclude.has(p.id));
-      // If too many excluded, regenerate to fill up to requested size (best-effort)
-      while (pairs.length < params.count) {
-        const needed = params.count - pairs.length;
-        const extra = makePairs(
-          needed,
-          params.content_type === "auto" ? "words" : params.content_type,
-          params.register
-        );
-        pairs.push(...extra.filter((p) => !exclude.has(p.id)));
-      }
-      pairs = pairs.slice(0, params.count);
-    }
-
-    const duration = Date.now() - start;
-    return {
-      pairs,
-      metadata: {
-        generation_time_ms: duration,
-        cache_hit: false,
-        cost_usd: 0,
-        prompt_hash,
-      },
-      prompt_hash,
-    };
-  },
-
-  /**
-   * Generates pairs from a free-form text description.
-   * Returns exactly `count` items, honoring content_type and register.
-   */
-  async generateFromText(params: {
-    text: string;
-    content_type: GenerationContentType;
-    register: GenerationRegister;
-    count: number;
-    exclude_pairs?: string[];
-  }): Promise<ProviderResult> {
-    // For stub, same behavior as topic; include text in prompt hash
-    const start = Date.now();
-    const prompt = JSON.stringify({ kind: "text", ...params });
-    const prompt_hash = sha256(prompt);
-
-    let pairs: GeneratedPairDTO[] = [];
-    if (params.content_type === "auto") {
-      const [w, p, m] = distributeAuto(params.count);
-      pairs = [
-        ...makePairs(w, "words", params.register),
-        ...makePairs(p, "phrases", params.register),
-        ...makePairs(m, "mini-phrases", params.register),
-      ];
-    } else {
-      pairs = makePairs(params.count, params.content_type, params.register);
-    }
-
-    const exclude = new Set(params.exclude_pairs ?? []);
-    if (exclude.size > 0) {
-      pairs = pairs.filter((p) => !exclude.has(p.id));
-      while (pairs.length < params.count) {
-        const needed = params.count - pairs.length;
-        const extra = makePairs(
-          needed,
-          params.content_type === "auto" ? "words" : params.content_type,
-          params.register
-        );
-        pairs.push(...extra.filter((p) => !exclude.has(p.id)));
-      }
-      pairs = pairs.slice(0, params.count);
-    }
-
-    const duration = Date.now() - start;
-    return {
-      pairs,
-      metadata: {
-        generation_time_ms: duration,
-        cache_hit: false,
-        cost_usd: 0,
-        prompt_hash,
-      },
-      prompt_hash,
-    };
-  },
-
-  /**
-   * Generates an extension batch (default 10 items).
-   * Used to add more pairs to an existing deck generation context.
-   */
-  async extend(params: {
-    content_type: GenerationContentType;
-    register: GenerationRegister;
-    count: number; // should be 10
-  }): Promise<ProviderResult> {
-    const start = Date.now();
-    const prompt = JSON.stringify({ kind: "extend", ...params });
-    const prompt_hash = sha256(prompt);
-
-    let pairs: GeneratedPairDTO[] = [];
-    if (params.content_type === "auto") {
-      const [w, p, m] = distributeAuto(params.count);
-      pairs = [
-        ...makePairs(w, "words", params.register),
-        ...makePairs(p, "phrases", params.register),
-        ...makePairs(m, "mini-phrases", params.register),
-      ];
-    } else {
-      pairs = makePairs(params.count, params.content_type, params.register);
-    }
-
-    const duration = Date.now() - start;
-    return {
-      pairs,
-      metadata: {
-        generation_time_ms: duration,
-        cache_hit: false,
-        cost_usd: 0,
-        prompt_hash,
-      },
-      prompt_hash,
-    };
-  },
+  generateFromTopic: (params: Parameters<OpenRouterAIProvider["generateFromTopic"]>[0]) =>
+    getDefaultProvider().generateFromTopic(params),
+  generateFromText: (params: Parameters<OpenRouterAIProvider["generateFromText"]>[0]) =>
+    getDefaultProvider().generateFromText(params),
+  extend: (params: Parameters<OpenRouterAIProvider["extend"]>[0]) => getDefaultProvider().extend(params),
 };
+
+export type { LanguageSpec } from "@/lib/prompts/generation";

@@ -151,7 +151,7 @@ export default function GenerateWizard() {
             <div className="text-center">
               <h3 className="text-lg font-semibold mb-1">Generowanie w toku...</h3>
               <p className="text-sm text-muted-foreground">
-                AI tworzy dla Ciebie 30 nowych par słówek. To może potrwać chwilę.
+                AI tworzy dla Ciebie 50 nowych par słówek. To może potrwać chwilę.
               </p>
             </div>
           </div>

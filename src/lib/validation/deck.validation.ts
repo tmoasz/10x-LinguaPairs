@@ -25,3 +25,29 @@ export const createDeckSchema = z
 
 export type CreateDeckSchema = typeof createDeckSchema;
 export type CreateDeckInput = z.infer<typeof createDeckSchema>;
+
+export const updateDeckSchema = z
+  .object({
+    title: z
+      .string({ invalid_type_error: "Title must be a string" })
+      .min(1, "Title is required")
+      .max(200, "Title must be at most 200 characters")
+      .optional(),
+    description: z
+      .string({ invalid_type_error: "Description must be a string" })
+      .min(1, "Description is required")
+      .max(1000, "Description must be at most 1000 characters")
+      .optional(),
+    visibility: z
+      .enum(["private", "public", "unlisted"], {
+        invalid_type_error: "Visibility must be private, public, or unlisted",
+      })
+      .optional(),
+  })
+  .refine((data) => Object.keys(data).length > 0, {
+    message: "At least one field must be provided",
+    path: ["title"],
+  });
+
+export type UpdateDeckSchema = typeof updateDeckSchema;
+export type UpdateDeckInput = z.infer<typeof updateDeckSchema>;

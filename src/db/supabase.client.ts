@@ -1,13 +1,10 @@
-import { createClient } from "@supabase/supabase-js";
 import { createServerClient, type CookieOptionsWithName } from "@supabase/ssr";
 import type { AstroCookies } from "astro";
 
 import type { Database } from "../db/database.types.ts";
 
-const supabaseUrl = import.meta.env.SUPABASE_URL;
-const supabaseAnonKey = import.meta.env.SUPABASE_KEY;
-
-export const supabaseClient = createClient<Database>(supabaseUrl, supabaseAnonKey);
+// Re-export typed SupabaseClient for use throughout the application
+export type SupabaseClient = ReturnType<typeof createServerClient<Database>>;
 
 /**
  * @deprecated This was used during development before authentication was implemented.

@@ -107,7 +107,7 @@ Aplikacja PWA do nauki słownictwa PL↔EN (oraz innych języków) oparta na gen
 
 - **Nazwa widoku**: Generowanie (kreator 1‑ekranowy)
 - **Ścieżka widoku**: `/generate`
-- **Główny cel**: Utworzyć zestaw 30 par w istniejącej/nowej talii, zgodnie z parametrami.
+- **Główny cel**: Utworzyć zestaw 50 par w istniejącej/nowej talii, zgodnie z parametrami.
 - **Kluczowe informacje do wyświetlenia**:
   - Krok 1: Wybór talii (lista z `/api/decks`) lub utworzenie nowej (tytuł, opis, języki).
   - Krok 2: Źródło – `topic` (z listy 10) lub `text` (1–5000 znaków).

@@ -39,6 +39,10 @@
 - **Vitest**: Framework do testów jednostkowych i integracyjnych.
 - **Playwright**: Framework do testów End-to-End (E2E).
 
+Testowanie aplikacji opiera się na Vitest (testy jednostkowe/integracyjne, m.in. `test/README.md`) i Playwright (testy E2E, `e2e/README.md`).  
+Smoke testy kluczowych integracji (np. OpenRouter) umieszczone są w katalogu `smoke/` z opisem w `smoke/README.md`.  
+Skrócony, całościowy opis uruchamiania testów znajduje się w głównym pliku `TESTING.md` w katalogu projektu.
+
 ---
 
 ## 6. CI/CD i Hosting

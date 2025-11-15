@@ -27,6 +27,13 @@ function isPublicPath(pathname: string): boolean {
 }
 
 export const onRequest = defineMiddleware(async ({ locals, cookies, url, request, redirect }, next) => {
+  const startTime = Date.now();
+  const isDev = import.meta.env.DEV;
+
+  if (isDev) {
+    console.log(`[MIDDLEWARE] ${request.method} ${url.pathname}${url.search}`);
+  }
+
   const supabase = createSupabaseServerInstance({ cookies, headers: request.headers });
   locals.supabase = supabase;
 
@@ -36,12 +43,27 @@ export const onRequest = defineMiddleware(async ({ locals, cookies, url, request
   } = await supabase.auth.getUser();
   if (user) {
     locals.user = { id: user.id, email: user.email };
+    if (isDev) {
+      console.log(`[MIDDLEWARE] User authenticated: ${user.email} (${user.id})`);
+    }
+  } else if (isDev) {
+    console.log(`[MIDDLEWARE] User not authenticated`);
   }
 
   if (!user && !isPublicPath(url.pathname)) {
     const nextPath = `${url.pathname}${url.search}`;
+    if (isDev) {
+      console.log(`[MIDDLEWARE] Redirecting to login (protected route)`);
+    }
     return redirect(`/auth/login?redirect=${encodeURIComponent(nextPath)}`);
   }
 
-  return next();
+  const response = await next();
+
+  if (isDev) {
+    const duration = Date.now() - startTime;
+    console.log(`[MIDDLEWARE] ${request.method} ${url.pathname} → ${response.status} (${duration}ms)`);
+  }
+
+  return response;
 });

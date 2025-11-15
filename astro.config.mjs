@@ -35,10 +35,15 @@ export default defineConfig({
   preview: { port: 4321, host: false }, // Use localhost only for Playwright
   vite: {
     plugins: [tailwindcss()],
+    resolve: {
+      dedupe: ["react", "react-dom"],
+    },
   },
   adapter: useCloudflareAdapter
     ? cloudflare()
     : node({
         mode: "standalone",
       }),
+  // Enable verbose logging in development
+  logLevel: process.env.NODE_ENV === "production" ? "error" : "debug",
 });
