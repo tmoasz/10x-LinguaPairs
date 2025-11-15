@@ -46,6 +46,11 @@ export default function DeckDetailView({ deckId }: DeckDetailViewProps) {
   const [flagReason, setFlagReason] = useState("");
   const [isSubmittingFlag, setIsSubmittingFlag] = useState(false);
   const [isLoadingMorePairs, setIsLoadingMorePairs] = useState(false);
+  const [deleteModal, setDeleteModal] = useState<{ pairId: string; termA: string; termB: string } | null>(null);
+  const [deleteError, setDeleteError] = useState<string | null>(null);
+  const [isDeletingPair, setIsDeletingPair] = useState(false);
+
+  const canManageDeck = Boolean(deck?.can_manage);
 
   useEffect(() => {
     let ignore = false;
@@ -207,6 +212,23 @@ export default function DeckDetailView({ deckId }: DeckDetailViewProps) {
     setFlagError(null);
   }
 
+  function openDeleteModal(pair: PairDTO) {
+    if (!canManageDeck) {
+      return;
+    }
+    setDeleteModal({
+      pairId: pair.id,
+      termA: pair.term_a,
+      termB: pair.term_b,
+    });
+    setDeleteError(null);
+  }
+
+  function closeDeleteModal() {
+    setDeleteModal(null);
+    setDeleteError(null);
+  }
+
   async function submitFlag() {
     if (!flagModal) {
       return;
@@ -240,6 +262,62 @@ export default function DeckDetailView({ deckId }: DeckDetailViewProps) {
       setFlagError(message);
     } finally {
       setIsSubmittingFlag(false);
+    }
+  }
+
+  async function confirmDeletePair() {
+    if (!deleteModal) {
+      return;
+    }
+
+    setIsDeletingPair(true);
+    setDeleteError(null);
+
+    try {
+      const response = await fetch(`/api/decks/${deckId}/pairs/${deleteModal.pairId}`, {
+        method: "DELETE",
+      });
+
+      if (!response.ok) {
+        throw new Error(await extractErrorMessage(response));
+      }
+
+      setPairs((prev) => prev.filter((pair) => pair.id !== deleteModal.pairId));
+      setFlaggedPairs((prev) => {
+        if (!prev[deleteModal.pairId]) {
+          return prev;
+        }
+        const next = { ...prev };
+        delete next[deleteModal.pairId];
+        return next;
+      });
+      setPairPagination((prev) => {
+        if (!prev) {
+          return prev;
+        }
+        const nextTotal = Math.max(0, prev.total - 1);
+        const nextTotalPages = nextTotal > 0 ? Math.max(1, Math.ceil(nextTotal / prev.limit)) : 1;
+        return {
+          ...prev,
+          total: nextTotal,
+          total_pages: nextTotalPages,
+          page: Math.min(prev.page, nextTotalPages),
+        };
+      });
+      setDeck((prev) => {
+        if (!prev) {
+          return prev;
+        }
+        return {
+          ...prev,
+          pairs_count: Math.max(0, prev.pairs_count - 1),
+        };
+      });
+      closeDeleteModal();
+    } catch (error) {
+      setDeleteError(error instanceof Error ? error.message : "Nie udało się usunąć pary.");
+    } finally {
+      setIsDeletingPair(false);
     }
   }
 
@@ -418,18 +496,30 @@ export default function DeckDetailView({ deckId }: DeckDetailViewProps) {
                       <span className="text-center text-muted-foreground">⟷</span>
                       <span className="break-words text-center text-base font-medium">{pair.term_b}</span>
                     </div>
-                    <button
-                      type="button"
-                      onClick={() => openFlagModal(pair)}
-                      disabled={flaggedPairs[pair.id]}
-                      className={`inline-flex items-center rounded-md border px-3 py-1.5 text-sm font-medium transition ${
-                        flaggedPairs[pair.id]
-                          ? "border-emerald-200 bg-emerald-50 text-emerald-600 cursor-default"
-                          : "border-border text-foreground hover:bg-accent"
-                      }`}
-                    >
-                      {flaggedPairs[pair.id] ? "Zgłoszono" : "Zgłoś błąd"}
-                    </button>
+                    <div className="flex flex-wrap items-center gap-2">
+                      <button
+                        type="button"
+                        onClick={() => openFlagModal(pair)}
+                        disabled={flaggedPairs[pair.id]}
+                        className={`inline-flex items-center rounded-md border px-3 py-1.5 text-sm font-medium transition ${
+                          flaggedPairs[pair.id]
+                            ? "border-emerald-200 bg-emerald-50 text-emerald-600 cursor-default"
+                            : "border-border text-foreground hover:bg-accent"
+                        }`}
+                      >
+                        {flaggedPairs[pair.id] ? "Zgłoszono" : "Zgłoś błąd"}
+                      </button>
+                      {canManageDeck ? (
+                        <button
+                          type="button"
+                          onClick={() => openDeleteModal(pair)}
+                          disabled={isDeletingPair && deleteModal?.pairId === pair.id}
+                          className="inline-flex items-center rounded-md border border-destructive/40 px-3 py-1.5 text-sm font-medium text-destructive transition hover:bg-destructive/10 disabled:cursor-not-allowed disabled:opacity-60"
+                        >
+                          Usuń
+                        </button>
+                      ) : null}
+                    </div>
                   </div>
                 ))}
               </div>
@@ -494,6 +584,41 @@ export default function DeckDetailView({ deckId }: DeckDetailViewProps) {
                 className="rounded-md bg-primary px-4 py-2 text-sm font-medium text-primary-foreground hover:bg-primary/90 disabled:cursor-not-allowed disabled:opacity-60"
               >
                 {isSubmittingFlag ? "Wysyłanie..." : "Wyślij zgłoszenie"}
+              </button>
+            </div>
+          </div>
+        </div>
+      ) : null}
+
+      {deleteModal ? (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-background/80 px-4 backdrop-blur-sm">
+          <div className="w-full max-w-md rounded-2xl border border-border bg-card p-6 shadow-xl">
+            <h3 className="text-lg font-semibold text-destructive">Usuń parę</h3>
+            <p className="text-sm text-muted-foreground">
+              Czy na pewno chcesz usunąć tę parę z talii?
+              <br />
+              <span className="font-medium text-foreground">
+                {deleteModal.termA} ↔ {deleteModal.termB}
+              </span>
+            </p>
+            {deleteError ? <p className="mt-3 text-sm text-destructive">{deleteError}</p> : null}
+
+            <div className="mt-6 flex flex-wrap items-center justify-end gap-3">
+              <button
+                type="button"
+                onClick={closeDeleteModal}
+                className="rounded-md border border-border px-4 py-2 text-sm font-medium text-foreground hover:bg-accent"
+                disabled={isDeletingPair}
+              >
+                Anuluj
+              </button>
+              <button
+                type="button"
+                onClick={confirmDeletePair}
+                disabled={isDeletingPair}
+                className="rounded-md bg-destructive px-4 py-2 text-sm font-medium text-destructive-foreground hover:bg-destructive/90 disabled:cursor-not-allowed disabled:opacity-60"
+              >
+                {isDeletingPair ? "Usuwanie..." : "Usuń parę"}
               </button>
             </div>
           </div>

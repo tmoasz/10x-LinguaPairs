@@ -29,7 +29,7 @@ Widok ma służyć jako „hub” do:
 
 ## 2. Zakres i powiązane endpointy
 
-W ramach tego planu obejmujemy 4 endpointy API:
+W ramach tego planu obejmujemy 5 endpointów API:
 
 1. `GET /api/decks/:deckId`
    - zwraca metadane talii (bez listy par),
@@ -48,6 +48,10 @@ W ramach tego planu obejmujemy 4 endpointy API:
    - pozwala użytkownikom zgłaszać błędne pary,
    - DTO request: `FlagPairDTO`,
    - DTO response: `PairFlagResponseDTO`.
+
+5. `DELETE /api/decks/:deckId/pairs/:pairId`
+   - usuwa parę z talii (tylko właściciel talii),
+   - body: brak, odpowiedź: status `204 No Content`.
 
 Wszystkie wymienione DTO są już zdefiniowane w `src/types.ts`:
 
@@ -240,6 +244,30 @@ Warto wdrożyć to w 2 krokach:
 - `403 FORBIDDEN` – użytkownik nie ma prawa dostępu do talii.
 - `404 NOT_FOUND` – talia lub para nie istnieje / nie należy do tej talii.
 
+### 4.5. DELETE /api/decks/:deckId/pairs/:pairId – usunięcie pary z talii
+
+**Cel**: umożliwić właścicielowi talii szybkie usuwanie par, które są niepotrzebne (np. użytkownik zna je już na wylot) lub nie spełniają wymagań.
+
+**Metoda**: `DELETE`  
+**URL**: `/api/decks/:deckId/pairs/:pairId`  
+**Autoryzacja**:
+
+- tylko właściciel talii (analogicznie jak PATCH na talii),
+- endpoint nie jest dostępny dla gości ani innych użytkowników.
+
+**Zachowanie**:
+
+- Walidacja, że talia istnieje oraz `pairId` należy do wskazanego `deckId`.
+- Soft delete: ustawienie `deleted_at` w tabeli `pairs` (rekord pozostaje dla historii/flag).
+- Frontend powinien usuwać parę z lokalnego stanu po udanym 204, zmniejszając `pairs_count` i `pagination.total`.
+
+**Typowe odpowiedzi**:
+
+- `204 NO_CONTENT` – para usunięta.
+- `401 UNAUTHORIZED` – użytkownik niezalogowany.
+- `403 FORBIDDEN` – użytkownik nie jest właścicielem talii.
+- `404 NOT_FOUND` – talia lub para nie istnieje / para nie należy do talii.
+
 ## 5. Zasady widoczności i autoryzacji (Deck Visibility)
 
 Widoczność talii (`DeckVisibility`) wpływa na wszystkie 4 endpointy i powinna być spójna w całej aplikacji.
@@ -278,7 +306,7 @@ Docelowy flow na frontendzie (React/Astro):
 3. Po sukcesie:
    - nagłówek widoku renderuje tytuł, opis, języki, ownera i liczbę par,
    - lista renderuje `term_a` / `term_b` w tabeli lub kartach,
-   - każdy wiersz ma przycisk „Zgłoś błąd”.
+   - każdy wiersz ma przycisk „Zgłoś błąd”, a właściciel dodatkowo widzi przycisk „Usuń”.
 4. Po kliknięciu „Zgłoś błąd”:
    - frontend otwiera prosty modal/formularz z wyborem powodu (`reason`) i opcjonalnym `details`,
    - wysyła `POST /api/decks/:deckId/pairs/:pairId/flag`,
@@ -292,6 +320,10 @@ Docelowy flow na frontendzie (React/Astro):
    - po 200:
      - UI podmienia lokalny stan talii z response,
      - wyświetla potwierdzenie.
+6. Usuwanie par (tylko właściciel):
+   - kliknięcie „Usuń” przy parze otwiera prosty modal potwierdzający,
+   - po akceptacji wysyłany jest `DELETE /api/decks/:deckId/pairs/:pairId`,
+   - po 204 UI usuwa parę lokalnie i aktualizuje licznik / paginację.
 
 **MVP vs później**:
 

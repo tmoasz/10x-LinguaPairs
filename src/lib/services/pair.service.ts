@@ -15,6 +15,11 @@ interface FlagParams {
   reason: string;
 }
 
+interface DeleteParams {
+  deckId: string;
+  pairId: string;
+}
+
 export const pairService = {
   async listByDeck(supabase: SupabaseClient, params: ListParams): Promise<PairsListDTO> {
     const page = Math.max(1, params.page ?? 1);
@@ -120,5 +125,25 @@ export const pairService = {
       reason: data.reason,
       flagged_at: data.flagged_at,
     };
+  },
+
+  async deletePair(supabase: SupabaseClient, params: DeleteParams): Promise<void> {
+    const { data, error } = await supabase
+      .from("pairs")
+      .update({ deleted_at: new Date().toISOString() })
+      .eq("id", params.pairId)
+      .eq("deck_id", params.deckId)
+      .is("deleted_at", null)
+      .select("id")
+      .maybeSingle();
+
+    if (error) {
+      console.error("Error deleting pair:", error);
+      throw new Error(`Failed to delete pair: ${error.message}`);
+    }
+
+    if (!data) {
+      throw new Error("PAIR_NOT_FOUND");
+    }
   },
 };

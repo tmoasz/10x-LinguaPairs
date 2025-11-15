@@ -175,6 +175,7 @@ export interface DeckDetailDTO {
   pairs_count: number;
   created_at: string;
   updated_at: string;
+  can_manage?: boolean;
 }
 
 /**
