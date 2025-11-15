@@ -18,7 +18,7 @@ Użytkownicy języków obcych tracą czas na ręczne tworzenie fiszek i mają tr
    - 50 par PL↔EN na podstawie tematu (lista 20 kategorii) lub opisu ≤ 5000 znaków.
    - Filtr typu treści: auto | słowa | zwroty | mini-frazy.
    - Przełącznik rejestru: neutralny | nieformalny | formalny.
-   - Dokładna deduplikacja, limit ≤ 8 tokenów na stronę pary.
+   - Dokładna deduplikacja, limit ≤ 8 słów na stronę pary.
    - „+10” dogenerowuje z wykluczeniem flagged i już znanych par.
    - Możliwość ręcznego dodania słowa i automatycznego tłumaczenia.
 2. Kontrakt danych pary: {l1, l2, type, register, source}.
@@ -61,7 +61,15 @@ Użytkownicy języków obcych tracą czas na ręczne tworzenie fiszek i mają tr
 - **Kryteria akceptacji**:
   - a) Wybór dowolnego tematu z listy generuje 50 par w <15 s.
   - b) Paradygmat 60/30/10 słowa/zwroty/mini-frazy.
-  - c) Pary spełniają kontrakt danych i ≤8 tokenów na stronę.
+  - c) Pary spełniają kontrakt danych i ≤8 słów na stronę.
+
+#### Wariant MVP (US-001)
+
+- **Opis (MVP)**: Jako użytkownik (gość lub zalogowany) chcę wybrać temat i w <20 s dostać około 50 par słówek dostosowanych do tematu, żeby od razu móc odpalić tryb Nauki lub Challenge.
+- **Kryteria akceptacji (MVP)**:
+  - a) Wybieram temat z listy i w <20 s otrzymuję wygenerowany zestaw.
+  - b) Zestaw zawiera co najmniej 40 sensownych par zgodnych z kontraktem danych.
+  - c) Wynik jest stabilny – brak błędów uniemożliwiających wyświetlenie siatki Nauki/Challenge.
 
 ### US-002: Generacja z własnego opisu
 
@@ -113,6 +121,14 @@ Użytkownicy języków obcych tracą czas na ręczne tworzenie fiszek i mają tr
   - b) Przycisk „Pokaż więcej" zwiększa o 1 wiersz do maks. 10.
   - c) Połączona poprawnie para jest oznaczana, błędna aktywuje anty-cheat.
 
+#### Wariant MVP (US-008)
+
+- **Opis (MVP)**: Jako użytkownik chcę w prostym widoku siatki 2×5 łączyć pary i dostać wynik, żeby ćwiczyć tłumaczenia w angażujący sposób.
+- **Kryteria akceptacji (MVP)**:
+  - a) Widok Nauki ładuje siatkę 2×5 z jednego zestawu par.
+  - b) Poprawnie połączona para jest oznaczana (np. znika lub zmienia kolor) i nie może być połączona ponownie.
+  - c) Po zakończeniu rundy użytkownik widzi podsumowanie: liczbę poprawnych i błędnych połączeń.
+
 ### US-009: Anty-cheat
 
 - **Opis**: Jako system chcę po błędzie ukryć jedną poprawną parę i dodać fałszywkę, aby utrudnić losowe klikanie.
@@ -122,10 +138,21 @@ Użytkownicy języków obcych tracą czas na ręczne tworzenie fiszek i mają tr
 
 ### US-010: Tryb Challenge
 
-- **Opis**: Jako użytkownik chcę zagrać 3 rundy po 10 par (2×5), aby sprawdzić się pod presją czasu.
+- **Opis**: Jako użytkownik chcę rozwiązać określoną paczkę par na czas, aby sprawdzić swoją szybkość i skuteczność.
 - **Kryteria akceptacji**:
-  - a) Start Trybu Challenge wyświetla timer (domyślnie 60 s, TBC).
-  - b) Wynik każdej rundy aktualizuje procent poprawnych par w Leitner.
+  - a) Start Trybu Challenge uruchamia stoper i pokazuje licznik czasu rosnący w górę.
+  - b) Po zakończeniu rundy aplikacja pokazuje:
+    czas ukończenia,
+    liczbę poprawnych i błędnych par,
+    procent poprawnych.
+
+#### Wariant MVP (US-010)
+
+- **Opis (MVP)**: Jako użytkownik chcę zagrać jedną rundę Challenge (10 par na czas), aby sprawdzić swoją szybkość i skuteczność.
+- **Kryteria akceptacji (MVP)**:
+  - a) Start Trybu Challenge wczytuje 10 par i uruchamia prosty stoper (licznik czasu rosnący w górę).
+  - b) Po zakończeniu rundy aplikacja pokazuje czas ukończenia oraz liczbę poprawnych i błędnych par.
+  - c) Wynik rundy jest zapisywany lokalnie (gość) lub w profilu użytkownika (jeśli jest zalogowany).
 
 ### US-011: Progres Leitner
 
@@ -160,6 +187,14 @@ Użytkownicy języków obcych tracą czas na ręczne tworzenie fiszek i mają tr
 - **Kryteria akceptacji**:
   - a) Strona startowa pokazuje listę predefiniowanych setów.
   - b) Postęp gościa zapisywany lokalnie (localStorage/IndexedDB).
+
+#### Wariant MVP (US-015)
+
+- **Opis (MVP)**: Jako gość chcę na stronie startowej jednym kliknięciem uruchomić tryb Challenge na kuratorowanym secie, żeby natychmiast poczuć, jak działa aplikacja.
+- **Kryteria akceptacji (MVP)**:
+  - a) Landing page wyświetla wyraźny przycisk (np. „Zagraj od razu”).
+  - b) Kliknięcie przycisku bez rejestracji przenosi do Trybu Challenge z predefiniowanym zestawem.
+  - c) Po zakończeniu rundy wynik jest zapisany lokalnie (np. ostatni lub najlepszy wynik użytkownika).
 
 ## 6. Metryki sukcesu
 
