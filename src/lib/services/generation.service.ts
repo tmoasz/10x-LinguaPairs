@@ -73,6 +73,24 @@ async function hasActiveForUser(supabase: SupabaseClient, userId: string): Promi
   return (data?.length || 0) > 0;
 }
 
+async function getActiveForUser(supabase: SupabaseClient, userId: string): Promise<GenerationRow | null> {
+  const { data, error } = await supabase
+    .from("generations")
+    .select("*")
+    .eq("user_id", userId)
+    .in("status", ["pending", "running"])
+    .order("created_at", { ascending: false })
+    .limit(1)
+    .maybeSingle();
+
+  if (error && error.code !== "PGRST116") {
+    console.error("Error fetching active generation for user:", error);
+    throw new Error(`Failed to fetch active generation: ${error.message}`);
+  }
+
+  return data ?? null;
+}
+
 async function getActiveForDeck(
   supabase: SupabaseClient,
   userId: string,
@@ -257,6 +275,10 @@ export const generationService = {
     return { generation_id: data.id, status: "pending" };
   },
 
+  async getActiveForUser(supabase: SupabaseClient, userId: string): Promise<GenerationRow | null> {
+    return await getActiveForUser(supabase, userId);
+  },
+
   async getActiveForDeck(supabase: SupabaseClient, userId: string, deckId: string): Promise<GenerationRow | null> {
     return await getActiveForDeck(supabase, userId, deckId);
   },
@@ -312,7 +334,22 @@ export const generationService = {
 
     const genId = created.id;
     const startedAt = new Date().toISOString();
-    await supabase.from("generations").update({ status: "running", started_at: startedAt }).eq("id", genId);
+    const { error: runningUpdateError } = await supabase
+      .from("generations")
+      .update({ status: "running", started_at: startedAt })
+      .eq("id", genId);
+
+    if (runningUpdateError) {
+      console.error("Failed to update generation status to running:", runningUpdateError);
+      // Try to clean up by marking as failed
+      await markFailedAndLog(
+        supabase,
+        created.deck_id,
+        genId,
+        new Error(`Failed to start generation: ${runningUpdateError.message}`)
+      );
+      throw new Error(`Failed to start generation: ${runningUpdateError.message}`);
+    }
 
     try {
       const providerRes = await aiProvider.generateFromTopic({
@@ -326,10 +363,28 @@ export const generationService = {
         banlist,
       });
 
-      await supabase
+      await insertGeneratedPairs(supabase, payload.deck_id, providerRes.pairs);
+
+      const { error: updateError } = await supabase
         .from("generations")
-        .update({ status: "succeeded", finished_at: new Date().toISOString() })
+        .update({
+          status: "succeeded",
+          finished_at: new Date().toISOString(),
+          pairs_generated: providerRes.pairs.length,
+        })
         .eq("id", genId);
+
+      if (updateError) {
+        console.error("Failed to update generation status to succeeded:", updateError);
+        // Attempt to mark as failed since we can't mark as succeeded
+        await markFailedAndLog(
+          supabase,
+          created.deck_id,
+          genId,
+          new Error(`Status update failed: ${updateError.message}`)
+        );
+        throw new Error(`Failed to update generation status: ${updateError.message}`);
+      }
 
       return {
         generation_id: genId,
@@ -391,10 +446,22 @@ export const generationService = {
     }
 
     const genId = created.id;
-    await supabase
+    const { error: runningUpdateError } = await supabase
       .from("generations")
       .update({ status: "running", started_at: new Date().toISOString() })
       .eq("id", genId);
+
+    if (runningUpdateError) {
+      console.error("Failed to update generation status to running:", runningUpdateError);
+      // Try to clean up by marking as failed
+      await markFailedAndLog(
+        supabase,
+        created.deck_id,
+        genId,
+        new Error(`Failed to start generation: ${runningUpdateError.message}`)
+      );
+      throw new Error(`Failed to start generation: ${runningUpdateError.message}`);
+    }
 
     try {
       const providerRes = await aiProvider.generateFromText({
@@ -407,10 +474,28 @@ export const generationService = {
         banlist,
       });
 
-      await supabase
+      await insertGeneratedPairs(supabase, payload.deck_id, providerRes.pairs);
+
+      const { error: updateError } = await supabase
         .from("generations")
-        .update({ status: "succeeded", finished_at: new Date().toISOString() })
+        .update({
+          status: "succeeded",
+          finished_at: new Date().toISOString(),
+          pairs_generated: providerRes.pairs.length,
+        })
         .eq("id", genId);
+
+      if (updateError) {
+        console.error("Failed to update generation status to succeeded:", updateError);
+        // Attempt to mark as failed since we can't mark as succeeded
+        await markFailedAndLog(
+          supabase,
+          created.deck_id,
+          genId,
+          new Error(`Status update failed: ${updateError.message}`)
+        );
+        throw new Error(`Failed to update generation status: ${updateError.message}`);
+      }
 
       return {
         generation_id: genId,
@@ -490,10 +575,22 @@ export const generationService = {
     }
 
     const genId = created.id;
-    await supabase
+    const { error: runningUpdateError } = await supabase
       .from("generations")
       .update({ status: "running", started_at: new Date().toISOString() })
       .eq("id", genId);
+
+    if (runningUpdateError) {
+      console.error("Failed to update generation status to running:", runningUpdateError);
+      // Try to clean up by marking as failed
+      await markFailedAndLog(
+        supabase,
+        created.deck_id,
+        genId,
+        new Error(`Failed to start generation: ${runningUpdateError.message}`)
+      );
+      throw new Error(`Failed to start generation: ${runningUpdateError.message}`);
+    }
 
     try {
       const providerRes = await aiProvider.extend({
@@ -508,10 +605,28 @@ export const generationService = {
         banlist,
       });
 
-      await supabase
+      await insertGeneratedPairs(supabase, payload.deck_id, providerRes.pairs);
+
+      const { error: updateError } = await supabase
         .from("generations")
-        .update({ status: "succeeded", finished_at: new Date().toISOString() })
+        .update({
+          status: "succeeded",
+          finished_at: new Date().toISOString(),
+          pairs_generated: providerRes.pairs.length,
+        })
         .eq("id", genId);
+
+      if (updateError) {
+        console.error("Failed to update generation status to succeeded:", updateError);
+        // Attempt to mark as failed since we can't mark as succeeded
+        await markFailedAndLog(
+          supabase,
+          created.deck_id,
+          genId,
+          new Error(`Status update failed: ${updateError.message}`)
+        );
+        throw new Error(`Failed to update generation status: ${updateError.message}`);
+      }
 
       return {
         generation_id: genId,
@@ -615,6 +730,27 @@ async function fetchDeckPairTerms(supabase: SupabaseClient, deckId: string, limi
     .filter((term): term is string => Boolean(term));
 
   return Array.from(new Set(terms));
+}
+
+async function insertGeneratedPairs(
+  supabase: SupabaseClient,
+  deckId: string,
+  pairs: GeneratedPairDTO[]
+): Promise<void> {
+  if (!pairs.length) return;
+
+  const rows = pairs.map((pair) => ({
+    id: pair.id,
+    deck_id: deckId,
+    term_a: pair.term_a,
+    term_b: pair.term_b,
+  }));
+
+  const { error } = await supabase.from("pairs").insert(rows);
+  if (error) {
+    console.error("Failed to insert generated pairs:", error);
+    throw new Error(`Failed to save generated pairs: ${error.message}`);
+  }
 }
 
 async function markFailedAndLog(supabase: SupabaseClient, deckId: string, generationId: string, error: unknown) {
