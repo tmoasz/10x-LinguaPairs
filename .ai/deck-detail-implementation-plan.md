@@ -216,8 +216,7 @@ Warto wdrożyć to w 2 krokach:
 **Request (Command Model)**:
 
 - `FlagPairDTO`:
-  - `reason: string` – krótki kod/tekst powodu (np. "wrong_translation", "typo", "offensive"),
-  - `details?: string` – opcjonalny opis od użytkownika.
+  - `reason: string` – krótki opis powodu (np. błędne tłumaczenie, literówka, treść ofensywna).
 
 **Zachowanie**:
 

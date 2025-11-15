@@ -12,7 +12,8 @@ interface PairsListResponse {
   pairs: PairDTO[];
   pagination: {
     page: number;
-    limit: number;
+    page_size: number;
+    limit?: number;
     total: number;
     total_pages: number;
   };
@@ -287,18 +288,20 @@ export default function DeckDetailView({ deckId }: DeckDetailViewProps) {
         if (!prev[deleteModal.pairId]) {
           return prev;
         }
-        const next = { ...prev };
-        delete next[deleteModal.pairId];
-        return next;
+        const { [deleteModal.pairId]: _removed, ...rest } = prev;
+        void _removed;
+        return rest;
       });
       setPairPagination((prev) => {
         if (!prev) {
           return prev;
         }
         const nextTotal = Math.max(0, prev.total - 1);
-        const nextTotalPages = nextTotal > 0 ? Math.max(1, Math.ceil(nextTotal / prev.limit)) : 1;
+        const nextTotalPages = nextTotal > 0 ? Math.max(1, Math.ceil(nextTotal / prev.page_size)) : 1;
         return {
           ...prev,
+          page_size: prev.page_size,
+          limit: prev.page_size,
           total: nextTotal,
           total_pages: nextTotalPages,
           page: Math.min(prev.page, nextTotalPages),
@@ -526,7 +529,9 @@ export default function DeckDetailView({ deckId }: DeckDetailViewProps) {
             </div>
           )}
 
-          {pairPagination && pairPagination.total > 50 && pairPagination.page < pairPagination.total_pages ? (
+          {pairPagination &&
+          pairPagination.total > pairPagination.page_size &&
+          pairPagination.page < pairPagination.total_pages ? (
             <div className="border-t border-border/60 px-6 py-4 text-center">
               <button
                 type="button"

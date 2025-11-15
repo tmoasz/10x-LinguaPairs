@@ -4,7 +4,7 @@ import type { PairDTO, PairFlagResponseDTO, PairsListDTO } from "@/types";
 interface ListParams {
   deckId: string;
   page?: number;
-  limit?: number;
+  pageSize?: number;
   userId?: string;
 }
 
@@ -23,8 +23,8 @@ interface DeleteParams {
 export const pairService = {
   async listByDeck(supabase: SupabaseClient, params: ListParams): Promise<PairsListDTO> {
     const page = Math.max(1, params.page ?? 1);
-    const limit = Math.min(200, Math.max(1, params.limit ?? 50));
-    const offset = (page - 1) * limit;
+    const pageSize = Math.min(200, Math.max(1, params.pageSize ?? 50));
+    const offset = (page - 1) * pageSize;
 
     const { data, count, error } = await supabase
       .from("pairs")
@@ -32,7 +32,7 @@ export const pairService = {
       .eq("deck_id", params.deckId)
       .is("deleted_at", null)
       .order("added_at", { ascending: true })
-      .range(offset, offset + limit - 1);
+      .range(offset, offset + pageSize - 1);
 
     if (error) {
       console.error("Error fetching pairs:", error);
@@ -68,13 +68,14 @@ export const pairService = {
     }));
 
     const total = count ?? 0;
-    const totalPages = total > 0 ? Math.max(1, Math.ceil(total / limit)) : 1;
+    const totalPages = total > 0 ? Math.max(1, Math.ceil(total / pageSize)) : 1;
 
     return {
       pairs,
       pagination: {
         page,
-        limit,
+        page_size: pageSize,
+        limit: pageSize,
         total,
         total_pages: totalPages,
       },

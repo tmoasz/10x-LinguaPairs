@@ -77,12 +77,16 @@ const createFetchResponse = <T>(payload: T, status = 200) => ({
   json: vi.fn().mockResolvedValue(payload),
 });
 
-const buildPagination = (count: number) => ({
-  page: 1,
-  limit: Math.max(count, 1),
-  total: count,
-  total_pages: 1,
-});
+const buildPagination = (count: number) => {
+  const size = Math.max(count, 1);
+  return {
+    page: 1,
+    page_size: size,
+    limit: size,
+    total: count,
+    total_pages: 1,
+  };
+};
 
 const originalFetch = globalThis.fetch;
 

@@ -634,9 +634,13 @@ export interface CuratedDeckDetailDTO {
  */
 export interface PaginationDTO {
   page: number;
-  limit: number;
+  page_size: number;
   total: number;
   total_pages: number;
+  /**
+   * Transitional alias for page_size. Prefer using page_size directly.
+   */
+  limit?: number;
 }
 
 /**
@@ -655,6 +659,7 @@ export interface ErrorResponseDTO {
  */
 export interface PaginationQueryParams {
   page?: number;
+  page_size?: number;
   limit?: number;
   sort?: string;
   order?: "asc" | "desc";
