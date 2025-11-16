@@ -1,0 +1,28 @@
+---
+import Layout from "@/layouts/Layout.astro";
+import ChallengeView from "@/components/challenge/ChallengeView";
+
+export const prerender = false;
+
+const deckId = Astro.params.deckId;
+const user = Astro.locals.user;
+
+if (!user) {
+  const redirectTarget = `/challenge/user/${deckId ?? ""}`;
+  return Astro.redirect(`/auth/login?redirect=${encodeURIComponent(redirectTarget)}`);
+}
+
+if (!deckId) {
+  throw new Error("Deck ID is required for Challenge view");
+}
+
+const pageTitle = `Challenge • ${deckId} | LinguaPairs`;
+---
+
+<Layout title={pageTitle}>
+  <main class="min-h-screen bg-background">
+    <div class="mx-auto w-full max-w-5xl px-4 py-10">
+      <ChallengeView deckId={deckId} client:load />
+    </div>
+  </main>
+</Layout>
