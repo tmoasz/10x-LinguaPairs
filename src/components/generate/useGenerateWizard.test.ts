@@ -342,7 +342,7 @@ describe("useGenerateWizard", () => {
 
     const topicCall = fetchMock.mock.calls.find(([url]: [FetchInput]) => String(url) === "/api/generate/from-topic");
     expect(topicCall).toBeDefined();
-    expect(window.location.href).toBe("/decks/deck-topic");
+    expect(window.location.href).toBe("/decks?deck=deck-topic");
   });
 
   it("prevents text-based generation when the provided text is outside length limits", async () => {
@@ -382,7 +382,7 @@ describe("useGenerateWizard", () => {
       ([url]: [FetchInput]) => String(url) === "/api/generate/from-text"
     );
     expect(successfulTextCall).toBeDefined();
-    expect(window.location.href).toBe("/decks/deck-1");
+    expect(window.location.href).toBe("/decks?deck=deck-1");
   });
 
   // ============================================================================
@@ -819,7 +819,7 @@ describe("useGenerateWizard", () => {
       // Verify generation was called
       const topicCall = fetchMock.mock.calls.find(([url]: [FetchInput]) => String(url) === "/api/generate/from-topic");
       expect(topicCall).toBeDefined();
-      expect(window.location.href).toBe("/decks/deck-new");
+      expect(window.location.href).toBe("/decks?deck=deck-new");
     });
 
     it("completes full flow: create deck -> select text -> generate", async () => {
@@ -873,7 +873,7 @@ describe("useGenerateWizard", () => {
       // Verify generation was called
       const textCall = fetchMock.mock.calls.find(([url]: [FetchInput]) => String(url) === "/api/generate/from-text");
       expect(textCall).toBeDefined();
-      expect(window.location.href).toBe("/decks/deck-text");
+      expect(window.location.href).toBe("/decks?deck=deck-text");
     });
 
     it("switches between topic and text sources", async () => {
