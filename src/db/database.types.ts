@@ -43,6 +43,7 @@ export type Database = {
           created_at: string;
           started_at: string | null;
           finished_at: string | null;
+          pairs_generated: number;
           base_generation_id: string | null;
         };
         Insert: {
@@ -59,6 +60,7 @@ export type Database = {
           created_at?: string;
           started_at?: string | null;
           finished_at?: string | null;
+          pairs_generated?: number;
           base_generation_id?: string | null;
         };
         Update: {
@@ -75,6 +77,7 @@ export type Database = {
           created_at?: string;
           started_at?: string | null;
           finished_at?: string | null;
+          pairs_generated?: number;
           base_generation_id?: string | null;
         };
         Relationships: [
