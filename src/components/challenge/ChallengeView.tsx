@@ -197,7 +197,6 @@ export default function ChallengeView({ deckId }: ChallengeViewProps) {
             incorrectAttempts={game.incorrectAttempts}
             correct={CHALLENGE_REQUIRED_PAIRS}
             onRestart={handleRestart}
-            deckId={deck.id}
           />
           <ChallengeLeaderboard
             entries={leaderboard?.entries ?? []}

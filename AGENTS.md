@@ -34,7 +34,7 @@ This guide helps contributors work effectively in 10x‑LinguaPairs.
 - `bun run test:coverage` — Unit tests with coverage.
 - `bun run test:e2e` — Build and run Playwright E2E tests.
 - `bun run preview:test` — Preview server on port 4321 (E2E friendly).
-  - See `TESTING.md`, `.ai/TESTING_SETUP.md`, and `test-plan.md` for details.
+- See `.ai/testing-guide.md` for scripts and utilities.
 
 ## Coding Style & Naming Conventions
 
@@ -52,7 +52,7 @@ This guide helps contributors work effectively in 10x‑LinguaPairs.
 - E2E: `Playwright` under `e2e/`; use `bun run preview:test` for stable localhost port during runs.
 - Coverage: use `bun run test:coverage` for PR gating; artifacts uploaded in CI.
 - Mock external deps (Supabase, AI provider) in unit tests; keep units pure.
-- See `TESTING.md` for patterns and utilities.
+- See `.ai/test-plan.md` for general tests plan.
 
 ## Commit & Pull Request Guidelines
 

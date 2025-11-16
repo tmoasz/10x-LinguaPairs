@@ -256,7 +256,25 @@ describe("useGenerateWizard", () => {
       },
     });
 
-    Object.defineProperty(window, "location", {
+    // Ensure window exists (jsdom should provide it, but create mock if needed)
+    // In some test environments (e.g., Bun), window might not be available
+    if (typeof window === "undefined") {
+      // Create a minimal window mock and make it available globally
+      const mockWindow = {
+        location: locationMock,
+      } as Window;
+      Object.defineProperty(globalThis, "window", {
+        configurable: true,
+        writable: true,
+        value: mockWindow,
+      });
+    }
+
+    // Now window should be available (either from jsdom or our mock)
+    // Use a type assertion to satisfy TypeScript
+    const win = (globalThis as unknown as { window: Window }).window;
+
+    Object.defineProperty(win, "location", {
       configurable: true,
       writable: true,
       value: locationMock,
