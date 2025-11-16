@@ -4,6 +4,7 @@ import { createDeckSchema } from "@/lib/validation/deck.validation";
 import { deckService } from "@/lib/services/deck.service";
 import { ValidationError } from "@/lib/errors";
 import type { DecksListDTO, DeckListItemDTO } from "@/types";
+import { safeRequestJson } from "@/lib/utils/request.utils";
 
 export const prerender = false;
 
@@ -351,7 +352,7 @@ export const POST: APIRoute = async (context) => {
   try {
     let body;
     try {
-      body = await context.request.json();
+      body = await safeRequestJson(context.request);
     } catch (parseError) {
       return new Response(
         JSON.stringify({

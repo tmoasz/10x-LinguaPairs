@@ -59,3 +59,34 @@ When modifying the directory structure, always update this section.
 - When adding new scripts or documentation, prefer Bun commands (e.g., `bunx` instead of `npx`).
 - Ensure any shell commands in documentation or CI pipelines invoke Bun commands.
 - For Windows environments, scripts should be compatible with PowerShell (`pwsh`) as per user rules.
+
+## API Endpoints & Cloudflare Workers
+
+### Request Handling in Cloudflare Workers
+
+**CRITICAL**: When working with `Request` objects in API endpoints (especially when deployed to Cloudflare Pages/Workers), always use the safe request utilities to prevent "Illegal invocation" errors.
+
+- **NEVER** call `request.json()` or `request.text()` directly on Request objects in API routes.
+- **ALWAYS** use `safeRequestJson(request)` from `@/lib/utils/request.utils` instead.
+- This prevents `TypeError: Illegal invocation` errors that occur when Request methods lose their `this` context in Cloudflare Workers runtime.
+
+**Example:**
+```typescript
+// ❌ WRONG - Can cause "Illegal invocation" error in Cloudflare Workers
+const body = await context.request.json();
+
+// ✅ CORRECT - Safe for Cloudflare Workers
+import { safeRequestJson } from "@/lib/utils/request.utils";
+const body = await safeRequestJson(context.request);
+```
+
+**Why this is needed:**
+- Cloudflare Workers use special runtime objects that require proper `this` context.
+- Methods like `json()` and `text()` can lose their context when called directly, especially during long-running operations (>5 seconds).
+- The safe utilities use `Request.prototype.json.call(request)` to explicitly preserve the `this` context.
+- This issue is documented in Cloudflare's error guide: https://developers.cloudflare.com/workers/observability/errors/#illegal-invocation-errors
+
+**When to use:**
+- All API endpoints that parse request bodies (`POST`, `PUT`, `PATCH`).
+- Any endpoint that might run longer than a few seconds (e.g., AI generation endpoints).
+- Better to be safe: use `safeRequestJson()` everywhere instead of `request.json()`.

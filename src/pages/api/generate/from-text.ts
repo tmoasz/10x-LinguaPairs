@@ -3,6 +3,7 @@ import { z } from "zod";
 import { generationService } from "@/lib/services/generation.service";
 import { generateFromTextSchema } from "@/lib/validation/generation.validation";
 import { getErrorMessage } from "@/lib/utils/error.utils";
+import { safeRequestJson } from "@/lib/utils/request.utils";
 
 /**
  * POST /api/generate/from-text
@@ -85,7 +86,7 @@ export const POST: APIRoute = async (context) => {
   const userId = user.id;
 
   try {
-    const raw = await context.request.json();
+    const raw = await safeRequestJson(context.request);
     // Special-case payload too large for text field: return 413 instead of 422
     if (raw && typeof raw.text === "string" && raw.text.length > 5000) {
       return new Response(

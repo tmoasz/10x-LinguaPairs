@@ -2,12 +2,13 @@ import type { APIRoute } from "astro";
 
 import { createSupabaseServerInstance } from "@/db/supabase.client";
 import { loginSchema } from "@/lib/validation/auth.schemas";
+import { safeRequestJson } from "@/lib/utils/request.utils";
 
 export const prerender = false;
 
 export const POST: APIRoute = async ({ request, cookies }) => {
   try {
-    const payload = await request.json().catch(() => ({}));
+    const payload = await safeRequestJson(request).catch(() => ({}));
     const parsed = loginSchema.safeParse(payload);
 
     if (!parsed.success) {

@@ -2,6 +2,7 @@ import type { APIRoute } from "astro";
 import { z } from "zod";
 import { deckService } from "@/lib/services/deck.service";
 import { updateDeckSchema } from "@/lib/validation/deck.validation";
+import { safeRequestJson } from "@/lib/utils/request.utils";
 
 export const prerender = false;
 
@@ -111,7 +112,7 @@ export const PATCH: APIRoute = async ({ params, request, locals }) => {
 
   let body: unknown;
   try {
-    body = await request.json();
+    body = await safeRequestJson(request);
   } catch {
     return new Response(
       JSON.stringify({
