@@ -23,6 +23,7 @@ import {
 } from "@/lib/errors/openrouter.error";
 import { chatRequestOptionsSchema } from "@/lib/validation/openrouter.validation";
 import { ZodError } from "zod";
+import { getConfig, getConfigNumber } from "@/lib/services/config.service";
 
 /**
  * Default configuration values.
@@ -799,27 +800,28 @@ export class OpenRouterService {
 }
 
 /**
- * Creates an OpenRouterService instance from environment variables.
+ * Creates an OpenRouterService instance from database config and environment variables.
  *
- * This is a convenience factory function that reads configuration from
- * environment variables with sensible defaults.
+ * This factory function reads configuration from the database (app_config table)
+ * with fallback to environment variables for backward compatibility.
+ * Secrets (API key) always come from environment variables.
  *
+ * @param supabase - Supabase client instance (required for database config)
  * @returns Configured OpenRouterService instance
  * @throws {OpenRouterAuthorizationError} If OPENROUTER_API_KEY is not set
  */
-export function createOpenRouterService(): OpenRouterService {
+export async function createOpenRouterService(): Promise<OpenRouterService> {
   const apiKey = import.meta.env.OPENROUTER_API_KEY;
   if (!apiKey) {
     throw new OpenRouterAuthorizationError("OPENROUTER_API_KEY environment variable is required");
   }
 
-  const baseUrl = import.meta.env.OPENROUTER_BASE_URL;
-  const defaultModel = import.meta.env.OPENROUTER_DEFAULT_MODEL;
-  const timeoutMs = import.meta.env.OPENROUTER_TIMEOUT_MS
-    ? parseInt(import.meta.env.OPENROUTER_TIMEOUT_MS, 10)
-    : undefined;
-  const appTitle = import.meta.env.OPENROUTER_APP_TITLE;
-  const siteUrl = import.meta.env.OPENROUTER_SITE_URL;
+  // Read config from database with env fallback
+  const baseUrl = (await getConfig("OPENROUTER_BASE_URL")) || undefined;
+  const defaultModel = (await getConfig("OPENROUTER_DEFAULT_MODEL")) || undefined;
+  const timeoutMs = (await getConfigNumber("OPENROUTER_TIMEOUT_MS")) || undefined;
+  const appTitle = (await getConfig("OPENROUTER_APP_TITLE")) || undefined;
+  const siteUrl = (await getConfig("OPENROUTER_SITE_URL")) || undefined;
 
   return new OpenRouterService({
     apiKey,

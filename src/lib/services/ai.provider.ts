@@ -19,9 +19,10 @@ import {
 import { buildPairGenerationJsonSchema, type PairGenerationOutput } from "@/lib/schemas/pair-generation.schema";
 import { createOpenRouterService, OpenRouterService } from "@/lib/services/openrouter.service";
 import type { ChatMessage, ChatRequestOptions } from "@/lib/services/openrouter.types";
+import { getConfig } from "@/lib/services/config.service";
 
-const DEFAULT_PRIMARY_MODEL = import.meta.env.OPENROUTER_PAIR_MODEL || "openai/gpt-5-mini";
-const DEFAULT_FALLBACK_MODEL = import.meta.env.OPENROUTER_PAIR_FALLBACK_MODEL || "openai/gpt-5";
+const DEFAULT_PRIMARY_MODEL = "openai/gpt-5-mini";
+const DEFAULT_FALLBACK_MODEL = "openai/gpt-5";
 const INFERENCE_PARAMS = {
   temperature: 0.4,
   top_p: 0.9,
@@ -231,7 +232,7 @@ export class OpenRouterAIProvider {
     promptSeed: Record<string, unknown>;
     banlist?: string[];
   }): Promise<ProviderResult> {
-    const schema = buildPairGenerationJsonSchema(params.count);
+    const schema = buildPairGenerationJsonSchema(params.count) as unknown as Record<string, unknown>;
     const systemMessage = buildSystemMessage({ langA: params.langA, langB: params.langB, register: params.register });
     const messages = [systemMessage, ...getFewShotMessages(), params.userMessage];
     const metadata = { kind: params.promptSeed.kind };
@@ -439,23 +440,42 @@ function normalizeTerm(value: string): string {
     .trim();
 }
 
-let defaultProvider: OpenRouterAIProvider | null = null;
+/**
+ * Creates an AI provider instance with configuration from database.
+ *
+ * @returns Configured OpenRouterAIProvider instance
+ */
+export async function createAiProvider(): Promise<OpenRouterAIProvider> {
+  const openRouter = await createOpenRouterService();
 
-function getDefaultProvider(): OpenRouterAIProvider {
-  if (!defaultProvider) {
-    defaultProvider = new OpenRouterAIProvider({
-      openRouter: createOpenRouterService(),
-    });
-  }
-  return defaultProvider;
+  // Read model config from database with env fallback
+  const primaryModel = (await getConfig("OPENROUTER_PAIR_MODEL")) || DEFAULT_PRIMARY_MODEL;
+  const fallbackModel = (await getConfig("OPENROUTER_PAIR_FALLBACK_MODEL")) || DEFAULT_FALLBACK_MODEL;
+
+  return new OpenRouterAIProvider({
+    openRouter,
+    primaryModel,
+    fallbackModel,
+  });
 }
 
+/**
+ * AI Provider interface for generation operations.
+ * This is a factory function that creates a provider instance per request.
+ */
 export const aiProvider = {
-  generateFromTopic: (params: Parameters<OpenRouterAIProvider["generateFromTopic"]>[0]) =>
-    getDefaultProvider().generateFromTopic(params),
-  generateFromText: (params: Parameters<OpenRouterAIProvider["generateFromText"]>[0]) =>
-    getDefaultProvider().generateFromText(params),
-  extend: (params: Parameters<OpenRouterAIProvider["extend"]>[0]) => getDefaultProvider().extend(params),
+  generateFromTopic: async (params: Parameters<OpenRouterAIProvider["generateFromTopic"]>[0]) => {
+    const provider = await createAiProvider();
+    return provider.generateFromTopic(params);
+  },
+  generateFromText: async (params: Parameters<OpenRouterAIProvider["generateFromText"]>[0]) => {
+    const provider = await createAiProvider();
+    return provider.generateFromText(params);
+  },
+  extend: async (params: Parameters<OpenRouterAIProvider["extend"]>[0]) => {
+    const provider = await createAiProvider();
+    return provider.extend(params);
+  },
 };
 
 export type { LanguageSpec } from "@/lib/prompts/generation";

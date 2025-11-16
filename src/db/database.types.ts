@@ -28,6 +28,30 @@ export type Database = {
   };
   public: {
     Tables: {
+      app_config: {
+        Row: {
+          key: string;
+          value: string;
+          description: string | null;
+          updated_at: string;
+          updated_by: string | null;
+        };
+        Insert: {
+          key: string;
+          value: string;
+          description?: string | null;
+          updated_at?: string;
+          updated_by?: string | null;
+        };
+        Update: {
+          key?: string;
+          value?: string;
+          description?: string | null;
+          updated_at?: string;
+          updated_by?: string | null;
+        };
+        Relationships: [];
+      };
       generations: {
         Row: {
           id: string;
