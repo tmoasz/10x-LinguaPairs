@@ -55,7 +55,14 @@ export default function ChallengePreview() {
     };
 
     setHistory((prev) => {
-      const nextHistory = [nextEntry, ...prev].slice(0, PREVIEW_MAX_RESULTS);
+      const nextHistory = [nextEntry, ...prev]
+        .sort((a, b) => {
+          if (a.total_time_ms === b.total_time_ms) {
+            return a.incorrect - b.incorrect;
+          }
+          return a.total_time_ms - b.total_time_ms;
+        })
+        .slice(0, PREVIEW_MAX_RESULTS);
       try {
         localStorage.setItem(PREVIEW_STORAGE_KEY, JSON.stringify(nextHistory));
       } catch {
