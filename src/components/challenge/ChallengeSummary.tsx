@@ -5,16 +5,9 @@ interface ChallengeSummaryProps {
   incorrectAttempts: number;
   correct: number;
   onRestart: () => void;
-  deckId: string;
 }
 
-export function ChallengeSummary({
-  totalTimeMs,
-  incorrectAttempts,
-  correct,
-  onRestart,
-  deckId,
-}: ChallengeSummaryProps) {
+export function ChallengeSummary({ totalTimeMs, incorrectAttempts, correct, onRestart }: ChallengeSummaryProps) {
   const medal = determineMedal(incorrectAttempts);
 
   return (
