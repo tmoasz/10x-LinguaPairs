@@ -93,7 +93,21 @@ export class OpenRouterService {
       baseDelayMs: options.retry?.baseDelayMs ?? DEFAULT_RETRY.baseDelayMs,
       maxDelayMs: options.retry?.maxDelayMs ?? DEFAULT_RETRY.maxDelayMs,
     };
-    this.fetchImpl = options.fetchImpl || globalThis.fetch;
+    const providedFetch = options.fetchImpl;
+    const globalFetch = typeof globalThis.fetch === "function" ? globalThis.fetch : undefined;
+
+    if (!providedFetch && !globalFetch) {
+      throw new OpenRouterValidationError("Fetch API is not available in this environment");
+    }
+
+    if (providedFetch) {
+      this.fetchImpl = providedFetch;
+    } else if (globalFetch) {
+      this.fetchImpl = ((...args: Parameters<typeof fetch>) => globalFetch.apply(globalThis, args)) as typeof fetch;
+    } else {
+      // Should be unreachable due to the guard above, but keeps TypeScript satisfied without non-null assertions.
+      throw new OpenRouterValidationError("Fetch API is not available in this environment");
+    }
     this.logger = options.logger;
 
     // Validate timeout
