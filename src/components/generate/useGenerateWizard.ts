@@ -329,6 +329,7 @@ export function useGenerateWizard() {
   );
 
   const defaultLanguages = useMemo(() => getDefaultLanguages(languages), [languages]);
+  // Determine onboarding state directly from currently loaded decks
   const onboarding = useMemo(() => isOnboarding(decks), [decks]);
 
   return {
@@ -342,6 +343,8 @@ export function useGenerateWizard() {
     canSubmit,
     isOnboarding: onboarding,
     defaultLanguages,
+    decksLoaded,
+    languagesLoaded,
     setStep,
     goToNextStep,
     goToPreviousStep,

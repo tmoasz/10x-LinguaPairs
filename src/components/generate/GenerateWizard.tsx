@@ -26,7 +26,10 @@ export default function GenerateWizard() {
     errors,
     canGoNext,
     canSubmit,
+    isOnboarding,
     defaultLanguages,
+    decksLoaded,
+    languagesLoaded,
     goToNextStep,
     goToPreviousStep,
     selectDeck,
@@ -56,7 +59,7 @@ export default function GenerateWizard() {
   }, [errors]);
 
   // Loading state while fetching initial data
-  const isInitialLoading = loading.decks || loading.languages;
+  const isInitialLoading = !decksLoaded || !languagesLoaded;
 
   if (isInitialLoading) {
     return (
@@ -109,6 +112,7 @@ export default function GenerateWizard() {
             selectedDeckId={state.selectedDeckId}
             defaultLangA={defaultLanguages.langA}
             defaultLangB={defaultLanguages.langB}
+            isOnboarding={isOnboarding}
             onDeckSelect={selectDeck}
             onDeckCreate={handleCreateDeck}
           />

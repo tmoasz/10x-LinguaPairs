@@ -9,7 +9,6 @@
 import { useState, useEffect, useRef } from "react";
 import DeckPicker from "@/components/decks/DeckPicker";
 import CreateDeckInline from "./CreateDeckInline";
-import { isOnboarding } from "./utils";
 import type { DeckListItemDTO, LanguageDTO, CreateDeckDTO } from "@/types";
 
 interface Step1DeckSelectionProps {
@@ -18,6 +17,7 @@ interface Step1DeckSelectionProps {
   selectedDeckId: string | null;
   defaultLangA: string | null;
   defaultLangB: string | null;
+  isOnboarding: boolean;
   onDeckSelect: (deckId: string) => void;
   onDeckCreate: (deck: CreateDeckDTO) => Promise<DeckListItemDTO>;
 }
@@ -28,14 +28,13 @@ export default function Step1DeckSelection({
   selectedDeckId,
   defaultLangA,
   defaultLangB,
+  isOnboarding: isOnboardingProp,
   onDeckSelect,
   onDeckCreate,
 }: Step1DeckSelectionProps) {
-  const isOnboardingFlow = isOnboarding(decks);
+  const isOnboardingFlow = isOnboardingProp;
   const selectedDeck = selectedDeckId ? decks.find((deck) => deck.id === selectedDeckId) : null;
-  // If onboarding, always show create form. Otherwise, allow toggle
   const [showCreateForm, setShowCreateForm] = useState(isOnboardingFlow);
-  // Track previous onboarding state to detect when onboarding ends
   const prevOnboardingRef = useRef(isOnboardingFlow);
 
   // Synchronize showCreateForm with isOnboardingFlow
