@@ -25,12 +25,12 @@ export default function ParamsSelector({
   onRegisterChange,
 }: ParamsSelectorProps) {
   return (
-    <div className="w-full space-y-8">
+    <div className="w-full grid grid-cols-1 md:grid-cols-2 gap-8">
       {/* Content Type Selection */}
       <div className="space-y-4">
         <div>
           <h3 className="text-lg font-semibold mb-1">Typ treści</h3>
-          <p className="text-sm text-muted-foreground">Wybierz typ par słówek, które chcesz wygenerować</p>
+          <p className="text-sm text-muted-foreground">Wybierz typ par zwrotów słownych, które chcesz wygenerować</p>
         </div>
 
         <RadioGroup value={contentType} onValueChange={(value) => onContentTypeChange(value as GenerationContentType)}>
@@ -38,9 +38,9 @@ export default function ParamsSelector({
             {CONTENT_TYPE_OPTIONS.map((option) => (
               <div key={option.value} className="flex items-start space-x-3">
                 <RadioGroupItem value={option.value} id={`content-${option.value}`} className="mt-1" />
-                <Label htmlFor={`content-${option.value}`} className="flex-1 cursor-pointer space-y-1 font-normal">
+                <Label htmlFor={`content-${option.value}`} className="flex-1 cursor-pointer font-normal block">
                   <div className="font-medium text-sm">{option.label}</div>
-                  <div className="text-xs text-muted-foreground">{option.description}</div>
+                  <div className="text-xs text-muted-foreground mt-1.5 block">{option.description}</div>
                 </Label>
               </div>
             ))}
@@ -60,9 +60,9 @@ export default function ParamsSelector({
             {REGISTER_OPTIONS.map((option) => (
               <div key={option.value} className="flex items-start space-x-3">
                 <RadioGroupItem value={option.value} id={`register-${option.value}`} className="mt-1" />
-                <Label htmlFor={`register-${option.value}`} className="flex-1 cursor-pointer space-y-1 font-normal">
+                <Label htmlFor={`register-${option.value}`} className="flex-1 cursor-pointer font-normal block">
                   <div className="font-medium text-sm">{option.label}</div>
-                  <div className="text-xs text-muted-foreground">{option.description}</div>
+                  <div className="text-xs text-muted-foreground mt-1.5 block">{option.description}</div>
                 </Label>
               </div>
             ))}

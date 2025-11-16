@@ -6,7 +6,7 @@
  * Integrates DeckPicker and CreateDeckInline
  */
 
-import { useState } from "react";
+import { useState, useEffect, useRef } from "react";
 import DeckPicker from "@/components/decks/DeckPicker";
 import CreateDeckInline from "./CreateDeckInline";
 import { isOnboarding } from "./utils";
@@ -32,9 +32,26 @@ export default function Step1DeckSelection({
   onDeckCreate,
 }: Step1DeckSelectionProps) {
   const isOnboardingFlow = isOnboarding(decks);
-
+  const selectedDeck = selectedDeckId ? decks.find((deck) => deck.id === selectedDeckId) : null;
   // If onboarding, always show create form. Otherwise, allow toggle
   const [showCreateForm, setShowCreateForm] = useState(isOnboardingFlow);
+  // Track previous onboarding state to detect when onboarding ends
+  const prevOnboardingRef = useRef(isOnboardingFlow);
+
+  // Synchronize showCreateForm with isOnboardingFlow
+  // Only hide form when onboarding transitions from true to false (deck created)
+  useEffect(() => {
+    const wasOnboarding = prevOnboardingRef.current;
+    const isOnboardingNow = isOnboardingFlow;
+
+    // If we transitioned from onboarding to non-onboarding, hide the form
+    if (wasOnboarding && !isOnboardingNow && showCreateForm) {
+      setShowCreateForm(false);
+    }
+
+    // Update ref for next render
+    prevOnboardingRef.current = isOnboardingNow;
+  }, [isOnboardingFlow, showCreateForm]);
 
   const handleCreateDeck = async (deckData: CreateDeckDTO) => {
     const newDeck = await onDeckCreate(deckData);
@@ -49,7 +66,7 @@ export default function Step1DeckSelection({
     <div className="w-full space-y-6">
       {!isOnboardingFlow && (
         <div>
-          <h2 className="text-xl font-semibold mb-1">Wybierz talię</h2>
+          <h2 className="text-xl font-semibold mb-1">Docelowa talia</h2>
           <p className="text-sm text-muted-foreground">Wygenerowane pary słówek zostaną dodane do wybranej talii</p>
         </div>
       )}
@@ -61,6 +78,9 @@ export default function Step1DeckSelection({
           selectedDeckId={selectedDeckId}
           onSelect={onDeckSelect}
           onCreateNew={() => setShowCreateForm(true)}
+          label="Docelowa talia"
+          labelHidden
+          helperTextHidden
         />
       )}
 
@@ -77,10 +97,18 @@ export default function Step1DeckSelection({
       )}
 
       {/* Show selected deck info when deck is selected (not in create mode) */}
-      {!showCreateForm && selectedDeckId && (
-        <div className="p-4 border rounded-lg bg-primary/5 border-primary/20">
+      {!showCreateForm && selectedDeck && (
+        <div className="p-4 border rounded-lg bg-primary/5 border-primary/20 space-y-2">
+          <div className="flex items-center gap-2 text-sm text-foreground">
+            <span className="text-base">✓</span>
+            <span className="font-semibold">{selectedDeck.title}</span>
+          </div>
           <p className="text-sm text-foreground">
-            ✓ <strong>Wybrana talia:</strong> {decks.find((d) => d.id === selectedDeckId)?.title ?? "Nieznana talia"}
+            <strong>Opis talii:</strong>{" "}
+            {selectedDeck.description?.trim()?.length ? selectedDeck.description : "Brak opisu"}
+          </p>
+          <p className="text-xs text-muted-foreground">
+            {selectedDeck.lang_a.name} ↔ {selectedDeck.lang_b.name} • {selectedDeck.pairs_count} par
           </p>
         </div>
       )}

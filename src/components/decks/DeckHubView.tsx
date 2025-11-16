@@ -124,6 +124,7 @@ export default function DeckHubView({ initialDeckId = null, autoSelectLast = fal
             selectedDeckId={selectedDeckId}
             onSelect={handleDeckSelect}
             onCreateNew={handleCreateNewDeck}
+            helperText="Zarządzaj parami i wyzwaniami w tej talii"
           />
           <DeckDetailView deckId={selectedDeckId} />
         </section>

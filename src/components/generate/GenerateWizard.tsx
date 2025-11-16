@@ -14,7 +14,6 @@ import StepIndicator from "./StepIndicator";
 import Step1DeckSelection from "./Step1DeckSelection";
 import Step2SourceSelection from "./Step2SourceSelection";
 import Step3Parameters from "./Step3Parameters";
-import NavigationButtons from "./NavigationButtons";
 import { Loader2 } from "lucide-react";
 
 export default function GenerateWizard() {
@@ -88,8 +87,17 @@ export default function GenerateWizard() {
 
   return (
     <div className="w-full">
-      {/* Step Indicator */}
-      <StepIndicator currentStep={state.currentStep} totalSteps={3} />
+      {/* Step Indicator with Navigation */}
+      <StepIndicator
+        currentStep={state.currentStep}
+        totalSteps={3}
+        canGoNext={canGoNext}
+        canSubmit={canSubmit}
+        isLoading={loading.generating}
+        onPrevious={goToPreviousStep}
+        onNext={goToNextStep}
+        onSubmit={handleGenerate}
+      />
 
       {/* Wizard Content */}
       <div className="bg-card border rounded-lg p-6 md:p-8 mb-6">
@@ -130,18 +138,6 @@ export default function GenerateWizard() {
           />
         )}
       </div>
-
-      {/* Navigation Buttons */}
-      <NavigationButtons
-        currentStep={state.currentStep}
-        totalSteps={3}
-        canGoNext={canGoNext}
-        canSubmit={canSubmit}
-        isLoading={loading.generating}
-        onPrevious={goToPreviousStep}
-        onNext={goToNextStep}
-        onSubmit={handleGenerate}
-      />
 
       {/* Loading Overlay during generation */}
       {loading.generating && (

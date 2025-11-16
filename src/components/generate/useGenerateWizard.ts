@@ -5,7 +5,7 @@
  * and API mutations required by the multi-step generation wizard.
  */
 
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useWizardStateMachine } from "./useWizardStateMachine";
 import { useWizardResources } from "./useWizardResources";
 import { getDefaultLanguages, isOnboarding, mapCreateDeckResponseToListItem, formatApiError } from "./utils";
@@ -71,6 +71,10 @@ export function useGenerateWizard() {
     isGenerating: mutationLoading.generating,
   });
 
+  // Track if we were in onboarding before creating a deck
+  const wasOnboardingRef = useRef(false);
+  const deckFromUrlAppliedRef = useRef(false);
+
   // ============================================================================
   // Data loading side effects
   // ============================================================================
@@ -87,27 +91,39 @@ export function useGenerateWizard() {
     }
   }, [decksLoaded, decks, syncWithDecks]);
 
-  // Auto-select deck from URL query parameter
+  // Track onboarding state
   useEffect(() => {
-    if (!decksLoaded || decks.length === 0) {
+    wasOnboardingRef.current = isOnboarding(decks);
+  }, [decks]);
+
+  // Auto-select deck from URL query parameter (only once)
+  useEffect(() => {
+    if (!decksLoaded || decks.length === 0 || deckFromUrlAppliedRef.current) {
       return;
     }
 
-    // Read deck ID from URL query parameter
     const urlParams = new URLSearchParams(window.location.search);
     const deckIdFromUrl = urlParams.get("deck");
 
     if (!deckIdFromUrl) {
+      deckFromUrlAppliedRef.current = true;
       return;
     }
 
-    // Check if the deck exists in the loaded decks
     const deckExists = decks.some((deck) => deck.id === deckIdFromUrl);
+    if (!deckExists) {
+      deckFromUrlAppliedRef.current = true;
+      return;
+    }
 
-    if (deckExists && state.selectedDeckId !== deckIdFromUrl) {
+    deckFromUrlAppliedRef.current = true;
+
+    if (state.selectedDeckId !== deckIdFromUrl) {
       selectDeck(deckIdFromUrl);
     }
-  }, [decksLoaded, decks, state.selectedDeckId, selectDeck]);
+
+    setStep(2);
+  }, [decksLoaded, decks, state.selectedDeckId, selectDeck, setStep]);
 
   useEffect(() => {
     if (!decksLoaded || !languagesLoaded) {
@@ -221,11 +237,18 @@ export function useGenerateWizard() {
 
   const handleCreateDeck = useCallback(
     async (deckData: CreateDeckDTO) => {
+      const wasOnboarding = wasOnboardingRef.current;
       const newDeck = await createDeckRequest(deckData);
       selectDeck(newDeck.id);
+
+      // If we were in onboarding, automatically go to step 2
+      if (wasOnboarding && state.currentStep === 1) {
+        setStep(2);
+      }
+
       return newDeck;
     },
-    [createDeckRequest, selectDeck]
+    [createDeckRequest, selectDeck, state.currentStep, setStep]
   );
 
   const handleGenerate = useCallback(async () => {
