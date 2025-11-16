@@ -3,6 +3,7 @@ import { z } from "zod";
 import { generationService } from "@/lib/services/generation.service";
 import { generateFromTopicSchema } from "@/lib/validation/generation.validation";
 import { getErrorMessage } from "@/lib/utils/error.utils";
+import { safeRequestJson } from "@/lib/utils/request.utils";
 
 /**
  * POST /api/generate/from-topic
@@ -87,7 +88,7 @@ export const POST: APIRoute = async (context) => {
   const userId = user.id;
 
   try {
-    const raw = await context.request.json();
+    const raw = await safeRequestJson(context.request);
     const body = generateFromTopicSchema.parse(raw);
 
     const result = await generationService.runFromTopic(supabase, userId, body);

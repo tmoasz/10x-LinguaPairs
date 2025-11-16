@@ -3,6 +3,7 @@ import { z } from "zod";
 import { deckService } from "@/lib/services/deck.service";
 import { pairService } from "@/lib/services/pair.service";
 import { flagPairSchema } from "@/lib/validation/pair.validation";
+import { safeRequestJson } from "@/lib/utils/request.utils";
 
 export const prerender = false;
 
@@ -55,7 +56,7 @@ export const POST: APIRoute = async ({ params, request, locals }) => {
 
   let body: unknown;
   try {
-    body = await request.json();
+    body = await safeRequestJson(request);
   } catch {
     return new Response(
       JSON.stringify({

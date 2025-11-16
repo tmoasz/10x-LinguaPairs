@@ -3,6 +3,7 @@ import { z } from "zod";
 
 import { createSupabaseServerInstance } from "@/db/supabase.client";
 import { emailSchema, passwordSchema } from "@/lib/validation/auth.schemas";
+import { safeRequestJson } from "@/lib/utils/request.utils";
 
 export const prerender = false;
 
@@ -13,7 +14,7 @@ const registerApiSchema = z.object({
 
 export const POST: APIRoute = async ({ request, cookies }) => {
   try {
-    const payload = await request.json().catch(() => ({}));
+    const payload = await safeRequestJson(request).catch(() => ({}));
     const parsed = registerApiSchema.safeParse(payload);
 
     if (!parsed.success) {

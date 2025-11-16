@@ -71,6 +71,38 @@ This guide helps contributors work effectively in 10x‑LinguaPairs.
 - Use the provided client in `src/db/supabase.client.ts` for typed access to the database.
 - Auth & SSR: `src/middleware/` injects `locals.supabase` and `locals.user`; protect non‑public routes via middleware.
 
+## Cloudflare Workers & Request Handling
+
+**IMPORTANT**: When working with `Request` objects in API endpoints deployed to Cloudflare Pages/Workers, always use safe request utilities to prevent "Illegal invocation" errors.
+
+### Rule: Never call `request.json()` directly
+
+- **DO NOT**: `await context.request.json()` or `await request.json()`
+- **DO**: `await safeRequestJson(context.request)` or `await safeRequestJson(request)`
+- Import from: `@/lib/utils/request.utils`
+
+### Why this matters
+
+In Cloudflare Workers runtime, Request methods (`json()`, `text()`, etc.) can lose their `this` context when called directly, especially during:
+
+- Long-running operations (>5 seconds)
+- Async operations that span multiple event loop ticks
+- When Request objects are passed through multiple function calls
+
+This causes `TypeError: Illegal invocation: function called with incorrect this reference`.
+
+### Solution
+
+The `safeRequestJson()` utility uses `Request.prototype.json.call(request)` to explicitly preserve the `this` context, preventing the error.
+
+### When to apply
+
+- **All API endpoints** that parse request bodies (POST, PUT, PATCH)
+- **Especially critical** for endpoints with long execution times (e.g., AI generation)
+- **Best practice**: Use `safeRequestJson()` everywhere instead of `request.json()` for consistency
+
+See: https://developers.cloudflare.com/workers/observability/errors/#illegal-invocation-errors
+
 ## Supabase Migrations
 
 - Location: `supabase/migrations/` (managed by Supabase CLI).
