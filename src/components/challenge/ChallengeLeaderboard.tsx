@@ -7,6 +7,8 @@ interface ChallengeLeaderboardProps {
 }
 
 export function ChallengeLeaderboard({ entries, myBest, isLoading = false }: ChallengeLeaderboardProps) {
+  const tableEntries = entries.length > 0 ? entries : myBest ? [myBest] : [];
+
   return (
     <div className="rounded-2xl border border-border bg-card/80 p-6 shadow-sm">
       <div className="flex items-center justify-between">
@@ -42,14 +44,14 @@ export function ChallengeLeaderboard({ entries, myBest, isLoading = false }: Cha
                   Ładuję ranking...
                 </td>
               </tr>
-            ) : entries.length === 0 ? (
+            ) : tableEntries.length === 0 ? (
               <tr>
                 <td colSpan={5} className="py-6 text-center text-muted-foreground">
                   Brak zapisanych wyników dla tej talii.
                 </td>
               </tr>
             ) : (
-              entries.map((entry, index) => (
+              tableEntries.map((entry, index) => (
                 <tr
                   key={entry.id}
                   className={[
