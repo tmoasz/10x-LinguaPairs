@@ -1,5 +1,6 @@
 ---
 import LoginForm from "./auth/LoginForm";
+import ChallengePreview from "./challenge/ChallengePreview.tsx";
 
 interface Props {
   user: { id: string; email: string | null } | null;
@@ -42,9 +43,14 @@ const isAuthenticated = Boolean(user);
     </header>
 
     <!-- Main content: Two columns -->
-    <main class="grid gap-12 lg:grid-cols-2 lg:gap-16">
-      <!-- Left column: Project info -->
-      <div class="flex flex-col justify-center space-y-8">
+    <main class="grid gap-10 lg:grid-cols-[1.1fr_0.9fr] lg:gap-14">
+      <!-- Left column: Challenge preview -->
+      <div class="flex flex-col">
+          <ChallengePreview client:load />
+      </div>
+
+      <!-- Right column: Text + Login panel -->
+      <div class="flex flex-col space-y-8">
         <div>
           <h1 class="text-3xl font-bold text-foreground sm:text-4xl lg:text-5xl">Kreatywna nauka słownictwa</h1>
           <p class="mt-4 text-lg text-muted-foreground">
@@ -61,19 +67,8 @@ const isAuthenticated = Boolean(user);
               życiowym.
             </p>
           </div>
-
-          <div>
-            <h2 class="text-lg font-semibold text-foreground">Tryby nauki</h2>
-            <ul class="mt-2 space-y-2 text-sm text-muted-foreground">
-              <li>• <strong>Nauka łączeniem:</strong> siatka 2×5 z niezależnym tasowaniem kolumn</li>
-              <li>• <strong>Challenge:</strong> 10 par na czas z zapisem wyniku</li>
-            </ul>
-          </div>
         </div>
-      </div>
 
-      <!-- Right column: Login panel -->
-      <div class="flex items-center justify-center">
         {
           isAuthenticated ? (
             <div class="w-full max-w-md space-y-6 rounded-lg border border-border bg-card p-8">
@@ -105,14 +100,7 @@ const isAuthenticated = Boolean(user);
                 </p>
               </div>
               <LoginForm client:load />
-              <div class="mt-6 text-center">
-                <p class="text-sm text-muted-foreground">
-                  Nie masz konta?{" "}
-                  <a href="/auth/register" class="font-medium text-primary hover:text-primary/80">
-                    Zarejestruj się
-                  </a>
-                </p>
-              </div>
+
             </div>
           )
         }
