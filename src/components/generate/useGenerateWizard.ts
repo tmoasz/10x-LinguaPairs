@@ -272,7 +272,7 @@ export function useGenerateWizard() {
         await runGenerationRequest("/api/generate/from-text", payload);
       }
 
-      window.location.href = `/decks/${deckId}`;
+      window.location.href = `/decks?deck=${deckId}`;
     } catch {
       // Error already stored in mutationErrors
     }
