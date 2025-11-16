@@ -46,7 +46,7 @@ const isAuthenticated = Boolean(user);
     <main class="grid gap-10 lg:grid-cols-[1.1fr_0.9fr] lg:gap-14">
       <!-- Left column: Challenge preview -->
       <div class="flex flex-col">
-          <ChallengePreview client:load />
+        <ChallengePreview client:load />
       </div>
 
       <!-- Right column: Text + Login panel -->
@@ -54,7 +54,9 @@ const isAuthenticated = Boolean(user);
         <div>
           <h1 class="text-3xl font-bold text-foreground sm:text-4xl lg:text-5xl">Kreatywna nauka słownictwa</h1>
           <p class="mt-4 text-lg text-muted-foreground">
-            Generuj zestawy par słów, fraz i zwrotów i ćwicz w trybie Challenge. Dostępne języki: <strong>English, English (US), Deutsch, Italiano, Español, Čeština</strong>.
+            Generuj zestawy par słów, fraz i zwrotów i ćwicz w trybie Challenge. Dostępne języki: <strong
+              >English, English (US), Deutsch, Italiano, Español, Čeština</strong
+            >.
           </p>
         </div>
 
@@ -63,8 +65,8 @@ const isAuthenticated = Boolean(user);
             <h2 class="text-lg font-semibold text-foreground">Generacja zestawów</h2>
             <p class="mt-2 text-sm text-muted-foreground">
               Wybierz temat lub opisz sytuację. System generuje pary: słów, zwrotów, mini-fraz, proste zdania. Bardzo
-              kreatywnie, dopasowuje się do Twojego stylu i tematyki. Ucz się słownictwa aby sprostać konketnym sytuacjom
-              życiowym.
+              kreatywnie, dopasowuje się do Twojego stylu i tematyki. Ucz się słownictwa aby sprostać konketnym
+              sytuacjom życiowym.
             </p>
           </div>
         </div>
@@ -100,7 +102,6 @@ const isAuthenticated = Boolean(user);
                 </p>
               </div>
               <LoginForm client:load />
-
             </div>
           )
         }
