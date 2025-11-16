@@ -6,8 +6,7 @@
  * - Register/formality (neutral, informal, formal)
  */
 
-import { Label } from "@/components/ui/label";
-import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
+import { Button } from "@/components/ui/button";
 import { CONTENT_TYPE_OPTIONS, REGISTER_OPTIONS } from "./types";
 import type { GenerationContentType, GenerationRegister } from "@/types";
 
@@ -33,19 +32,21 @@ export default function ParamsSelector({
           <p className="text-sm text-muted-foreground">Wybierz typ par zwrotów słownych, które chcesz wygenerować</p>
         </div>
 
-        <RadioGroup value={contentType} onValueChange={(value) => onContentTypeChange(value as GenerationContentType)}>
-          <div className="space-y-3">
-            {CONTENT_TYPE_OPTIONS.map((option) => (
-              <div key={option.value} className="flex items-start space-x-3">
-                <RadioGroupItem value={option.value} id={`content-${option.value}`} className="mt-1" />
-                <Label htmlFor={`content-${option.value}`} className="flex-1 cursor-pointer font-normal block">
-                  <div className="font-medium text-sm">{option.label}</div>
-                  <div className="text-xs text-muted-foreground mt-1.5 block">{option.description}</div>
-                </Label>
-              </div>
-            ))}
-          </div>
-        </RadioGroup>
+        <div className="flex flex-col gap-3">
+          {CONTENT_TYPE_OPTIONS.map((option) => (
+            <Button
+              key={option.value}
+              type="button"
+              variant={contentType === option.value ? "default" : "outline"}
+              size="lg"
+              onClick={() => onContentTypeChange(option.value)}
+              className="w-full flex flex-col items-start justify-center h-auto py-4 px-4"
+            >
+              <span className="font-semibold text-sm">{option.label}</span>
+              <span className="text-xs opacity-90 mt-1 text-left">{option.description}</span>
+            </Button>
+          ))}
+        </div>
       </div>
 
       {/* Register Selection */}
@@ -55,19 +56,21 @@ export default function ParamsSelector({
           <p className="text-sm text-muted-foreground">Wybierz poziom formalności generowanego słownictwa</p>
         </div>
 
-        <RadioGroup value={register} onValueChange={(value) => onRegisterChange(value as GenerationRegister)}>
-          <div className="space-y-3">
-            {REGISTER_OPTIONS.map((option) => (
-              <div key={option.value} className="flex items-start space-x-3">
-                <RadioGroupItem value={option.value} id={`register-${option.value}`} className="mt-1" />
-                <Label htmlFor={`register-${option.value}`} className="flex-1 cursor-pointer font-normal block">
-                  <div className="font-medium text-sm">{option.label}</div>
-                  <div className="text-xs text-muted-foreground mt-1.5 block">{option.description}</div>
-                </Label>
-              </div>
-            ))}
-          </div>
-        </RadioGroup>
+        <div className="flex flex-col gap-3">
+          {REGISTER_OPTIONS.map((option) => (
+            <Button
+              key={option.value}
+              type="button"
+              variant={register === option.value ? "default" : "outline"}
+              size="lg"
+              onClick={() => onRegisterChange(option.value)}
+              className="w-full flex flex-col items-start justify-center h-auto py-4 px-4"
+            >
+              <span className="font-semibold text-sm">{option.label}</span>
+              <span className="text-xs opacity-90 mt-1 text-left">{option.description}</span>
+            </Button>
+          ))}
+        </div>
       </div>
     </div>
   );
