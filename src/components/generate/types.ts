@@ -134,22 +134,22 @@ export const CONTENT_TYPE_OPTIONS: {
   {
     value: "auto",
     label: "Automatyczny",
-    description: "AI zdecyduje co najlepsze dla tego kontekstu",
+    description: "AI zdecyduje o różnorodności par słownych do wygenerowania",
   },
   {
     value: "words",
     label: "Pojedyncze słowa",
-    description: "Tylko pojedyncze słowa i ich tłumaczenia",
+    description: "Krótkie słowa i zwroty - do prostej nauki słownictwa",
   },
   {
     value: "mini-phrases",
     label: "Krótkie frazy",
-    description: "Krótkie wyrażenia i zwroty (2-4 słowa)",
+    description: "Krótkie wyrażenia i zwroty wprowadzające w tematykę",
   },
   {
     value: "phrases",
     label: "Frazy",
-    description: "Dłuższe frazy i zdania",
+    description: "Dłuższe frazy i zdania pozwalajace na komunikację.",
   },
 ];
 

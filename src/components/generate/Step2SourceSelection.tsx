@@ -6,8 +6,7 @@
  * - Own text (1-5000 characters)
  */
 
-import { Label } from "@/components/ui/label";
-import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
+import { Button } from "@/components/ui/button";
 import TopicPicker from "./TopicPicker";
 import TextAreaLimited from "./TextAreaLimited";
 import type { TopicID } from "@/types";
@@ -37,25 +36,29 @@ export default function Step2SourceSelection({
       </div>
 
       {/* Source type selection */}
-      <RadioGroup value={source} onValueChange={(value) => onSourceChange(value as "topic" | "text")}>
-        <div className="space-y-3">
-          <div className="flex items-center space-x-3">
-            <RadioGroupItem value="topic" id="source-topic" />
-            <Label htmlFor="source-topic" className="cursor-pointer font-normal">
-              <div className="font-medium">Temat z listy</div>
-              <div className="text-xs text-muted-foreground">Wybierz jeden z 20 predefiniowanych tematów</div>
-            </Label>
-          </div>
+      <div className="flex gap-3">
+        <Button
+          type="button"
+          variant={source === "topic" ? "default" : "outline"}
+          size="lg"
+          onClick={() => onSourceChange("topic")}
+          className="flex-1 flex flex-col items-start justify-center h-auto py-4 px-6"
+        >
+          <span className="font-semibold text-base">Temat z listy</span>
+          <span className="text-xs opacity-90 mt-1">Wybierz jeden z 20 predefiniowanych tematów</span>
+        </Button>
 
-          <div className="flex items-center space-x-3">
-            <RadioGroupItem value="text" id="source-text" />
-            <Label htmlFor="source-text" className="cursor-pointer font-normal">
-              <div className="font-medium">Własny tekst</div>
-              <div className="text-xs text-muted-foreground">Opisz kontekst własnymi słowami (1-5000 znaków)</div>
-            </Label>
-          </div>
-        </div>
-      </RadioGroup>
+        <Button
+          type="button"
+          variant={source === "text" ? "default" : "outline"}
+          size="lg"
+          onClick={() => onSourceChange("text")}
+          className="flex-1 flex flex-col items-start justify-center h-auto py-4 px-6"
+        >
+          <span className="font-semibold text-base">Własny tekst</span>
+          <span className="text-xs opacity-90 mt-1">Opisz kontekst własnymi słowami (1-5000 znaków)</span>
+        </Button>
+      </div>
 
       {/* Conditional content based on source */}
       <div className="mt-6">

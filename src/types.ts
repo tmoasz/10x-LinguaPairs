@@ -294,7 +294,59 @@ export interface PairFlagResponseDTO {
 }
 
 // ============================================================================
-// 6. Generation DTOs (AI-Powered)
+// 6. Challenge DTOs (Challenge Mode API)
+// ============================================================================
+
+export interface ChallengePairsResponseDTO {
+  deck_id: string;
+  total_available: number;
+  required_pairs: number;
+  rounds: number;
+  pairs_per_round: number;
+  pairs: PairDTO[];
+}
+
+export interface ChallengeResultRequestDTO {
+  deck_id: string;
+  total_time_ms: number;
+  correct: number;
+  incorrect: number;
+  version?: string;
+  round_times_ms?: number[];
+}
+
+export interface ChallengeResultDTO {
+  id: string;
+  deck_id: string;
+  user_id: string;
+  total_time_ms: number;
+  correct: number;
+  incorrect: number;
+  version: string;
+  round_times_ms: number[] | null;
+  created_at: string;
+}
+
+export interface ChallengeLeaderboardEntryDTO {
+  id: string;
+  deck_id: string;
+  user_id: string;
+  total_time_ms: number;
+  incorrect: number;
+  correct: number;
+  created_at: string;
+  player_name: string;
+  is_current_user: boolean;
+}
+
+export interface ChallengeLeaderboardDTO {
+  deck_id: string;
+  entries: ChallengeLeaderboardEntryDTO[];
+  my_best?: ChallengeLeaderboardEntryDTO | null;
+}
+
+// ============================================================================
+// 7. Generation DTOs (AI-Powered)
 // ============================================================================
 
 /**
@@ -400,7 +452,7 @@ export interface GenerationResponseDTO {
 }
 
 // ============================================================================
-// 7. Progress Tracking DTOs (Leitner SRS)
+// 8. Progress Tracking DTOs (Leitner SRS)
 // ============================================================================
 
 /**
@@ -547,7 +599,7 @@ export interface BatchReviewResponseDTO {
 }
 
 // ============================================================================
-// 8. Share Link DTOs
+// 9. Share Link DTOs
 // ============================================================================
 
 /**
@@ -589,7 +641,7 @@ export interface SharedDeckDTO {
 }
 
 // ============================================================================
-// 9. Curated Decks DTOs
+// 10. Curated Decks DTOs
 // ============================================================================
 
 /**
@@ -626,7 +678,7 @@ export interface CuratedDeckDetailDTO {
 }
 
 // ============================================================================
-// 10. Common Utility DTOs
+// 11. Common Utility DTOs
 // ============================================================================
 
 /**
@@ -697,7 +749,7 @@ export interface DueReviewQueryParams {
 }
 
 // ============================================================================
-// 11. Telemetry & Logging Types
+// 12. Telemetry & Logging Types
 // ============================================================================
 
 /**
@@ -749,7 +801,7 @@ export interface FlagTelemetryDTO {
 }
 
 // ============================================================================
-// 12. Command Model Helpers
+// 13. Command Model Helpers
 // ============================================================================
 
 /**
