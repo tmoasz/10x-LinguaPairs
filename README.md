@@ -14,7 +14,9 @@ Welcome to **10x-LinguaPairs**, a modern, accessible, web applications focused o
 
 ## Project Description
 
-10x-LinguaPairs provides an Astro 5 + React 19 boilerplate enhanced with TypeScript, Tailwind CSS and shadcn/ui. It is designed to help developers ship performant, accessible and SEO-friendly sites quickly. Although the template can be used for any kind of project, it is optimised for building language-learning tools such as flash-cards, vocabulary trainers or pair-matching games.
+10x-LinguaPairs is a Supabase-backed Astro 5 + React 19 PWA that actually powers a complete vocabulary learning workflow. Logged-in users go through a three-step AI generation wizard to pick or create a deck, choose languages and a topic or free-form brief, and configure content type plus register filters before generating 50 new PL↔EN (and multilingual) term pairs that land in Supabase. Once a deck exists, the Deck Hub lets them review metadata, change visibility, flag or delete bad pairs, and keep track of the daily quota that limits three generations per day.
+
+On top of generation, the app includes an in-browser Challenge mode: decks with at least 15 pairs feed a three-round matching grid with timers, mistake penalties and a leaderboard stored via `/api/challenge/*`. Guests can try a local preview on the landing page, while authenticated users can play against their own decks and automatically save results. Email-based authentication (login/register/reset) is already wired to Supabase, so the README mirrors the current, working product rather than a generic starter.
 
 ## Tech Stack
 
@@ -67,7 +69,7 @@ $ bun install
 $ bun run dev
 
 # 4. Open the project
-# Visit http://localhost:4321 in your browser
+# Visit http://localhost:3000 in your browser
 ```
 
 ### Building for Production
@@ -93,20 +95,20 @@ $ bun run preview
 
 ## Project Scope
 
-The current template includes:
+What is already live:
 
-- Pre-configured Astro + React + TS setup
-- Tailwind CSS 4 with sensible defaults and theming
-- shadcn/ui components ready to use
-- Opinionated ESLint & Prettier configs with Husky hooks
-- Sample layout, page and component structure
+- AI generation wizard with deck picker/creator, topic or free-form prompts, register + content-type filters, quota enforcement and Supabase persistence (see `src/pages/generate.astro` and `src/components/generate/*`).
+- Deck Hub with metadata editing, visibility controls, pagination of generated pairs, reporting/flagging flows, and Supabase-backed APIs under `src/pages/api/decks/*` that power the React management views.
+- Challenge gameplay loop with three timed rounds, anti-cheat penalties, leaderboard storage, and guest preview embedded on the landing page (`src/components/challenge/*` and `/api/challenge/*` routes).
+- Email/password auth plus login/register/reset UIs connected to Supabase Auth middleware, protecting generation, deck and challenge routes.
+- Daily quota endpoint (`/api/users/me/quota`) and rate limiting that gates generation to three successful runs per day.
 
-Planned future enhancements (see project board):
+Coming up next (tracked in backlog):
 
-- Supabase integration for backend data storage
-- Authentication scaffold
-- Example language-learning features (flashcards, spaced repetition)
-- Unit & end-to-end testing setup (Vitest, Playwright, RTL)
+- Leitner learning mode with spaced repetition buckets.
+- Offline caching of the last 10 decks for guest play and PWA installability polish.
+- Manual pair editing plus “+10” regeneration flow across all decks.
+- Telemetry dashboards and richer moderation tooling for flagged content.
 
 ## Project Status
 
