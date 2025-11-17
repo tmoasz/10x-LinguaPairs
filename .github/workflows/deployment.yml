@@ -82,7 +82,7 @@ jobs:
           PUBLIC_ENV_NAME: ${{ secrets.PUBLIC_ENV_NAME }}
           SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
           SUPABASE_KEY: ${{ secrets.SUPABASE_KEY }}
-          OPENROUTER_API_KEY: ${{ secrets.OPENROUTER_API_KEY }}
+          OPENROUTER_API_KEY: ""
         run: bun run build
 
       - name: Deploy to Cloudflare Pages
