@@ -3,6 +3,7 @@ import { z } from "zod";
 import { challengeService } from "@/lib/services/challenge.service";
 import { deckService } from "@/lib/services/deck.service";
 import { safeRequestJson } from "@/lib/utils/request.utils";
+import { logger } from "@/lib/utils/logger";
 import { challengeResultSchema } from "@/lib/validation/challenge.validation";
 
 export const prerender = false;
@@ -86,7 +87,7 @@ export const POST: APIRoute = async ({ request, locals }) => {
       headers: jsonHeaders,
     });
   } catch (error) {
-    console.error("Unexpected error in POST /api/challenge/results", error);
+    logger.error("Unexpected error in POST /api/challenge/results", error);
     return new Response(
       JSON.stringify({
         error: {

@@ -1,6 +1,7 @@
 import type { APIRoute } from "astro";
 import { challengeService } from "@/lib/services/challenge.service";
 import { deckService } from "@/lib/services/deck.service";
+import { logger } from "@/lib/utils/logger";
 
 export const prerender = false;
 
@@ -55,7 +56,7 @@ export const GET: APIRoute = async ({ params, locals, request }) => {
       headers: jsonHeaders,
     });
   } catch (error) {
-    console.error("Unexpected error in GET /api/challenge/decks/:deckId/top", error);
+    logger.error("Unexpected error in GET /api/challenge/decks/:deckId/top", error);
     return new Response(
       JSON.stringify({
         error: {

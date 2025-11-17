@@ -1,5 +1,6 @@
 import { ValidationError } from "@/lib/errors";
 import type { SupabaseClient } from "@/db/supabase.client";
+import { logger } from "@/lib/utils/logger";
 import type {
   CreateDeckDTO,
   CreateDeckResponseDTO,
@@ -31,7 +32,7 @@ export const deckService = {
       .eq("is_active", true);
 
     if (languagesError) {
-      console.error("Error fetching languages:", languagesError);
+      logger.error("Error fetching languages:", languagesError);
       throw new Error(`Failed to fetch languages: ${languagesError.message}`);
     }
 
@@ -64,7 +65,7 @@ export const deckService = {
       .single();
 
     if (deckInsertError || !deckRecord) {
-      console.error("Error creating deck:", deckInsertError);
+      logger.error("Error creating deck:", deckInsertError);
       throw new Error(
         deckInsertError
           ? `Failed to create deck: ${deckInsertError.message}`
@@ -130,7 +131,7 @@ export const deckService = {
     const { error } = await supabase.from("decks").update(payload).eq("id", deckId).is("deleted_at", null);
 
     if (error) {
-      console.error("Error updating deck:", error);
+      logger.error("Error updating deck:", error);
       throw new Error(`Failed to update deck: ${error.message}`);
     }
   },
@@ -156,7 +157,7 @@ async function fetchDeckRow(supabase: SupabaseClient, deckId: string): Promise<D
     .maybeSingle();
 
   if (error && error.code !== "PGRST116") {
-    console.error("Error fetching deck:", error);
+    logger.error("Error fetching deck:", error);
     throw new Error(`Failed to fetch deck: ${error.message}`);
   }
 
@@ -167,7 +168,7 @@ async function fetchOwnerProfile(supabase: SupabaseClient, userId: string) {
   const { data, error } = await supabase.from("profiles").select("id, username").eq("id", userId).single();
 
   if (error || !data) {
-    console.error("Error fetching owner profile:", error);
+    logger.error("Error fetching owner profile:", error);
     throw new Error(
       error ? `Failed to fetch owner profile: ${error.message}` : `Deck owner profile not found for user ID: ${userId}`
     );
@@ -180,7 +181,7 @@ async function fetchLanguageMap(supabase: SupabaseClient, ids: string[]): Promis
   const { data, error } = await supabase.from("languages").select("id, code, name, flag_emoji").in("id", ids);
 
   if (error) {
-    console.error("Error fetching languages:", error);
+    logger.error("Error fetching languages:", error);
     throw new Error(`Failed to fetch languages: ${error.message}`);
   }
 
@@ -204,7 +205,7 @@ async function countPairsForDeck(supabase: SupabaseClient, deckId: string): Prom
     .is("deleted_at", null);
 
   if (error) {
-    console.error("Error counting pairs:", error);
+    logger.error("Error counting pairs:", error);
     throw new Error(`Failed to count pairs: ${error.message}`);
   }
 

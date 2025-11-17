@@ -1,4 +1,5 @@
 import type { SupabaseClient } from "@/db/supabase.client";
+import { logger } from "@/lib/utils/logger";
 import type { PairDTO, PairFlagResponseDTO, PairsListDTO } from "@/types";
 
 interface ListParams {
@@ -35,7 +36,7 @@ export const pairService = {
       .range(offset, offset + pageSize - 1);
 
     if (error) {
-      console.error("Error fetching pairs:", error);
+      logger.error("Error fetching pairs:", error);
       throw new Error(`Failed to fetch pairs: ${error.message}`);
     }
 
@@ -51,7 +52,7 @@ export const pairService = {
         .in("pair_id", pairIds);
 
       if (flagsError) {
-        console.error("Error fetching pair flags:", flagsError);
+        logger.error("Error fetching pair flags:", flagsError);
         throw new Error(`Failed to fetch flags: ${flagsError.message}`);
       }
       flaggedSet = new Set((flagsData ?? []).map((row) => row.pair_id));
@@ -92,7 +93,7 @@ export const pairService = {
       .maybeSingle();
 
     if (error && error.code !== "PGRST116") {
-      console.error("Error verifying pair ownership:", error);
+      logger.error("Error verifying pair ownership:", error);
       throw new Error(`Failed to verify pair: ${error.message}`);
     }
 
@@ -115,7 +116,7 @@ export const pairService = {
       if (error && error.code === "23505") {
         throw new Error("PAIR_ALREADY_FLAGGED");
       }
-      console.error("Error flagging pair:", error);
+      logger.error("Error flagging pair:", error);
       throw new Error(error?.message ?? "Failed to flag pair");
     }
 
@@ -139,7 +140,7 @@ export const pairService = {
       .maybeSingle();
 
     if (error) {
-      console.error("Error deleting pair:", error);
+      logger.error("Error deleting pair:", error);
       throw new Error(`Failed to delete pair: ${error.message}`);
     }
 

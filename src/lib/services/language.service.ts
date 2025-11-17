@@ -1,4 +1,5 @@
 import type { SupabaseClient } from "@/db/supabase.client";
+import { logger } from "@/lib/utils/logger";
 import type { Language, LanguageDTO, LanguagesListDTO } from "@/types";
 
 /**
@@ -32,7 +33,7 @@ export const languageService = {
     const { data, error, count } = await query;
 
     if (error) {
-      console.error("Error fetching languages:", error);
+      logger.error("Error fetching languages:", error);
       throw new Error(`Failed to fetch languages: ${error.message}`);
     }
 
@@ -73,7 +74,7 @@ export const languageService = {
         return null;
       }
 
-      console.error("Error fetching language:", error);
+      logger.error("Error fetching language:", error);
       throw new Error(`Failed to fetch language: ${error.message}`);
     }
 

@@ -2,6 +2,7 @@ import type { SupabaseClient } from "@/db/supabase.client";
 import { aiProvider, type LanguageSpec } from "@/lib/services/ai.provider";
 import { getTopicLabel } from "@/lib/constants/topics";
 import { getErrorMessage } from "@/lib/utils/error.utils";
+import { logger } from "@/lib/utils/logger";
 import type {
   GenerationContentType,
   GenerationRegister,
@@ -50,7 +51,7 @@ async function getUsedToday(supabase: SupabaseClient, userId: string): Promise<n
     .gte("created_at", today);
 
   if (error) {
-    console.error("Error counting quota usage:", error);
+    logger.error("Error counting quota usage:", error);
     throw new Error(`Failed to compute quota: ${error.message}`);
   }
 
@@ -66,7 +67,7 @@ async function hasActiveForUser(supabase: SupabaseClient, userId: string): Promi
     .limit(1);
 
   if (error) {
-    console.error("Error checking active generation:", error);
+    logger.error("Error checking active generation:", error);
     throw new Error(`Failed to check active generation: ${error.message}`);
   }
 
@@ -84,7 +85,7 @@ async function getActiveForUser(supabase: SupabaseClient, userId: string): Promi
     .maybeSingle();
 
   if (error && error.code !== "PGRST116") {
-    console.error("Error fetching active generation for user:", error);
+    logger.error("Error fetching active generation for user:", error);
     throw new Error(`Failed to fetch active generation: ${error.message}`);
   }
 
@@ -107,7 +108,7 @@ async function getActiveForDeck(
     .maybeSingle();
 
   if (error && error.code !== "PGRST116") {
-    console.error("Error fetching active generation for deck:", error);
+    logger.error("Error fetching active generation for deck:", error);
     throw new Error(`Failed to fetch active generation: ${error.message}`);
   }
 
@@ -165,7 +166,7 @@ export const generationService = {
       .single();
 
     if (error || !data) {
-      console.error("Error creating generation (topic):", error);
+      logger.error("Error creating generation (topic):", error);
       throw new Error(error?.message || "Failed to create generation");
     }
 
@@ -206,7 +207,7 @@ export const generationService = {
       .single();
 
     if (error || !data) {
-      console.error("Error creating generation (text):", error);
+      logger.error("Error creating generation (text):", error);
       throw new Error(error?.message || "Failed to create generation");
     }
 
@@ -238,7 +239,7 @@ export const generationService = {
       if (baseErr.code === "PGRST116") {
         throw new Error("BASE_GENERATION_NOT_FOUND");
       }
-      console.error("Error reading base generation:", baseErr);
+      logger.error("Error reading base generation:", baseErr);
       throw new Error(`Failed to read base generation: ${baseErr.message}`);
     }
 
@@ -268,7 +269,7 @@ export const generationService = {
       .single();
 
     if (error || !data) {
-      console.error("Error creating generation (extend):", error);
+      logger.error("Error creating generation (extend):", error);
       throw new Error(error?.message || "Failed to create generation");
     }
 
@@ -329,7 +330,7 @@ export const generationService = {
 
     if (insertErr || !created) {
       if (insertErr?.code === "23505") throw new Error("GENERATION_IN_PROGRESS");
-      console.error("Error creating generation (topic, sync):", insertErr);
+      logger.error("Error creating generation (topic, sync):", insertErr);
       throw new Error(insertErr?.message || "Failed to create generation");
     }
 
@@ -341,7 +342,7 @@ export const generationService = {
       .eq("id", genId);
 
     if (runningUpdateError) {
-      console.error("Failed to update generation status to running:", runningUpdateError);
+      logger.error("Failed to update generation status to running:", runningUpdateError);
       // Try to clean up by marking as failed
       await markFailedAndLog(
         supabase,
@@ -377,7 +378,7 @@ export const generationService = {
         .eq("id", genId);
 
       if (updateError) {
-        console.error("Failed to update generation status to succeeded:", updateError);
+        logger.error("Failed to update generation status to succeeded:", updateError);
         // Attempt to mark as failed since we can't mark as succeeded
         await markFailedAndLog(
           supabase,
@@ -444,7 +445,7 @@ export const generationService = {
 
     if (insertErr || !created) {
       if (insertErr?.code === "23505") throw new Error("GENERATION_IN_PROGRESS");
-      console.error("Error creating generation (text, sync):", insertErr);
+      logger.error("Error creating generation (text, sync):", insertErr);
       throw new Error(insertErr?.message || "Failed to create generation");
     }
 
@@ -455,7 +456,7 @@ export const generationService = {
       .eq("id", genId);
 
     if (runningUpdateError) {
-      console.error("Failed to update generation status to running:", runningUpdateError);
+      logger.error("Failed to update generation status to running:", runningUpdateError);
       // Try to clean up by marking as failed
       await markFailedAndLog(
         supabase,
@@ -490,7 +491,7 @@ export const generationService = {
         .eq("id", genId);
 
       if (updateError) {
-        console.error("Failed to update generation status to succeeded:", updateError);
+        logger.error("Failed to update generation status to succeeded:", updateError);
         // Attempt to mark as failed since we can't mark as succeeded
         await markFailedAndLog(
           supabase,
@@ -540,7 +541,7 @@ export const generationService = {
 
     if (baseErr) {
       if (baseErr.code === "PGRST116") throw new Error("BASE_GENERATION_NOT_FOUND");
-      console.error("Error reading base generation:", baseErr);
+      logger.error("Error reading base generation:", baseErr);
       throw new Error(`Failed to read base generation: ${baseErr.message}`);
     }
 
@@ -575,7 +576,7 @@ export const generationService = {
 
     if (insertErr || !created) {
       if (insertErr?.code === "23505") throw new Error("GENERATION_IN_PROGRESS");
-      console.error("Error creating generation (extend, sync):", insertErr);
+      logger.error("Error creating generation (extend, sync):", insertErr);
       throw new Error(insertErr?.message || "Failed to create generation");
     }
 
@@ -586,7 +587,7 @@ export const generationService = {
       .eq("id", genId);
 
     if (runningUpdateError) {
-      console.error("Failed to update generation status to running:", runningUpdateError);
+      logger.error("Failed to update generation status to running:", runningUpdateError);
       // Try to clean up by marking as failed
       await markFailedAndLog(
         supabase,
@@ -623,7 +624,7 @@ export const generationService = {
         .eq("id", genId);
 
       if (updateError) {
-        console.error("Failed to update generation status to succeeded:", updateError);
+        logger.error("Failed to update generation status to succeeded:", updateError);
         // Attempt to mark as failed since we can't mark as succeeded
         await markFailedAndLog(
           supabase,
@@ -665,7 +666,7 @@ async function ensureDeckOwnedByUser(supabase: SupabaseClient, userId: string, d
 
   if (error) {
     if (error.code === "PGRST116") throw new Error("DECK_NOT_FOUND");
-    console.error("Error reading deck:", error);
+    logger.error("Error reading deck:", error);
     throw new Error(`Failed to read deck: ${error.message}`);
   }
 
@@ -683,7 +684,7 @@ async function getDeckLanguages(
   const { data, error } = await supabase.from("languages").select("id, code, name").in("id", ids);
 
   if (error) {
-    console.error("Error fetching languages:", error);
+    logger.error("Error fetching languages:", error);
     throw new Error(`Failed to read deck languages: ${error.message}`);
   }
 
@@ -711,7 +712,7 @@ async function fetchPairTermsByIds(supabase: SupabaseClient, ids: string[]): Pro
   const { data, error } = await supabase.from("pairs").select("term_a, term_b").in("id", ids);
 
   if (error) {
-    console.error("Error fetching pairs for banlist:", error);
+    logger.error("Error fetching pairs for banlist:", error);
     throw new Error(`Failed to fetch excluded pairs: ${error.message}`);
   }
 
@@ -727,7 +728,7 @@ async function fetchDeckPairTerms(supabase: SupabaseClient, deckId: string, limi
   const { data, error } = await supabase.from("pairs").select("term_a, term_b").eq("deck_id", deckId).limit(limit);
 
   if (error) {
-    console.error("Error fetching deck pairs for banlist:", error);
+    logger.error("Error fetching deck pairs for banlist:", error);
     throw new Error(`Failed to fetch deck pairs: ${error.message}`);
   }
 
@@ -755,7 +756,7 @@ async function insertGeneratedPairs(
 
   const { error } = await supabase.from("pairs").insert(rows);
   if (error) {
-    console.error("Failed to insert generated pairs:", error);
+    logger.error("Failed to insert generated pairs:", error);
     throw new Error(`Failed to save generated pairs: ${error.message}`);
   }
 }
@@ -768,7 +769,7 @@ async function markFailedAndLog(supabase: SupabaseClient, deckId: string, genera
       .update({ status: "failed", finished_at: new Date().toISOString() })
       .eq("id", generationId);
   } catch (e) {
-    console.error("Failed to mark generation as failed:", e);
+    logger.error("Failed to mark generation as failed:", e);
   }
 
   try {
@@ -789,6 +790,6 @@ async function markFailedAndLog(supabase: SupabaseClient, deckId: string, genera
       cache_hit: null,
     });
   } catch (e) {
-    console.error("Failed to log pair generation error:", e);
+    logger.error("Failed to log pair generation error:", e);
   }
 }

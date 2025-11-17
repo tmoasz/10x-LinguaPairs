@@ -3,6 +3,7 @@ import { z } from "zod";
 import { deckService } from "@/lib/services/deck.service";
 import { pairService } from "@/lib/services/pair.service";
 import { flagPairSchema } from "@/lib/validation/pair.validation";
+import { logger } from "@/lib/utils/logger";
 import { safeRequestJson } from "@/lib/utils/request.utils";
 
 export const prerender = false;
@@ -124,7 +125,7 @@ export const POST: APIRoute = async ({ params, request, locals }) => {
       );
     }
 
-    console.error("Unexpected error in POST /api/decks/:deckId/pairs/:pairId/flag", error);
+    logger.error("Unexpected error in POST /api/decks/:deckId/pairs/:pairId/flag", error);
     return new Response(
       JSON.stringify({
         error: {

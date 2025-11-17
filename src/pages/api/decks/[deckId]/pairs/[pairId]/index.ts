@@ -1,6 +1,7 @@
 import type { APIRoute } from "astro";
 import { deckService } from "@/lib/services/deck.service";
 import { pairService } from "@/lib/services/pair.service";
+import { logger } from "@/lib/utils/logger";
 
 export const prerender = false;
 
@@ -85,7 +86,7 @@ export const DELETE: APIRoute = async ({ params, locals }) => {
       return notFoundResponse();
     }
 
-    console.error("Unexpected error in DELETE /api/decks/:deckId/pairs/:pairId", error);
+    logger.error("Unexpected error in DELETE /api/decks/:deckId/pairs/:pairId", error);
     return new Response(
       JSON.stringify({
         error: {

@@ -89,7 +89,6 @@ export default function ChallengePreview() {
           incorrectAttempts={game.incorrectAttempts}
           correct={CHALLENGE_REQUIRED_PAIRS}
           onRestart={game.reset}
-          deckId={MOCK_CHALLENGE_DECK.id}
         />
       ) : (
         <>

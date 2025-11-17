@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import FlagIcon from "@/components/FlagIcon";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
+import { logger } from "@/lib/utils/logger";
 import type { DeckDetailDTO, PairDTO } from "@/types";
 
 interface DeckDetailViewProps {
@@ -287,7 +288,7 @@ export default function DeckDetailView({ deckId }: DeckDetailViewProps) {
       setFlaggedPairs((prev) => ({ ...prev, ...buildFlaggedMap(data.pairs ?? []) }));
       setPairPagination(data.pagination);
     } catch (error) {
-      console.error("Failed to load more pairs", error);
+      logger.error("Failed to load more pairs", error);
       setPairsError("Nie udało się wczytać kolejnych par.");
     } finally {
       setIsLoadingMorePairs(false);
