@@ -71,6 +71,7 @@ export default defineConfig({
     },
   },
   server: { port: 3000 },
+  // @ts-expect-error - preview is not a valid property for the server config
   preview: { port: 4321, host: false }, // Use localhost only for Playwright
   vite: {
     plugins: [tailwindcss()],

@@ -1,4 +1,3 @@
-/* eslint-disable no-console -- Debug logging in development mode only */
 import crypto from "crypto";
 
 import type {
@@ -20,6 +19,7 @@ import { buildPairGenerationJsonSchema, type PairGenerationOutput } from "@/lib/
 import { createOpenRouterService, OpenRouterService } from "@/lib/services/openrouter.service";
 import type { ChatMessage, ChatRequestOptions } from "@/lib/services/openrouter.types";
 import { getConfig } from "@/lib/services/config.service";
+import { logger } from "@/lib/utils/logger";
 
 const DEFAULT_PRIMARY_MODEL = "openai/gpt-5-mini";
 const DEFAULT_FALLBACK_MODEL = "openai/gpt-5";
@@ -91,7 +91,7 @@ export class OpenRouterAIProvider {
     const count = params.count || 50;
 
     if (isDev) {
-      console.log(
+      logger.debug(
         `[AI_PROVIDER] generateFromTopic: topic=${params.topic_id}, count=${count}, langA=${params.langA.code}, langB=${params.langB.code}, type=${params.content_type}, register=${params.register}`
       );
     }
@@ -137,7 +137,7 @@ export class OpenRouterAIProvider {
 
     if (isDev) {
       const textPreview = params.text.length > 50 ? params.text.substring(0, 50) + "..." : params.text;
-      console.log(
+      logger.debug(
         `[AI_PROVIDER] generateFromText: text="${textPreview}", count=${count}, langA=${params.langA.code}, langB=${params.langB.code}, type=${params.content_type}, register=${params.register}`
       );
     }
@@ -180,7 +180,7 @@ export class OpenRouterAIProvider {
     const count = params.count || 10;
 
     if (isDev) {
-      console.log(
+      logger.debug(
         `[AI_PROVIDER] extend: topic=${params.topic_id || "N/A"}, count=${count}, langA=${params.langA.code}, langB=${params.langB.code}, type=${params.content_type}, register=${params.register}, banlist=${params.banlist?.length || 0} items`
       );
     }
@@ -239,7 +239,7 @@ export class OpenRouterAIProvider {
     const start = this.now();
 
     if (isDev) {
-      console.log(
+      logger.debug(
         `[AI_PROVIDER] runGeneration: requesting ${params.count} pairs, banlist=${params.banlist?.length || 0} items, using model=${this.primaryModel}${this.fallbackModel ? ` (fallback: ${this.fallbackModel})` : ""}`
       );
     }
@@ -248,17 +248,17 @@ export class OpenRouterAIProvider {
     const duration = Math.max(0, this.now() - start);
 
     if (isDev) {
-      console.log(`[AI_PROVIDER] AI response received: ${pairs.length} raw pairs from model=${model} (${duration}ms)`);
+      logger.debug(`[AI_PROVIDER] AI response received: ${pairs.length} raw pairs from model=${model} (${duration}ms)`);
     }
 
     const sanitized = this.normalizePairs(pairs, params.banlist);
     const prompt_hash = hashRecord(params.promptSeed);
 
     if (isDev) {
-      console.log(
+      logger.debug(
         `[AI_PROVIDER] Normalization: ${pairs.length} raw → ${sanitized.length} valid pairs (excluded: ${pairs.length - sanitized.length})`
       );
-      console.log(`[AI_PROVIDER] Generation complete: ${sanitized.length} pairs in ${duration}ms, model=${model}`);
+      logger.debug(`[AI_PROVIDER] Generation complete: ${sanitized.length} pairs in ${duration}ms, model=${model}`);
     }
 
     return {
@@ -281,20 +281,20 @@ export class OpenRouterAIProvider {
   ): Promise<{ pairs: PairGenerationOutput["pairs"]; model: string }> {
     try {
       if (isDev) {
-        console.log(`[AI_PROVIDER] Invoking primary model: ${this.primaryModel}`);
+        logger.debug(`[AI_PROVIDER] Invoking primary model: ${this.primaryModel}`);
       }
       const response = await this.callModel(this.primaryModel, messages, schema, metadata);
       return { pairs: response.parsed.pairs, model: this.primaryModel };
     } catch (error) {
       if (this.fallbackModel && this.fallbackModel !== this.primaryModel) {
         if (isDev) {
-          console.warn(`[AI_PROVIDER] Primary model failed, using fallback: ${this.fallbackModel}`, error);
+          logger.warn(`[AI_PROVIDER] Primary model failed, using fallback: ${this.fallbackModel}`, error);
         }
         const response = await this.callModel(this.fallbackModel, messages, schema, { ...metadata, fallback: true });
         return { pairs: response.parsed.pairs, model: this.fallbackModel };
       }
       if (isDev) {
-        console.error(`[AI_PROVIDER] Generation failed (no fallback available):`, error);
+        logger.error(`[AI_PROVIDER] Generation failed (no fallback available):`, error);
       }
       throw error;
     }
@@ -314,7 +314,7 @@ export class OpenRouterAIProvider {
     };
 
     if (isDev) {
-      console.log(
+      logger.debug(
         `[AI_PROVIDER] Calling OpenRouter: model=${model}, messages=${messages.length}, params=${JSON.stringify(INFERENCE_PARAMS)}`
       );
     }
@@ -324,14 +324,14 @@ export class OpenRouterAIProvider {
     const callDuration = this.now() - callStart;
 
     if (isDev) {
-      console.log(
+      logger.debug(
         `[AI_PROVIDER] OpenRouter response: ${callDuration}ms, parsed=${!!response.parsed}, pairs=${response.parsed?.pairs?.length || 0}`
       );
     }
 
     if (!response.parsed || !Array.isArray(response.parsed.pairs)) {
       if (isDev) {
-        console.error(`[AI_PROVIDER] Invalid response structure:`, {
+        logger.error(`[AI_PROVIDER] Invalid response structure:`, {
           parsed: !!response.parsed,
           pairsIsArray: Array.isArray(response.parsed?.pairs),
         });
@@ -348,7 +348,7 @@ export class OpenRouterAIProvider {
     const banned = new Set((banlist ?? []).map(normalizeTerm).filter(Boolean));
 
     if (isDev && banlist && banlist.length > 0) {
-      console.log(`[AI_PROVIDER] Normalizing with banlist: ${banned.size} banned terms`);
+      logger.debug(`[AI_PROVIDER] Normalizing with banlist: ${banned.size} banned terms`);
     }
 
     let skippedEmpty = 0;
@@ -398,7 +398,7 @@ export class OpenRouterAIProvider {
     }
 
     if (isDev && (skippedEmpty > 0 || skippedTokenLimit > 0 || skippedBanned > 0 || skippedDuplicate > 0)) {
-      console.log(
+      logger.debug(
         `[AI_PROVIDER] Normalization stats: empty=${skippedEmpty}, tokenLimit=${skippedTokenLimit}, banned=${skippedBanned}, duplicate=${skippedDuplicate}`
       );
     }

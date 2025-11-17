@@ -1,6 +1,7 @@
 import type { APIRoute } from "astro";
 
 import { createSupabaseServerInstance } from "@/db/supabase.client";
+import { logger } from "@/lib/utils/logger";
 
 export const prerender = false;
 
@@ -26,7 +27,7 @@ export const POST: APIRoute = async ({ request, cookies }) => {
       headers: { "Content-Type": "application/json" },
     });
   } catch (error) {
-    console.error("Signout API error", error);
+    logger.error("Signout API error", error);
     return new Response(JSON.stringify({ error: "Wystąpił błąd. Spróbuj ponownie." }), {
       status: 500,
       headers: { "Content-Type": "application/json" },

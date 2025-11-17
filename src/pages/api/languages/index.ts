@@ -2,6 +2,7 @@ import type { APIRoute } from "astro";
 import { z } from "zod";
 import { languagesListQuerySchema } from "@/lib/validation/language.validation";
 import { languageService } from "@/lib/services/language.service";
+import { logger } from "@/lib/utils/logger";
 
 export const prerender = false;
 
@@ -79,7 +80,7 @@ export const GET: APIRoute = async (context) => {
     }
 
     // Handle other errors
-    console.error("Unexpected error in GET /api/languages:", error);
+    logger.error("Unexpected error in GET /api/languages:", error);
 
     return new Response(
       JSON.stringify({

@@ -1,5 +1,6 @@
 import type { SupabaseClient } from "@/db/supabase.client";
 import { CHALLENGE_MAX_LEADERBOARD, CHALLENGE_REQUIRED_PAIRS, CHALLENGE_VERSION } from "@/lib/constants/challenge";
+import { logger } from "@/lib/utils/logger";
 import type {
   ChallengeLeaderboardDTO,
   ChallengeLeaderboardEntryDTO,
@@ -34,7 +35,7 @@ export const challengeService = {
       .limit(fetchLimit);
 
     if (error) {
-      console.error("Error fetching pairs for challenge:", error);
+      logger.error("Error fetching pairs for challenge:", error);
       throw new Error(`Failed to fetch challenge pairs: ${error.message}`);
     }
 
@@ -67,7 +68,7 @@ export const challengeService = {
       .single();
 
     if (error || !data) {
-      console.error("Error inserting challenge result:", error);
+      logger.error("Error inserting challenge result:", error);
       throw new Error(error?.message ?? "Failed to store challenge result");
     }
 
@@ -102,7 +103,7 @@ export const challengeService = {
       .limit(effectiveLimit);
 
     if (error) {
-      console.error("Error fetching challenge leaderboard:", error);
+      logger.error("Error fetching challenge leaderboard:", error);
       throw new Error(`Failed to fetch leaderboard: ${error.message}`);
     }
 
@@ -158,7 +159,7 @@ async function fetchProfileMap(
   const { data, error } = await supabase.from("profiles").select("id, username, display_name").in("id", userIds);
 
   if (error) {
-    console.error("Error fetching profiles for leaderboard:", error);
+    logger.error("Error fetching profiles for leaderboard:", error);
     throw new Error(`Failed to fetch player profiles: ${error.message}`);
   }
 
@@ -193,7 +194,7 @@ async function fetchBestForUser(
     .maybeSingle();
 
   if (error && error.code !== "PGRST116") {
-    console.error("Error fetching player's best challenge result:", error);
+    logger.error("Error fetching player's best challenge result:", error);
     throw new Error(`Failed to fetch player's best result: ${error.message}`);
   }
 
@@ -220,7 +221,7 @@ async function fetchSinglePlayerName(supabase: SupabaseClient, userId: string): 
     .maybeSingle();
 
   if (error && error.code !== "PGRST116") {
-    console.error("Error fetching single profile name:", error);
+    logger.error("Error fetching single profile name:", error);
     throw new Error(`Failed to fetch profile: ${error.message}`);
   }
 

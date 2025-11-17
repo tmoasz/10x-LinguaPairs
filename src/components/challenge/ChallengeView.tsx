@@ -8,6 +8,7 @@ import { useChallengeGame, type ChallengeCompletionSummary } from "@/components/
 import { Button } from "@/components/ui/button";
 import FlagIcon from "@/components/FlagIcon";
 import { CHALLENGE_REQUIRED_PAIRS } from "@/lib/constants/challenge";
+import { logger } from "@/lib/utils/logger";
 import type { ChallengeLeaderboardDTO, ChallengePairsResponseDTO, ChallengeResultDTO, DeckDetailDTO } from "@/types";
 
 interface ChallengeViewProps {
@@ -42,7 +43,7 @@ export default function ChallengeView({ deckId }: ChallengeViewProps) {
       const data = await fetchJson<DeckDetailDTO>(`/api/decks/${deckId}`);
       setDeck(data);
     } catch (error) {
-      console.error("Failed to load deck", error);
+      logger.error("Failed to load deck", error);
       setViewError(error instanceof Error ? error.message : "Nie udało się wczytać talii.");
     } finally {
       setDeckLoading(false);
@@ -74,7 +75,7 @@ export default function ChallengeView({ deckId }: ChallengeViewProps) {
       const data = await fetchJson<ChallengeLeaderboardDTO>(`/api/challenge/decks/${deckId}/top`);
       setLeaderboard(data);
     } catch (error) {
-      console.error("Failed to load leaderboard", error);
+      logger.error("Failed to load leaderboard", error);
     } finally {
       setLeaderboardLoading(false);
     }
@@ -104,7 +105,7 @@ export default function ChallengeView({ deckId }: ChallengeViewProps) {
         });
         await loadLeaderboard();
       } catch (error) {
-        console.error("Failed to save challenge result", error);
+        logger.error("Failed to save challenge result", error);
         setResultError(error instanceof Error ? error.message : "Nie udało się zapisać wyniku.");
       } finally {
         setSavingResult(false);

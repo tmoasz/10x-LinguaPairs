@@ -4,6 +4,7 @@ import { createDeckSchema } from "@/lib/validation/deck.validation";
 import { deckService } from "@/lib/services/deck.service";
 import { ValidationError } from "@/lib/errors";
 import type { DecksListDTO, DeckListItemDTO } from "@/types";
+import { logger } from "@/lib/utils/logger";
 import { safeRequestJson } from "@/lib/utils/request.utils";
 
 export const prerender = false;
@@ -96,7 +97,7 @@ export const GET: APIRoute = async (context) => {
       .is("deleted_at", null);
 
     if (countError) {
-      console.error("Error counting decks:", {
+      logger.error("Error counting decks:", {
         error: countError,
         message: countError.message,
         details: countError.details,
@@ -133,7 +134,7 @@ export const GET: APIRoute = async (context) => {
       .range(offset, offset + limit - 1);
 
     if (decksError) {
-      console.error("Error fetching decks:", {
+      logger.error("Error fetching decks:", {
         error: decksError,
         message: decksError.message,
         details: decksError.details,
@@ -191,7 +192,7 @@ export const GET: APIRoute = async (context) => {
       .in("id", Array.from(languageIds));
 
     if (languagesError) {
-      console.error("Error fetching languages:", languagesError);
+      logger.error("Error fetching languages:", languagesError);
       throw new Error(`Failed to fetch languages: ${languagesError.message}`);
     }
 
@@ -214,7 +215,7 @@ export const GET: APIRoute = async (context) => {
       .is("deleted_at", null);
 
     if (pairsError) {
-      console.error("Error counting pairs:", pairsError);
+      logger.error("Error counting pairs:", pairsError);
       throw new Error(`Failed to count pairs: ${pairsError.message}`);
     }
 
@@ -275,9 +276,9 @@ export const GET: APIRoute = async (context) => {
       headers: { "Content-Type": "application/json" },
     });
   } catch (error) {
-    console.error("Unexpected error in GET /api/decks:", error);
+    logger.error("Unexpected error in GET /api/decks:", error);
     if (error && typeof error === "object" && "message" in error) {
-      console.error("Error message:", error.message);
+      logger.error("Error message:", error.message);
     }
 
     return new Response(
@@ -416,12 +417,12 @@ export const POST: APIRoute = async (context) => {
     }
 
     // Log error details for debugging
-    console.error("Unexpected error in POST /api/decks:", error);
+    logger.error("Unexpected error in POST /api/decks:", error);
     if (error && typeof error === "object" && "message" in error) {
-      console.error("Error message:", error.message);
+      logger.error("Error message:", error.message);
     }
     if (error && typeof error === "object" && "code" in error) {
-      console.error("Error code:", error.code);
+      logger.error("Error code:", error.code);
     }
 
     return new Response(
@@ -441,3 +442,4 @@ export const POST: APIRoute = async (context) => {
     );
   }
 };
+

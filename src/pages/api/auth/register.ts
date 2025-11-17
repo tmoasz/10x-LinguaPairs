@@ -2,6 +2,7 @@ import type { APIRoute } from "astro";
 import { z } from "zod";
 
 import { createSupabaseServerInstance } from "@/db/supabase.client";
+import { logger } from "@/lib/utils/logger";
 import { emailSchema, passwordSchema } from "@/lib/validation/auth.schemas";
 import { safeRequestJson } from "@/lib/utils/request.utils";
 
@@ -63,7 +64,7 @@ export const POST: APIRoute = async ({ request, cookies }) => {
       }
     );
   } catch (error) {
-    console.error("Register API error", error);
+    logger.error("Register API error", error);
     return new Response(JSON.stringify({ error: "Wystąpił błąd. Spróbuj ponownie." }), {
       status: 500,
       headers: { "Content-Type": "application/json" },

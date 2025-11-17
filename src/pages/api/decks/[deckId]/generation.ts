@@ -1,6 +1,7 @@
 import type { APIRoute } from "astro";
 import { z } from "zod";
 import { generationService } from "@/lib/services/generation.service";
+import { logger } from "@/lib/utils/logger";
 
 export const prerender = false;
 
@@ -61,7 +62,7 @@ export const GET: APIRoute = async (context) => {
       });
     }
 
-    console.error("Unexpected error in GET /api/decks/:deckId/generation:", error);
+    logger.error("Unexpected error in GET /api/decks/:deckId/generation:", error);
     return new Response(
       JSON.stringify({ error: { code: "INTERNAL_ERROR", message: "An unexpected error occurred" } }),
       { status: 500, headers: { "Content-Type": "application/json" } }

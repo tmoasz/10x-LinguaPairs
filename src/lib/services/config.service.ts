@@ -1,3 +1,5 @@
+import { logger } from "@/lib/utils/logger";
+
 /**
  * Configuration Service with Database-backed Runtime Configuration
  *
@@ -79,8 +81,7 @@ async function fetchConfigRow(key: string): Promise<AppConfigValueRow | null> {
   });
 
   if (!response.ok) {
-    // eslint-disable-next-line no-console
-    console.warn(`[ConfigService] Failed to fetch "${key}" from app_config: ${response.statusText}`);
+    logger.warn(`[ConfigService] Failed to fetch "${key}" from app_config: ${response.statusText}`);
     return null;
   }
 

@@ -3,6 +3,7 @@ import { z } from "zod";
 import { generationService } from "@/lib/services/generation.service";
 import { generateExtendSchema } from "@/lib/validation/generation.validation";
 import { getErrorMessage } from "@/lib/utils/error.utils";
+import { logger } from "@/lib/utils/logger";
 import { safeRequestJson } from "@/lib/utils/request.utils";
 
 /**
@@ -95,7 +96,7 @@ export const POST: APIRoute = async (context) => {
       }
     }
 
-    console.error("Unexpected error in POST /api/generate/extend:", error);
+    logger.error("Unexpected error in POST /api/generate/extend:", error);
     return new Response(
       JSON.stringify({ error: { code: "INTERNAL_ERROR", message: "An unexpected error occurred" } }),
       { status: 500, headers: { "Content-Type": "application/json" } }

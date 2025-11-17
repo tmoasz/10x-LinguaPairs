@@ -1,6 +1,7 @@
 import type { APIRoute } from "astro";
 import { z } from "zod";
 import { deckService } from "@/lib/services/deck.service";
+import { logger } from "@/lib/utils/logger";
 import { updateDeckSchema } from "@/lib/validation/deck.validation";
 import { safeRequestJson } from "@/lib/utils/request.utils";
 
@@ -76,7 +77,7 @@ export const GET: APIRoute = async ({ params, locals }) => {
       headers: jsonHeaders,
     });
   } catch (error) {
-    console.error("Unexpected error in GET /api/decks/:deckId", error);
+    logger.error("Unexpected error in GET /api/decks/:deckId", error);
     return new Response(
       JSON.stringify({
         error: {
@@ -166,7 +167,7 @@ export const PATCH: APIRoute = async ({ params, request, locals }) => {
       );
     }
 
-    console.error("Unexpected error in PATCH /api/decks/:deckId", error);
+    logger.error("Unexpected error in PATCH /api/decks/:deckId", error);
     return new Response(
       JSON.stringify({
         error: {

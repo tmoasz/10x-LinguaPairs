@@ -1,6 +1,7 @@
 import type { APIRoute } from "astro";
 import { deckService } from "@/lib/services/deck.service";
 import { pairService } from "@/lib/services/pair.service";
+import { logger } from "@/lib/utils/logger";
 
 export const prerender = false;
 
@@ -63,7 +64,7 @@ export const GET: APIRoute = async ({ params, locals, request }) => {
       headers: jsonHeaders,
     });
   } catch (error) {
-    console.error("Unexpected error in GET /api/decks/:deckId/pairs", error);
+    logger.error("Unexpected error in GET /api/decks/:deckId/pairs", error);
     return new Response(
       JSON.stringify({
         error: {
