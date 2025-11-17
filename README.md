@@ -1,5 +1,7 @@
 # 10x-LinguaPairs
 
+[![Pull Request Checks](https://github.com/tmoasz/10x-LinguaPairs/actions/workflows/pull-request.yml/badge.svg)](https://github.com/tmoasz/10x-LinguaPairs/actions/workflows/pull-request.yml)
+
 Welcome to **10x-LinguaPairs**, a modern, accessible, web applications focused on language-learning tools.
 
 ## Table of Contents
