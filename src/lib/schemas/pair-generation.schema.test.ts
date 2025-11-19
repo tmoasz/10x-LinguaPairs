@@ -1,4 +1,3 @@
-import { describe, it, expect } from "vitest";
 import { buildPairGenerationJsonSchema, type PairGenerationJsonSchema } from "@/lib/schemas/pair-generation.schema";
 
 describe("schemas/pair-generation", () => {

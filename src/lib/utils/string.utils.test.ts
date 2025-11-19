@@ -1,4 +1,3 @@
-import { describe, it, expect } from "vitest";
 import { capitalize, truncate, isValidEmail } from "./string.utils";
 
 describe("String Utils", () => {

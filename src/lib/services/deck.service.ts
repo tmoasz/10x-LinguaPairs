@@ -227,7 +227,7 @@ function mapDeckDetail(
       username: ownerProfile.username,
     },
     title: deckRow.title,
-    description: deckRow.description,
+    description: deckRow.description ?? "",
     lang_a: langA,
     lang_b: langB,
     visibility: deckRow.visibility,

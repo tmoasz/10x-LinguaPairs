@@ -160,6 +160,57 @@ export type Database = {
           },
         ];
       };
+      challenge_results: {
+        Row: {
+          id: string;
+          deck_id: string;
+          user_id: string;
+          total_time_ms: number;
+          correct: number;
+          incorrect: number;
+          version: string;
+          round_times_ms: Json | null;
+          created_at: string;
+        };
+        Insert: {
+          id?: string;
+          deck_id: string;
+          user_id: string;
+          total_time_ms: number;
+          correct?: number;
+          incorrect?: number;
+          version?: string;
+          round_times_ms?: Json | null;
+          created_at?: string;
+        };
+        Update: {
+          id?: string;
+          deck_id?: string;
+          user_id?: string;
+          total_time_ms?: number;
+          correct?: number;
+          incorrect?: number;
+          version?: string;
+          round_times_ms?: Json | null;
+          created_at?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "challenge_results_deck_id_fkey";
+            columns: ["deck_id"];
+            isOneToOne: false;
+            referencedRelation: "decks";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "challenge_results_user_id_fkey";
+            columns: ["user_id"];
+            isOneToOne: false;
+            referencedRelation: "profiles";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
       languages: {
         Row: {
           id: string;
@@ -335,6 +386,71 @@ export type Database = {
             columns: ["pair_id"];
             isOneToOne: false;
             referencedRelation: "pairs";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
+      pair_generation_errors: {
+        Row: {
+          id: string;
+          deck_id: string;
+          attempt: number;
+          provider: string | null;
+          model: string | null;
+          prompt_sha256: string | null;
+          request_params: Json;
+          error_code: string;
+          error_message: string;
+          error_details: Json | null;
+          http_status: number | null;
+          retryable: boolean;
+          duration_ms: number | null;
+          cost_usd: number | null;
+          cache_hit: boolean | null;
+          created_at: string;
+        };
+        Insert: {
+          id?: string;
+          deck_id: string;
+          attempt?: number;
+          provider?: string | null;
+          model?: string | null;
+          prompt_sha256?: string | null;
+          request_params?: Json;
+          error_code: string;
+          error_message: string;
+          error_details?: Json | null;
+          http_status?: number | null;
+          retryable?: boolean;
+          duration_ms?: number | null;
+          cost_usd?: number | null;
+          cache_hit?: boolean | null;
+          created_at?: string;
+        };
+        Update: {
+          id?: string;
+          deck_id?: string;
+          attempt?: number;
+          provider?: string | null;
+          model?: string | null;
+          prompt_sha256?: string | null;
+          request_params?: Json;
+          error_code?: string;
+          error_message?: string;
+          error_details?: Json | null;
+          http_status?: number | null;
+          retryable?: boolean;
+          duration_ms?: number | null;
+          cost_usd?: number | null;
+          cache_hit?: boolean | null;
+          created_at?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "pair_generation_errors_deck_id_fkey";
+            columns: ["deck_id"];
+            isOneToOne: false;
+            referencedRelation: "decks";
             referencedColumns: ["id"];
           },
         ];

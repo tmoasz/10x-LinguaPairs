@@ -1,5 +1,4 @@
-import { describe, it, expect, vi, beforeEach } from "vitest";
-import type { ChatJsonResponse, ChatRequestOptions } from "@/lib/services/openrouter.types";
+import type { ChatJsonResponse, ChatRequestOptions, ChatResponse } from "@/lib/services/openrouter.types";
 import { OpenRouterAIProvider } from "@/lib/services/ai.provider";
 import type { PairGenerationJsonSchema, PairGenerationOutput } from "@/lib/schemas/pair-generation.schema";
 import type { GenerationContentType, GenerationRegister, TopicID } from "@/types";
@@ -9,6 +8,26 @@ type ChatJson = ChatJsonResponse<PairGenerationOutput>;
 
 const langA: LanguageSpec = { code: "pl", name: "Polish" };
 const langB: LanguageSpec = { code: "en", name: "English" };
+
+function createMockChatResponse(overrides?: Partial<ChatResponse>): ChatResponse {
+  return {
+    id: "mock",
+    model: "mock",
+    content: "",
+    finishReason: "stop",
+    raw: {
+      id: "mock",
+      model: "mock",
+      choices: [
+        {
+          message: { content: "" },
+          finish_reason: "stop",
+        },
+      ],
+    },
+    ...overrides,
+  };
+}
 
 function createProvider(overrides?: { response?: ChatJson; nowSequence?: number[]; uuidSequence?: string[] }) {
   const response: ChatJson =
@@ -20,7 +39,7 @@ function createProvider(overrides?: { response?: ChatJson; nowSequence?: number[
           { term_a: "do widzenia", term_b: "goodbye", type: "words", register: "neutral" },
         ],
       },
-      raw: { id: "mock", model: "mock", content: "", finishReason: "stop" },
+      raw: createMockChatResponse(),
     } satisfies ChatJson);
 
   const chatJson = vi
@@ -85,7 +104,7 @@ describe("OpenRouterAIProvider", () => {
           { term_a: "krótkie", term_b: "short", type: "words", register: "neutral" },
         ],
       },
-      raw: { id: "mock", model: "mock", content: "", finishReason: "stop" },
+      raw: createMockChatResponse(),
     };
     const { provider, chatJson } = createProvider({
       response,
@@ -96,7 +115,11 @@ describe("OpenRouterAIProvider", () => {
     const result = await provider.generateFromTopic(buildTopicParams({ count: 2 }));
 
     expect(chatJson).toHaveBeenCalledTimes(1);
-    const [options, schemaName, schema] = chatJson.mock.calls[0];
+    const [options, schemaName, schema] = chatJson.mock.calls[0] as [
+      ChatRequestOptions,
+      string,
+      PairGenerationJsonSchema,
+    ];
     expect(schemaName).toBe("pair_generation");
     expect(schema).toHaveProperty(["properties", "pairs", "minItems"], 2);
     expect(schema.properties.pairs.maxItems).toBe(2);
@@ -126,7 +149,7 @@ describe("OpenRouterAIProvider", () => {
     const result = await provider.generateFromText(buildTextParams());
 
     expect(chatJson).toHaveBeenCalledTimes(1);
-    const [options] = chatJson.mock.calls[0];
+    const [options] = chatJson.mock.calls[0] as [ChatRequestOptions];
     const userMsg = options.messages.find((m) => m.role === "user");
     expect(userMsg?.content).toContain("Context: AAAA"); // starts with context
     expect(userMsg?.content).toContain("…\ncontent_type=phrases, register=formal, count=30");
@@ -148,7 +171,7 @@ describe("OpenRouterAIProvider", () => {
       banlist: ["istniejąca para"],
     });
 
-    const [options] = chatJson.mock.calls[0];
+    const [options] = chatJson.mock.calls[0] as [ChatRequestOptions];
     const userMsg = options.messages.find((m) => m.role === "user");
     expect(userMsg?.content).toContain("Extension: +10 new unique pairs");
     expect(userMsg?.content).toContain("Avoid: istniejąca para");
