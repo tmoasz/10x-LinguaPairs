@@ -1,0 +1,71 @@
+---
+import Layout from "@/layouts/Layout.astro";
+
+export const prerender = false;
+
+const deckId = Astro.params.deckId;
+const user = Astro.locals.user;
+
+if (!user || !user.id) {
+  return Astro.redirect(`/auth/login?redirect=${encodeURIComponent(`/decks/${deckId ?? ""}/progress`)}`);
+}
+
+if (!deckId) {
+  throw new Error("Deck ID is required for Progress view");
+}
+
+const pageTitle = `Postęp • ${deckId} | LinguaPairs`;
+---
+
+<Layout title={pageTitle}>
+  <main class="min-h-screen bg-background">
+    <div class="mx-auto w-full max-w-3xl px-4 py-16">
+      <div class="flex flex-col items-center justify-center text-center space-y-6">
+        <div class="relative">
+          <div class="absolute inset-0 bg-primary/10 rounded-full blur-3xl"></div>
+          <div class="relative bg-background border border-border rounded-full p-8 shadow-lg">
+            <svg
+              class="h-16 w-16 text-primary"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="1.5"
+              viewBox="0 0 24 24"
+              xmlns="http://www.w3.org/2000/svg"
+            >
+              <path
+                d="M9.813 15.904L9 18.75l-.813-2.846a4.5 4.5 0 00-3.09-3.09L2.25 12l2.846-.813a4.5 4.5 0 003.09-3.09L9 5.25l.813 2.846a4.5 4.5 0 003.09 3.09L15.75 12l-2.846.813a4.5 4.5 0 00-3.09 3.09zM18.259 8.715L18 9.75l-.259-1.035a3.375 3.375 0 00-2.455-2.456L14.25 6l1.036-.259a3.375 3.375 0 002.455-2.456L18 2.25l.259 1.035a3.375 3.375 0 002.456 2.456L21.75 6l-1.035.259a3.375 3.375 0 00-2.456 2.456zM16.894 20.567L16.5 21.75l-.394-1.183a2.25 2.25 0 00-1.423-1.423L13.5 18.75l1.183-.394a2.25 2.25 0 001.423-1.423l.394-1.183.394 1.183a2.25 2.25 0 001.423 1.423l1.183.394-1.183.394a2.25 2.25 0 00-1.423 1.423z"
+                stroke-linecap="round"
+                stroke-linejoin="round"></path>
+            </svg>
+          </div>
+        </div>
+
+        <div class="space-y-3">
+          <h1 class="text-3xl font-bold tracking-tight">Widok postępu w przygotowaniu</h1>
+          <p class="text-muted-foreground text-lg max-w-md mx-auto">
+            Pracujemy nad widokiem "Pokaż postęp" z systemem Leitner. Ta funkcja będzie wkrótce dostępna!
+          </p>
+        </div>
+
+        <div class="pt-4">
+          <a
+            href="/decks"
+            class="inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-md text-sm font-medium transition-all bg-primary text-primary-foreground shadow-xs hover:bg-primary/90 h-9 px-4 py-2"
+          >
+            <svg
+              class="h-4 w-4"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="2"
+              viewBox="0 0 24 24"
+              xmlns="http://www.w3.org/2000/svg"
+            >
+              <path d="M19 12H5M12 19l-7-7 7-7" stroke-linecap="round" stroke-linejoin="round"></path>
+            </svg>
+            Powrót do talii
+          </a>
+        </div>
+      </div>
+    </div>
+  </main>
+</Layout>
