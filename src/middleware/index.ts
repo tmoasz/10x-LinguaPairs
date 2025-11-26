@@ -40,7 +40,7 @@ export const onRequest = defineMiddleware(async ({ locals, cookies, url, request
     data: { user },
   } = await supabase.auth.getUser();
   if (user) {
-    locals.user = { id: user.id, email: user.email };
+    locals.user = { id: user.id, email: user.email ?? null };
     logger.debug(`[MIDDLEWARE] User authenticated: ${user.email} (${user.id})`);
   } else {
     logger.debug(`[MIDDLEWARE] User not authenticated`);

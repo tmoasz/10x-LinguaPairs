@@ -288,7 +288,7 @@ export interface FlagPairDTO {
 export interface PairFlagResponseDTO {
   id: string;
   pair_id: string;
-  flagged_by: string;
+  flagged_by: string | null;
   reason: string;
   flagged_at: string;
 }

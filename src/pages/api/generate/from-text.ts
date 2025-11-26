@@ -87,7 +87,7 @@ export const POST: APIRoute = async (context) => {
   const userId = user.id;
 
   try {
-    const raw = await safeRequestJson(context.request);
+    const raw = await safeRequestJson<Record<string, unknown>>(context.request);
     // Special-case payload too large for text field: return 413 instead of 422
     if (raw && typeof raw.text === "string" && raw.text.length > 5000) {
       return new Response(

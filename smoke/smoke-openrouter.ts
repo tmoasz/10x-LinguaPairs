@@ -2,6 +2,7 @@ import { OpenRouterAIProvider, type LanguageSpec } from "../src/lib/services/ai.
 import { OpenRouterService } from "../src/lib/services/openrouter.service";
 import { getTopicLabel, TOPIC_DEFINITIONS } from "../src/lib/constants/topics";
 import type { GenerationContentType, GenerationRegister, TopicID } from "../src/types";
+import { logger } from "../src/lib/utils/logger";
 
 type CliMap = Record<string, string>;
 
@@ -90,7 +91,7 @@ async function main(): Promise<void> {
   const topicLabel = getTopicLabel(topicId);
   const mode = args.text ? "text" : "topic";
 
-  console.info(
+  logger.info(
     `[${new Date(scriptStart).toISOString()}] Running OpenRouter smoke test (mode=${mode}, content_type=${contentType}, register=${register}, count=${count})`
   );
 
@@ -122,22 +123,22 @@ async function main(): Promise<void> {
   const modelLabel =
     primaryModel && resolvedModel !== primaryModel ? `${resolvedModel} (fallback from ${primaryModel})` : resolvedModel;
 
-  console.info(`Request started at ${new Date(requestStart).toISOString()}`);
-  console.info(`Request duration: ${formatDuration(requestDuration)}`);
-  console.info(`Total script duration: ${formatDuration(totalDuration)}`);
-  console.info(`Model: ${modelLabel}`);
-  console.info(`Generated ${response.pairs.length} pairs in ${response.metadata.generation_time_ms}ms`);
-  console.info(`Prompt hash: ${response.metadata.prompt_hash}`);
+  logger.info(`Request started at ${new Date(requestStart).toISOString()}`);
+  logger.info(`Request duration: ${formatDuration(requestDuration)}`);
+  logger.info(`Total script duration: ${formatDuration(totalDuration)}`);
+  logger.info(`Model: ${modelLabel}`);
+  logger.info(`Generated ${response.pairs.length} pairs in ${response.metadata.generation_time_ms}ms`);
+  logger.info(`Prompt hash: ${response.metadata.prompt_hash}`);
 
   response.pairs.forEach((pair, idx) => {
-    console.log(
+    logger.info(
       `${String(idx + 1).padStart(2, "0")}. [${pair.type}/${pair.register}] ${pair.term_a} => ${pair.term_b}`
     );
   });
 }
 
 main().catch((error) => {
-  console.error("Smoke test failed:", error);
+  logger.error("Smoke test failed:", error);
   process.exit(1);
 });
 

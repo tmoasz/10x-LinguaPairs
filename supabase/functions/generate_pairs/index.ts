@@ -1,6 +1,14 @@
 import "jsr:@supabase/functions-js/edge-runtime.d.ts";
 import { createClient } from "npm:@supabase/supabase-js@2";
 
+// Simple logger for Deno edge function context
+/* eslint-disable no-console */
+const logger = {
+  error: (...args: unknown[]) => console.error(...args),
+  warn: (...args: unknown[]) => console.warn(...args),
+};
+/* eslint-enable no-console */
+
 function requireEnv(name: string): string {
   const value = Deno.env.get(name);
   if (!value) {
@@ -93,7 +101,7 @@ async function runGeneration(generationId: string) {
       provider_metadata: providerRes.metadata,
     });
   } catch (error) {
-    console.error("Generation failed", generationId, error);
+    logger.error("Generation failed", generationId, error);
     await updateGeneration(generationId, {
       status: "failed",
       finished_at: new Date().toISOString(),
@@ -110,7 +118,7 @@ async function fetchGeneration(id: string): Promise<GenerationRecord | null> {
     .eq("id", id)
     .single();
   if (error) {
-    console.error("Failed to load generation", id, error);
+    logger.error("Failed to load generation", id, error);
     return null;
   }
   return data;
@@ -119,7 +127,7 @@ async function fetchGeneration(id: string): Promise<GenerationRecord | null> {
 async function fetchDeckDescription(deckId: string): Promise<string | null> {
   const { data, error } = await supabaseAdmin.from("decks").select("description").eq("id", deckId).maybeSingle();
   if (error && error.code !== "PGRST116") {
-    console.error("Failed to fetch deck description", deckId, error);
+    logger.error("Failed to fetch deck description", deckId, error);
     return null;
   }
   return data?.description ?? null;
@@ -140,7 +148,7 @@ async function logGenerationError(generationId: string, error: unknown) {
 async function fetchBanlist(deckId: string, limit = 200) {
   const { data, error } = await supabaseAdmin.from("pairs").select("term_a, term_b").eq("deck_id", deckId).limit(limit);
   if (error) {
-    console.error("Failed to fetch banlist", error);
+    logger.error("Failed to fetch banlist", error);
     return [];
   }
   const terms = (data ?? [])
@@ -163,7 +171,7 @@ async function callProviderWithFallback(
     if (!FALLBACK_MODEL || FALLBACK_MODEL === payload.model) {
       throw error;
     }
-    console.warn("Primary model failed, retrying with fallback", error);
+    logger.warn("Primary model failed, retrying with fallback", error);
     return await callOpenRouter(buildPayload(generation, deckDescription, banlist, FALLBACK_MODEL));
   }
 }

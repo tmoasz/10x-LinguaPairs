@@ -1,0 +1,66 @@
+---
+import Layout from "@/layouts/Layout.astro";
+
+export const prerender = false;
+
+const deckId = Astro.params.deckId;
+
+if (!deckId) {
+  throw new Error("Deck ID is required for Learning view");
+}
+
+const pageTitle = `Nauka • ${deckId} | LinguaPairs`;
+---
+
+<Layout title={pageTitle}>
+  <main class="min-h-screen bg-background">
+    <div class="mx-auto w-full max-w-3xl px-4 py-16">
+      <div class="flex flex-col items-center justify-center text-center space-y-6">
+        <div class="relative">
+          <div class="absolute inset-0 bg-primary/10 rounded-full blur-3xl"></div>
+          <div class="relative bg-background border border-border rounded-full p-8 shadow-lg">
+            <svg
+              class="h-16 w-16 text-primary"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="1.5"
+              viewBox="0 0 24 24"
+              xmlns="http://www.w3.org/2000/svg"
+            >
+              <path
+                d="M12 6.042A8.967 8.967 0 006 3.75c-1.052 0-2.062.18-3 .512v14.25A8.987 8.987 0 016 18c2.305 0 4.408.867 6 2.292m0-14.25a8.966 8.966 0 016-2.292c1.052 0 2.062.18 3 .512v14.25A8.987 8.987 0 0018 18a8.967 8.967 0 00-6 2.292m0-14.25v14.25"
+                stroke-linecap="round"
+                stroke-linejoin="round"></path>
+            </svg>
+          </div>
+        </div>
+
+        <div class="space-y-3">
+          <h1 class="text-3xl font-bold tracking-tight">Tryb nauki w przygotowaniu</h1>
+          <p class="text-muted-foreground text-lg max-w-md mx-auto">
+            Pracujemy nad trybem "Rozpocznij naukę". Ta funkcja będzie wkrótce dostępna!
+          </p>
+        </div>
+
+        <div class="flex flex-col sm:flex-row gap-3 pt-4">
+          <a
+            href="/"
+            class="inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-md text-sm font-medium transition-all bg-primary text-primary-foreground shadow-xs hover:bg-primary/90 h-9 px-4 py-2"
+          >
+            <svg
+              class="h-4 w-4"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="2"
+              viewBox="0 0 24 24"
+              xmlns="http://www.w3.org/2000/svg"
+            >
+              <path d="M19 12H5M12 19l-7-7 7-7" stroke-linecap="round" stroke-linejoin="round"></path>
+            </svg>
+            Powrót do strony głównej
+          </a>
+        </div>
+      </div>
+    </div>
+  </main>
+</Layout>

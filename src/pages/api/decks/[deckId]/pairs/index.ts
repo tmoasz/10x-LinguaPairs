@@ -52,10 +52,13 @@ export const GET: APIRoute = async ({ params, locals, request }) => {
           ? Number(legacyLimitParamRaw)
           : undefined;
 
+    const pageCandidate = pageParam ?? NaN;
+    const pageSizeCandidate = pageSizeParam ?? NaN;
+
     const response = await pairService.listByDeck(supabase, {
       deckId,
-      page: Number.isFinite(pageParam) ? Math.floor(pageParam) : undefined,
-      pageSize: Number.isFinite(pageSizeParam) ? Math.floor(pageSizeParam) : undefined,
+      page: Number.isFinite(pageCandidate) ? Math.floor(pageCandidate) : undefined,
+      pageSize: Number.isFinite(pageSizeCandidate) ? Math.floor(pageSizeCandidate) : undefined,
       userId: locals.user?.id ?? undefined,
     });
 
