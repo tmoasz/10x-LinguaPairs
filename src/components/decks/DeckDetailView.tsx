@@ -316,12 +316,6 @@ export default function DeckDetailView({ deckId }: DeckDetailViewProps) {
       <div className="space-y-6">
         <section className="rounded-2xl border border-border bg-card text-card-foreground shadow-sm">
           <div className="space-y-4 p-6">
-            <div className="flex flex-wrap items-center gap-3">
-              <h1 className="text-2xl font-semibold">{deck.title}</h1>
-              <span className="rounded-full bg-muted px-3 py-1 text-xs font-semibold text-muted-foreground">
-                {pairPagination?.total ?? pairs.length} par
-              </span>
-            </div>
             <div className="flex flex-wrap items-center gap-4 text-sm text-muted-foreground">
               <LanguagePair langA={deck.lang_a} langB={deck.lang_b} />
               <span>•</span>

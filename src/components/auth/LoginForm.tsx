@@ -93,7 +93,7 @@ export default function LoginForm(props: LoginFormProps) {
 
         toast.success("Zalogowano pomyślnie!");
         // Ensure cookies are set by server, then navigate
-        const target = redirect && redirect.startsWith("/") && !redirect.startsWith("//") ? redirect : "/";
+        const target = redirect && redirect.startsWith("/") && !redirect.startsWith("//") ? redirect : "/decks";
         window.location.assign(target);
       } catch {
         toast.error("Błąd logowania", { description: "Wystąpił błąd. Spróbuj ponownie." });

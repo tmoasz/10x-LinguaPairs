@@ -14,9 +14,18 @@ export default function DeckHubView({ initialDeckId = null, autoSelectLast = fal
   const [decks, setDecks] = useState<DeckListItemDTO[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const handleDeckSelect = useCallback((deckId: string) => {
-    setSelectedDeckId(deckId);
-  }, []);
+  const handleDeckSelect = useCallback(
+    (deckId: string) => {
+      setSelectedDeckId(deckId);
+      const deck = decks.find((d) => d.id === deckId);
+      if (deck) {
+        localStorage.setItem("lingua_active_deck", JSON.stringify({ id: deck.id, name: deck.title }));
+        // Dispatch event to notify Navigation
+        window.dispatchEvent(new Event("lingua_active_deck_change"));
+      }
+    },
+    [decks]
+  );
   const handleCreateNewDeck = useCallback(() => {
     window.location.href = "/generate";
   }, []);
@@ -50,24 +59,53 @@ export default function DeckHubView({ initialDeckId = null, autoSelectLast = fal
       setSelectedDeckId(null);
       return;
     }
+    // If we already have a valid selection, don't override it
     if (selectedDeckId && decks.some((deck) => deck.id === selectedDeckId)) {
       return;
     }
 
     let nextId: string | null = null;
 
+    // Priority 1: Use initialDeckId from URL param
     if (initialDeckId && decks.some((deck) => deck.id === initialDeckId)) {
       nextId = initialDeckId;
-    } else if (autoSelectLast) {
-      // Decks are already sorted by updated_at desc, so first deck is the most recently used
+    }
+
+    // Priority 2: Check localStorage for active deck (preserves navigation context)
+    if (!nextId) {
+      try {
+        const storedActiveDeck = localStorage.getItem("lingua_active_deck");
+        if (storedActiveDeck) {
+          const parsed = JSON.parse(storedActiveDeck) as { id?: string };
+          if (parsed.id && decks.some((deck) => deck.id === parsed.id)) {
+            nextId = parsed.id;
+          }
+        }
+      } catch {
+        // Ignore localStorage errors
+      }
+    }
+
+    // Priority 3: autoSelectLast falls back to first deck (sorted by updated_at)
+    if (!nextId && autoSelectLast) {
       nextId = decks[0]?.id ?? null;
     }
 
+    // Priority 4: Ultimate fallback - first deck
     if (!nextId) {
       nextId = decks[0]?.id ?? null;
     }
 
     setSelectedDeckId(nextId);
+
+    // Save to localStorage if we have a valid selection
+    if (nextId) {
+      const deck = decks.find((d) => d.id === nextId);
+      if (deck) {
+        localStorage.setItem("lingua_active_deck", JSON.stringify({ id: deck.id, name: deck.title }));
+        window.dispatchEvent(new Event("lingua_active_deck_change"));
+      }
+    }
   }, [decks, selectedDeckId, initialDeckId, autoSelectLast]);
 
   if (!loading && decks.length === 0) {

@@ -8,6 +8,6 @@ export const prerender = false;
 const user = (Astro.locals.user as { id: string; email: string | null } | undefined) ?? null;
 ---
 
-<Layout title="LinguaPairs — Generuj i ucz się słownictwa 10x szybciej">
+<Layout title="LinguaPairs — Generuj i ucz się słownictwa 10x szybciej" showNavigation={false}>
   <Welcome user={user} />
 </Layout>

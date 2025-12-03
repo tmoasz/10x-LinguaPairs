@@ -20,7 +20,7 @@ export const prerender = false;
 // If user already logged in, redirect away
 const user = Astro.locals.user;
 if (user) {
-  return Astro.redirect(redirect || "/");
+  return Astro.redirect(redirect || "/decks");
 }
 ---
 

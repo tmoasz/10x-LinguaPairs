@@ -1,13 +1,14 @@
 ---
 import "../styles/global.css";
-import ThemeToggle from "../components/ThemeToggle";
+import { Navigation } from "../components/Navigation";
 import { Toaster } from "@/components/ui/sonner";
 
 interface Props {
   title?: string;
+  showNavigation?: boolean;
 }
 
-const { title = "10x Astro Starter" } = Astro.props;
+const { title = "10x Astro Starter", showNavigation = true } = Astro.props;
 ---
 
 <!doctype html>
@@ -41,9 +42,7 @@ const { title = "10x Astro Starter" } = Astro.props;
     </script>
   </head>
   <body>
-    <div class="fixed top-4 right-4 z-50">
-      <ThemeToggle client:load />
-    </div>
+    <Navigation client:load user={Astro.locals.user} showLinks={showNavigation} />
     <slot />
     <Toaster client:load position="bottom-center" />
   </body>

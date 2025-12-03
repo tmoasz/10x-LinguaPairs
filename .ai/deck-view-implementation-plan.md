@@ -121,7 +121,7 @@ const shouldAutoSelect = autoSelectQuery || !deckIdParam;
 <Layout title="Moje talie — LinguaPairs">
   <main class="min-h-screen bg-background">
     <div class="mx-auto w-full max-w-5xl px-4 py-10">
-      <DeckHubView initialDeckId={deckIdParam ?? null} autoSelectLast={shouldAutoSelect} client:only="react" />
+      <DeckHubView initialDeckId={deckIdParam ?? null} autoSelectLast={shouldAutoSelect} client:load />
     </div>
   </main>
 </Layout>

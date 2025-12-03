@@ -3,6 +3,7 @@ import { config } from "dotenv";
 import { fileURLToPath } from "url";
 import { dirname, resolve } from "path";
 import { existsSync } from "fs";
+import { logger } from "@/lib/utils/logger";
 
 // Get __dirname equivalent in ES modules
 const __filename = fileURLToPath(import.meta.url);
@@ -64,7 +65,7 @@ export async function deleteTestUser(email: string, userId?: string): Promise<vo
         if (deleteByIdError.status === 403 || deleteByIdError.code === "not_admin") {
           return;
         }
-        console.error(`Error deleting user by id ${userId}:`, deleteByIdError);
+        logger.error(`Error deleting user by id ${userId}:`, deleteByIdError);
       }
     }
 
@@ -77,7 +78,7 @@ export async function deleteTestUser(email: string, userId?: string): Promise<vo
       if (listError.status === 403 || listError.code === "not_admin") {
         return;
       }
-      console.error("Error listing users:", listError);
+      logger.error("Error listing users:", listError);
       return;
     }
 
@@ -96,7 +97,7 @@ export async function deleteTestUser(email: string, userId?: string): Promise<vo
       if (deleteError.status === 403 || deleteError.code === "not_admin") {
         return;
       }
-      console.error(`Error deleting user ${email}:`, deleteError);
+      logger.error(`Error deleting user ${email}:`, deleteError);
     }
   } catch (error) {
     // Silently handle permission errors
@@ -104,6 +105,6 @@ export async function deleteTestUser(email: string, userId?: string): Promise<vo
       return;
     }
     const userHint = userId ? `${email} (id: ${userId})` : email;
-    console.error(`Error in deleteTestUser for ${userHint}:`, error);
+    logger.error(`Error in deleteTestUser for ${userHint}:`, error);
   }
 }

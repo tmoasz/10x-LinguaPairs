@@ -21,7 +21,7 @@ const pageTitle = `Talia ${deckId} | LinguaPairs`;
 <Layout title={pageTitle}>
   <main class="min-h-screen bg-background">
     <div class="mx-auto w-full max-w-5xl px-4 py-10">
-      <DeckHubView initialDeckId={deckId} autoSelectLast={false} client:only="react" />
+      <DeckHubView initialDeckId={deckId} autoSelectLast={false} client:load />
     </div>
   </main>
 </Layout>
