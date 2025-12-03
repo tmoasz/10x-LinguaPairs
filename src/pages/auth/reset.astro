@@ -20,7 +20,7 @@ const type = url.searchParams.get("type");
 // If user arrives with a code, redirect to callback to exchange it for a session
 // This handles cases where the email link points directly here instead of callback
 if (code && type === "recovery") {
-  return Astro.redirect(`/api/auth/callback?code=${code}&next=/auth/reset`);
+  return Astro.redirect(`/api/auth/callback?code=${encodeURIComponent(code)}&next=/auth/reset`);
 }
 
 // Check if user has an active session (from callback code exchange)
