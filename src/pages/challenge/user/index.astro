@@ -1,0 +1,33 @@
+---
+import Layout from "@/layouts/Layout.astro";
+
+export const prerender = false;
+---
+
+<Layout title="Challenge | LinguaPairs">
+  <div class="flex min-h-[60vh] items-center justify-center">
+    <div class="text-center">
+      <p class="text-muted-foreground">Przekierowywanie do ostatniej talii...</p>
+    </div>
+  </div>
+</Layout>
+
+<script>
+  // Client-side redirect based on localStorage
+  const activeDeckJson = localStorage.getItem("lingua_active_deck");
+
+  if (activeDeckJson) {
+    try {
+      const activeDeck = JSON.parse(activeDeckJson);
+      if (activeDeck && activeDeck.id) {
+        window.location.href = `/challenge/user/${activeDeck.id}`;
+      } else {
+        window.location.href = "/decks";
+      }
+    } catch {
+      window.location.href = "/decks";
+    }
+  } else {
+    window.location.href = "/decks";
+  }
+</script>

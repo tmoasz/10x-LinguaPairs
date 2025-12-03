@@ -77,7 +77,7 @@ export default function DeckPicker({
           {decks.map((deck) => (
             <SelectItem key={deck.id} value={deck.id}>
               <div className="flex items-center gap-2 w-full">
-                <span className="font-medium flex-1 truncate">{deck.title}</span>
+                <span className="font-medium text-lg flex-1 truncate">{deck.title}</span>
                 <div className="flex items-center gap-1.5">
                   <div className="flex items-center gap-1">
                     <FlagIcon code={deck.lang_a.code} />

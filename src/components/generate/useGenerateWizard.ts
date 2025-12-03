@@ -96,7 +96,7 @@ export function useGenerateWizard() {
     wasOnboardingRef.current = isOnboarding(decks);
   }, [decks]);
 
-  // Auto-select deck from URL query parameter (only once)
+  // Auto-select deck from URL query parameter or localStorage (only once)
   useEffect(() => {
     if (!decksLoaded || decks.length === 0 || deckFromUrlAppliedRef.current) {
       return;
@@ -105,23 +105,42 @@ export function useGenerateWizard() {
     const urlParams = new URLSearchParams(window.location.search);
     const deckIdFromUrl = urlParams.get("deck");
 
-    if (!deckIdFromUrl) {
-      deckFromUrlAppliedRef.current = true;
-      return;
+    // Priority: 1) URL param, 2) localStorage active deck
+    let deckIdToSelect: string | null = null;
+
+    if (deckIdFromUrl) {
+      const deckExists = decks.some((deck) => deck.id === deckIdFromUrl);
+      if (deckExists) {
+        deckIdToSelect = deckIdFromUrl;
+      }
     }
 
-    const deckExists = decks.some((deck) => deck.id === deckIdFromUrl);
-    if (!deckExists) {
-      deckFromUrlAppliedRef.current = true;
-      return;
+    // Fallback to localStorage if no URL param or deck doesn't exist
+    if (!deckIdToSelect) {
+      try {
+        const storedActiveDeck = localStorage.getItem("lingua_active_deck");
+        if (storedActiveDeck) {
+          const parsed = JSON.parse(storedActiveDeck) as { id?: string };
+          if (parsed.id && decks.some((deck) => deck.id === parsed.id)) {
+            deckIdToSelect = parsed.id;
+          }
+        }
+      } catch {
+        // Ignore localStorage errors
+      }
     }
 
     deckFromUrlAppliedRef.current = true;
 
-    if (state.selectedDeckId !== deckIdFromUrl) {
-      selectDeck(deckIdFromUrl);
+    if (!deckIdToSelect) {
+      return;
     }
 
+    if (state.selectedDeckId !== deckIdToSelect) {
+      selectDeck(deckIdToSelect);
+    }
+
+    // Skip step 1 if deck is pre-selected (from URL or localStorage)
     setStep(2);
   }, [decksLoaded, decks, state.selectedDeckId, selectDeck, setStep]);
 
