@@ -11,10 +11,7 @@ import { Loader2, CheckCircle2, XCircle } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
 // Client-side Supabase instance for auth operations
-const supabase = createClient(
-  import.meta.env.PUBLIC_SUPABASE_URL,
-  import.meta.env.PUBLIC_SUPABASE_ANON_KEY
-);
+const supabase = createClient(import.meta.env.PUBLIC_SUPABASE_URL, import.meta.env.PUBLIC_SUPABASE_ANON_KEY);
 
 type Status = "processing" | "success" | "error";
 
@@ -112,6 +109,11 @@ export default function MagicLinkHandler() {
           setTimeout(() => {
             window.location.href = redirectTo;
           }, 1500);
+        } else {
+          // Session not established without explicit error
+          console.error("[MAGIC LINK] No session returned");
+          setStatus("error");
+          setErrorMessage("Nie udało się ustanowić sesji. Spróbuj ponownie.");
         }
       } catch (err) {
         console.error("[MAGIC LINK] Unexpected error:", err);
@@ -161,10 +163,7 @@ export default function MagicLinkHandler() {
               <Button asChild size="lg" className="w-full">
                 <a href="/auth/login">Zaloguj się ponownie</a>
               </Button>
-              <a
-                href="/"
-                className="text-sm text-muted-foreground hover:text-foreground transition-colors"
-              >
+              <a href="/" className="text-sm text-muted-foreground hover:text-foreground transition-colors">
                 Powrót do strony głównej
               </a>
             </div>
@@ -174,4 +173,3 @@ export default function MagicLinkHandler() {
     </div>
   );
 }
-
