@@ -1,0 +1,19 @@
+---
+/**
+ * Magic Link Callback Page
+ *
+ * Handles magic link authentication (login via email link).
+ * Parses hash fragment tokens and establishes a session.
+ */
+
+import AuthLayout from "@/layouts/AuthLayout.astro";
+import MagicLinkHandler from "@/components/auth/MagicLinkHandler";
+
+// SSR-only - requires client-side hash parsing
+export const prerender = false;
+---
+
+<AuthLayout title="Logowanie" description="Przetwarzanie linku logowania...">
+  <MagicLinkHandler client:load />
+</AuthLayout>
+
