@@ -1,4 +1,4 @@
-import { Play, RefreshCw } from "lucide-react";
+import { Play, RefreshCw, Dices } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 import { MatchingGrid } from "@/components/challenge/MatchingGrid";
 import { ChallengeTimer } from "@/components/challenge/ChallengeTimer";
@@ -9,70 +9,108 @@ import { Button } from "@/components/ui/button";
 import FlagIcon from "@/components/FlagIcon";
 import { CHALLENGE_REQUIRED_PAIRS } from "@/lib/constants/challenge";
 import { MOCK_CHALLENGE_DECK, getMockChallengePairs } from "@/components/challenge/challenge.mock";
+import { guestIdentityService } from "@/lib/services/guest-identity";
 import type { ChallengeLeaderboardEntryDTO } from "@/types";
+import { logger } from "@/lib/utils/logger";
 
-const PREVIEW_STORAGE_KEY = "linguapairs.challenge.preview.results";
-const PREVIEW_MAX_RESULTS = 10;
+interface DemoResult {
+  id: string;
+  guest_id: string;
+  total_time_ms: number;
+  incorrect: number;
+  created_at: string;
+  guest_name: string;
+}
 
 export default function ChallengePreview() {
   const mockPairs = useMemo(() => getMockChallengePairs(), []);
 
-  const [history, setHistory] = useState<ChallengeLeaderboardEntryDTO[]>([]);
+  // Identity state
+  const [guestId, setGuestId] = useState<string>("");
+  const [guestName, setGuestName] = useState<string>("Anonim");
+
+  // Leaderboard state
+  const [leaderboard, setLeaderboard] = useState<ChallengeLeaderboardEntryDTO[]>([]);
+  const [isLoadingLeaderboard, setIsLoadingLeaderboard] = useState(false);
 
   const game = useChallengeGame({
     pairs: mockPairs,
   });
 
+  // Initialize identity and load leaderboard
   useEffect(() => {
-    try {
-      const raw = localStorage.getItem(PREVIEW_STORAGE_KEY);
-      if (!raw) {
-        return;
-      }
-      const parsed = JSON.parse(raw) as ChallengeLeaderboardEntryDTO[];
-      if (Array.isArray(parsed)) {
-        setHistory(parsed);
-      }
-    } catch {
-      // ignore parse errors
-    }
+    const { guestId: id, guestName: name } = guestIdentityService.getIdentity();
+    setGuestId(id);
+    setGuestName(name);
+    void fetchLeaderboard(id);
   }, []);
 
+  const fetchLeaderboard = async (currentGuestId: string) => {
+    setIsLoadingLeaderboard(true);
+    try {
+      const res = await fetch("/api/challenge/demo/leaderboard");
+      if (!res.ok) throw new Error("Failed to fetch leaderboard");
+
+      const data = await res.json();
+
+      const mapped: ChallengeLeaderboardEntryDTO[] = (data as DemoResult[]).map((row) => ({
+        id: row.id,
+        deck_id: "demo",
+        user_id: row.guest_id,
+        total_time_ms: row.total_time_ms,
+        incorrect: row.incorrect,
+        correct: CHALLENGE_REQUIRED_PAIRS,
+        created_at: row.created_at,
+        player_name: row.guest_name,
+        is_current_user: row.guest_id === currentGuestId,
+      }));
+
+      setLeaderboard(mapped);
+    } catch (error) {
+      logger.error("Error loading demo leaderboard", error);
+    } finally {
+      setIsLoadingLeaderboard(false);
+    }
+  };
+
+  const handleRegenerateName = () => {
+    const newName = guestIdentityService.regenerateName();
+    setGuestName(newName);
+
+    // Optimistically update own name in leaderboard if present
+    setLeaderboard((prev) => prev.map((entry) => (entry.is_current_user ? { ...entry, player_name: newName } : entry)));
+  };
+
+  // Handle game finish
   useEffect(() => {
     if (game.status !== "finished" || typeof game.totalTimeMs !== "number") {
       return;
     }
-    const nextEntry: ChallengeLeaderboardEntryDTO = {
-      id: `local-${Date.now()}`,
-      deck_id: MOCK_CHALLENGE_DECK.id,
-      user_id: "local-guest",
-      total_time_ms: game.totalTimeMs,
-      incorrect: game.incorrectAttempts,
-      correct: CHALLENGE_REQUIRED_PAIRS,
-      created_at: new Date().toISOString(),
-      player_name: "Anonimowy",
-      is_current_user: true,
+
+    const submitScore = async () => {
+      try {
+        await fetch("/api/challenge/demo/results", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            guest_id: guestId,
+            guest_name: guestName,
+            total_time_ms: game.totalTimeMs,
+            incorrect: game.incorrectAttempts,
+          }),
+        });
+        await fetchLeaderboard(guestId);
+      } catch (error) {
+        logger.error("Failed to submit demo score", error);
+      }
     };
 
-    setHistory((prev) => {
-      const nextHistory = [nextEntry, ...prev]
-        .sort((a, b) => {
-          if (a.total_time_ms === b.total_time_ms) {
-            return a.incorrect - b.incorrect;
-          }
-          return a.total_time_ms - b.total_time_ms;
-        })
-        .slice(0, PREVIEW_MAX_RESULTS);
-      try {
-        localStorage.setItem(PREVIEW_STORAGE_KEY, JSON.stringify(nextHistory));
-      } catch {
-        // ignore storage errors
-      }
-      return nextHistory;
-    });
-  }, [game.status, game.totalTimeMs, game.incorrectAttempts]);
+    void submitScore();
+  }, [game.status, game.totalTimeMs, game.incorrectAttempts, guestId, guestName]);
 
   const showFinishedView = game.status === "finished" && typeof game.totalTimeMs === "number";
+
+  const myBest = useMemo(() => leaderboard.find((e) => e.is_current_user) ?? null, [leaderboard]);
 
   return (
     <section className="space-y-6 rounded-2xl border border-border bg-card/80 p-6 shadow-sm">
@@ -80,6 +118,19 @@ export default function ChallengePreview() {
         <div>
           <h2 className="text-2xl font-semibold">{MOCK_CHALLENGE_DECK.title}</h2>
           <p className="text-sm text-muted-foreground">{MOCK_CHALLENGE_DECK.description}</p>
+        </div>
+        <div className="flex items-center gap-2 text-sm">
+          <span className="text-muted-foreground">Grasz jako:</span>
+          <div className="flex items-center gap-2 rounded-md border border-border px-3 py-1.5 bg-background/50">
+            <span className="font-medium">{guestName}</span>
+            <button
+              onClick={handleRegenerateName}
+              title="Wylosuj nową nazwę"
+              className="text-muted-foreground hover:text-primary transition-colors"
+            >
+              <Dices className="h-4 w-4" />
+            </button>
+          </div>
         </div>
       </header>
 
@@ -130,7 +181,11 @@ export default function ChallengePreview() {
           />
         </>
       )}
-      <ChallengeLeaderboard entries={history} myBest={history[0] ?? null} isLoading={false} />
+
+      <div className="pt-4 border-t border-border">
+        <h3 className="mb-4 text-lg font-semibold">Tablica wyników (Demo)</h3>
+        <ChallengeLeaderboard entries={leaderboard} myBest={myBest} isLoading={isLoadingLeaderboard} />
+      </div>
     </section>
   );
 }
