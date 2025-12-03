@@ -15,6 +15,8 @@ const PUBLIC_EXACT = new Set<string>([
   "/api/auth/logout",
   "/api/auth/signout",
   "/api/auth/session",
+  "/api/challenge/demo/results",
+  "/api/challenge/demo/leaderboard",
   "/favicon.ico",
   "/robots.txt",
   "/manifest.webmanifest",
