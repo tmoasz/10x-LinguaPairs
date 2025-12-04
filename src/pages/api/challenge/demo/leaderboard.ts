@@ -4,7 +4,7 @@ import type { APIRoute } from "astro";
 
 export const GET: APIRoute = async ({ locals }) => {
   const supabase = locals.supabase;
-  const limit = 50;
+  const limit = 30;
   
   const { data, error } = await supabase
     .from("challenge_demo_results")

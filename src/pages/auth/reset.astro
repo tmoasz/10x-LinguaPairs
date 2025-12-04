@@ -2,8 +2,8 @@
 /**
  * Reset Password Page
  *
- * Set new password after clicking reset link from email
- * This page receives code/type parameters from Supabase
+ * Set new password after clicking reset link from email.
+ * User arrives here after /api/auth/callback exchanges the code for a session.
  */
 
 import AuthLayout from "@/layouts/AuthLayout.astro";
@@ -12,27 +12,25 @@ import ResetPasswordForm from "@/components/auth/ResetPasswordForm";
 // SSR-only - requires runtime access to cookies/headers for auth middleware
 export const prerender = false;
 
-// Get parameters from URL (Supabase sends code and type)
+// Get parameters from URL
 const url = new URL(Astro.request.url);
 const code = url.searchParams.get("code");
 const type = url.searchParams.get("type");
 
-// TODO: Perform SSR exchange code for session
-// const supabase = Astro.locals.supabase;
-// if (code && type === "recovery") {
-//   const { error } = await supabase.auth.exchangeCodeForSession(code);
-//   if (error) {
-//     // Handle expired/invalid token
-//   }
-// }
+// If user arrives with a code, redirect to callback to exchange it for a session
+// This handles cases where the email link points directly here instead of callback
+if (code && type === "recovery") {
+  return Astro.redirect(`/api/auth/callback?code=${encodeURIComponent(code)}&next=/auth/reset`);
+}
 
-// For now, just check if we have the required parameters
-const hasValidParams = code && type === "recovery";
+// Check if user has an active session (from callback code exchange)
+const user = Astro.locals.user;
+const hasValidSession = !!user;
 ---
 
 <AuthLayout title="Ustaw nowe hasło" description="Wprowadź nowe, silne hasło dla swojego konta.">
   {
-    hasValidParams ? (
+    hasValidSession ? (
       <ResetPasswordForm client:load />
     ) : (
       <div class="text-center space-y-6">

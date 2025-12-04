@@ -72,15 +72,42 @@ export default function ResetPasswordForm() {
 
     setIsLoading(true);
 
-    // TODO: Implement actual password reset completion
-    setTimeout(() => {
-      setIsLoading(false);
+    try {
+      const response = await fetch("/api/auth/reset-password", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ password: formData.password }),
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        // Handle session expired - redirect to forgot page
+        if (response.status === 401) {
+          toast.error("Sesja wygasła", {
+            description: "Poproś o nowy link do resetowania hasła.",
+          });
+          window.location.href = "/auth/forgot";
+          return;
+        }
+
+        toast.error("Błąd", {
+          description: data.error || "Nie udało się zmienić hasła. Spróbuj ponownie.",
+        });
+        return;
+      }
+
       setSuccess(true);
       toast.success("Hasło zmienione!", {
         description: "Możesz teraz się zalogować",
       });
-      // console.log("Password reset completed");
-    }, 1500);
+    } catch {
+      toast.error("Błąd połączenia", {
+        description: "Nie udało się połączyć z serwerem. Spróbuj ponownie.",
+      });
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   // Success state

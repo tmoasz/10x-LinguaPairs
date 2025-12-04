@@ -51,15 +51,33 @@ export default function ForgotPasswordForm() {
 
     setIsLoading(true);
 
-    // TODO: Implement actual password reset request
-    setTimeout(() => {
-      setIsLoading(false);
+    try {
+      const response = await fetch("/api/auth/forgot", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email: formData.email }),
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        toast.error("Błąd", {
+          description: data.error || "Nie udało się wysłać linku. Spróbuj ponownie.",
+        });
+        return;
+      }
+
       setSuccess(true);
       toast.success("Link wysłany!", {
         description: "Sprawdź swoją skrzynkę e-mail",
       });
-      // console.log("Password reset requested for:", formData.email);
-    }, 1500);
+    } catch {
+      toast.error("Błąd połączenia", {
+        description: "Nie udało się połączyć z serwerem. Spróbuj ponownie.",
+      });
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   // Success state

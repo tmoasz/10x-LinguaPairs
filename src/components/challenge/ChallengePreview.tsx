@@ -1,5 +1,5 @@
 import { Play, RefreshCw, Dices } from "lucide-react";
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useState, useCallback } from "react";
 import { MatchingGrid } from "@/components/challenge/MatchingGrid";
 import { ChallengeTimer } from "@/components/challenge/ChallengeTimer";
 import { ChallengeSummary } from "@/components/challenge/ChallengeSummary";
@@ -26,24 +26,39 @@ export default function ChallengePreview() {
   const mockPairs = useMemo(() => getMockChallengePairs(), []);
 
   // Identity state
-  const [guestId, setGuestId] = useState<string>("");
   const [guestName, setGuestName] = useState<string>("Anonim");
 
   // Leaderboard state
   const [leaderboard, setLeaderboard] = useState<ChallengeLeaderboardEntryDTO[]>([]);
   const [isLoadingLeaderboard, setIsLoadingLeaderboard] = useState(false);
 
+  // Handle game finish
+  const handleGameFinish = useCallback(async (summary: { totalTimeMs: number; incorrectAttempts: number }) => {
+    if (typeof summary.totalTimeMs !== "number") return;
+
+    const { guestId, guestName } = guestIdentityService.getIdentity();
+
+    try {
+      await fetch("/api/challenge/demo/results", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          guest_id: guestId,
+          guest_name: guestName,
+          total_time_ms: summary.totalTimeMs,
+          incorrect: summary.incorrectAttempts,
+        }),
+      });
+      await fetchLeaderboard(guestId);
+    } catch (error) {
+      logger.error("Failed to submit demo score", error);
+    }
+  }, []);
+
   const game = useChallengeGame({
     pairs: mockPairs,
+    onFinish: handleGameFinish,
   });
-
-  // Initialize identity and load leaderboard
-  useEffect(() => {
-    const { guestId: id, guestName: name } = guestIdentityService.getIdentity();
-    setGuestId(id);
-    setGuestName(name);
-    void fetchLeaderboard(id);
-  }, []);
 
   const fetchLeaderboard = async (currentGuestId: string) => {
     setIsLoadingLeaderboard(true);
@@ -81,32 +96,12 @@ export default function ChallengePreview() {
     setLeaderboard((prev) => prev.map((entry) => (entry.is_current_user ? { ...entry, player_name: newName } : entry)));
   };
 
-  // Handle game finish
+  // Initialize identity and load leaderboard
   useEffect(() => {
-    if (game.status !== "finished" || typeof game.totalTimeMs !== "number") {
-      return;
-    }
-
-    const submitScore = async () => {
-      try {
-        await fetch("/api/challenge/demo/results", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            guest_id: guestId,
-            guest_name: guestName,
-            total_time_ms: game.totalTimeMs,
-            incorrect: game.incorrectAttempts,
-          }),
-        });
-        await fetchLeaderboard(guestId);
-      } catch (error) {
-        logger.error("Failed to submit demo score", error);
-      }
-    };
-
-    void submitScore();
-  }, [game.status, game.totalTimeMs, game.incorrectAttempts, guestId, guestName]);
+    const { guestId: id, guestName: name } = guestIdentityService.getIdentity();
+    setGuestName(name);
+    void fetchLeaderboard(id);
+  }, []);
 
   const showFinishedView = game.status === "finished" && typeof game.totalTimeMs === "number";
 
