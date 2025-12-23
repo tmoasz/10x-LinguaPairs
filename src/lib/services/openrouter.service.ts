@@ -338,20 +338,21 @@ export class OpenRouterService {
     const headers = this.buildHeaders();
     const body = JSON.stringify(payload);
 
-    // Create timeout abort controller
-    const timeoutController = new AbortController();
-    const timeoutId = setTimeout(() => {
-      timeoutController.abort();
-    }, this.timeoutMs);
-
-    // Combine signals
-    const combinedSignal = this.combineAbortSignals(
-      [signal, timeoutController.signal].filter(Boolean) as AbortSignal[]
-    );
-
     let lastError: Error | null = null;
 
     for (let attempt = 0; attempt <= this.retry.maxRetries; attempt++) {
+      // Timeout must apply to every attempt. If we clear the timeout once (e.g. on a non-2xx response)
+      // and then retry, we would effectively disable timeouts for subsequent attempts.
+      const timeoutController = new AbortController();
+      const timeoutId = setTimeout(() => {
+        timeoutController.abort();
+      }, this.timeoutMs);
+
+      // Combine signals per attempt to avoid accumulating listeners across retries.
+      const combinedSignal = this.combineAbortSignals(
+        [signal, timeoutController.signal].filter(Boolean) as AbortSignal[]
+      );
+
       try {
         this.logger?.debug?.(`OpenRouter request attempt ${attempt + 1}/${this.retry.maxRetries + 1}`);
 
@@ -361,8 +362,6 @@ export class OpenRouterService {
           body,
           signal: combinedSignal,
         });
-
-        clearTimeout(timeoutId);
 
         // Handle non-2xx responses
         if (!response.ok) {
@@ -382,8 +381,6 @@ export class OpenRouterService {
 
         return response;
       } catch (error) {
-        clearTimeout(timeoutId);
-
         if (error instanceof OpenRouterError && !this.isRetryableError(error)) {
           throw error;
         }
@@ -419,6 +416,8 @@ export class OpenRouterService {
         }
 
         throw error instanceof Error ? error : new Error(String(error));
+      } finally {
+        clearTimeout(timeoutId);
       }
     }
 
@@ -460,8 +459,6 @@ export class OpenRouterService {
         signal: combinedSignal,
       });
 
-      clearTimeout(timeoutId);
-
       if (!response.ok) {
         const error = await this.handleErrorResponse(response, 0);
         throw error.error;
@@ -474,8 +471,6 @@ export class OpenRouterService {
       // Parse SSE stream
       await this.parseSSEStream(response.body, callbacks, combinedSignal);
     } catch (error) {
-      clearTimeout(timeoutId);
-
       if (error instanceof OpenRouterError) {
         callbacks.onError?.(error);
         throw error;
@@ -492,6 +487,9 @@ export class OpenRouterService {
       const networkError = new OpenRouterNetworkError(error instanceof Error ? error.message : "Stream request failed");
       callbacks.onError?.(networkError);
       throw networkError;
+    } finally {
+      // Keep timeout active for the entire stream parsing; otherwise long streams can hang forever.
+      clearTimeout(timeoutId);
     }
   }
 
@@ -782,7 +780,8 @@ export class OpenRouterService {
       if (signal.aborted) {
         controller.abort();
       } else {
-        signal.addEventListener("abort", () => controller.abort());
+        // Use `once: true` to avoid listener accumulation in long-lived processes.
+        signal.addEventListener("abort", () => controller.abort(), { once: true });
       }
     });
 

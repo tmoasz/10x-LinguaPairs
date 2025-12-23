@@ -3,6 +3,9 @@ export const prerender = false;
 import type { APIRoute } from "astro";
 import { z } from "zod";
 import { safeRequestJson } from "@/lib/utils/request.utils";
+import { logger } from "@/lib/utils/logger";
+
+const jsonHeaders = { "Content-Type": "application/json" };
 
 const ResultSchema = z.object({
   guest_id: z.string().uuid(),
@@ -13,6 +16,12 @@ const ResultSchema = z.object({
 
 export const POST: APIRoute = async ({ request, locals }) => {
   const supabase = locals.supabase;
+  if (!supabase) {
+    return new Response(
+      JSON.stringify({ error: { code: "INTERNAL_ERROR", message: "Database connection not available" } }),
+      { status: 500, headers: jsonHeaders }
+    );
+  }
   try {
     const body = await safeRequestJson(request);
     const payload = ResultSchema.parse(body);
@@ -27,13 +36,32 @@ export const POST: APIRoute = async ({ request, locals }) => {
       });
 
     if (error) {
-      console.error("Failed to insert challenge demo result:", error);
-      return new Response(JSON.stringify({ error: error.message }), { status: 500 });
+      logger.error("Failed to insert challenge demo result:", error);
+      return new Response(JSON.stringify({ error: { code: "INTERNAL_ERROR", message: "Failed to store result" } }), {
+        status: 500,
+        headers: jsonHeaders,
+      });
     }
 
-    return new Response(JSON.stringify({ success: true }), { status: 200 });
+    return new Response(JSON.stringify({ success: true }), { status: 201, headers: jsonHeaders });
   } catch (err) {
-    console.error("Invalid challenge demo result payload:", err);
-    return new Response(JSON.stringify({ error: "Invalid payload" }), { status: 400 });
+    if (err instanceof z.ZodError) {
+      return new Response(
+        JSON.stringify({
+          error: {
+            code: "VALIDATION_ERROR",
+            message: "Invalid payload",
+            details: err.issues.map((issue) => ({ field: issue.path.join("."), message: issue.message })),
+          },
+        }),
+        { status: 422, headers: jsonHeaders }
+      );
+    }
+
+    logger.error("Unexpected error inserting challenge demo result:", err);
+    return new Response(JSON.stringify({ error: { code: "INTERNAL_ERROR", message: "Unexpected error" } }), {
+      status: 500,
+      headers: jsonHeaders,
+    });
   }
 };
