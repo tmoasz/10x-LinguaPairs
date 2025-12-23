@@ -70,6 +70,24 @@ export const GET: APIRoute = async (context) => {
     const sort = url.searchParams.get("sort") || "created_at";
     const order = (url.searchParams.get("order") || "desc") as "asc" | "desc";
 
+    // IMPORTANT: Never pass arbitrary sort keys to the database.
+    // This prevents unexpected 500s and avoids leaking schema details via error messages.
+    const allowedSortFields = new Set(["created_at", "updated_at", "title"]);
+    if (!allowedSortFields.has(sort)) {
+      return new Response(
+        JSON.stringify({
+          error: {
+            code: "VALIDATION_ERROR",
+            message: `Invalid sort field. Allowed: ${Array.from(allowedSortFields).join(", ")}`,
+          },
+        }),
+        {
+          status: 400,
+          headers: { "Content-Type": "application/json" },
+        }
+      );
+    }
+
     if (isNaN(page) || isNaN(limit)) {
       return new Response(
         JSON.stringify({
@@ -207,23 +225,30 @@ export const GET: APIRoute = async (context) => {
       });
     }
 
-    // Get pairs count for each deck
-    const { data: pairsCounts, error: pairsError } = await supabase
-      .from("pairs")
-      .select("deck_id")
-      .in("deck_id", deckIds)
-      .is("deleted_at", null);
+    // Get pairs count for each deck.
+    //
+    // BUGFIX: The previous implementation selected *all* pair rows and counted in JS.
+    // That becomes O(N) in the number of pairs in the page and can easily turn a simple list
+    // request into a heavy DB + network transfer (especially for large decks).
+    //
+    // We instead do cheap COUNT queries (head: true) per deck. This is bounded by page size
+    // (<= 100) and avoids transferring potentially thousands of rows.
+    const pairsCountEntries = await Promise.all(
+      deckIds.map(async (deckId) => {
+        const { count, error } = await supabase
+          .from("pairs")
+          .select("id", { count: "exact", head: true })
+          .eq("deck_id", deckId)
+          .is("deleted_at", null);
 
-    if (pairsError) {
-      logger.error("Error counting pairs:", pairsError);
-      throw new Error(`Failed to count pairs: ${pairsError.message}`);
-    }
+        if (error) {
+          throw new Error(`Failed to count pairs for deck ${deckId}: ${error.message}`);
+        }
 
-    // Count pairs per deck
-    const pairsCountMap = new Map<string, number>();
-    for (const pair of pairsCounts || []) {
-      pairsCountMap.set(pair.deck_id, (pairsCountMap.get(pair.deck_id) || 0) + 1);
-    }
+        return [deckId, count ?? 0] as const;
+      })
+    );
+    const pairsCountMap = new Map<string, number>(pairsCountEntries);
 
     // Transform to DTO format
     const decksList: DeckListItemDTO[] = decks.map((deck) => {
